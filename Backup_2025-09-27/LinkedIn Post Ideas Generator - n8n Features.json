@@ -1,0 +1,323 @@
+{
+  "createdAt": "2025-09-27T01:28:00.622Z",
+  "updatedAt": "2025-09-27T05:15:57.104Z",
+  "id": "uqytC8OOfziFP4wC",
+  "name": "LinkedIn Post Ideas Generator - n8n Features",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "Daily Content Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "fetch-n8n-blog",
+      "name": "Fetch n8n Blog RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        400,
+        200
+      ],
+      "parameters": {
+        "url": "https://blog.n8n.io/rss/",
+        "method": "GET",
+        "responseFormat": "xml"
+      },
+      "typeVersion": 4
+    },
+    {
+      "id": "fetch-github-releases",
+      "name": "Fetch GitHub Releases",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        400,
+        400
+      ],
+      "parameters": {
+        "url": "https://api.github.com/repos/n8n-io/n8n/releases",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            },
+            {
+              "name": "User-Agent",
+              "value": "n8n-linkedin-bot"
+            }
+          ]
+        }
+      },
+      "typeVersion": 4
+    },
+    {
+      "id": "parse-rss-content",
+      "name": "Parse RSS Content",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        600,
+        200
+      ],
+      "parameters": {
+        "jsCode": "// Parse RSS XML content - improved version\nconst items = [];\n\n// Get the XML data from the HTTP request\nlet xmlData = $input.first().json?.data || $input.first().binary?.data || $input.first().json;\n\n// Handle different data formats\nif (typeof xmlData !== 'string') {\n  if (xmlData && typeof xmlData === 'object') {\n    xmlData = JSON.stringify(xmlData);\n  } else {\n    xmlData = String(xmlData || '');\n  }\n}\n\nconsole.log('XML data type:', typeof xmlData);\nconsole.log('XML data length:', xmlData.length);\nconsole.log('First 200 chars:', xmlData.substring(0, 200));\n\nif (xmlData && xmlData.length > 0) {\n  try {\n    // Simple XML parsing for RSS feed items\n    const itemMatches = xmlData.match(/<item[^>]*>([\\s\\S]*?)<\\/item>/g);\n    \n    if (itemMatches && itemMatches.length > 0) {\n      console.log('Found', itemMatches.length, 'RSS items');\n      \n      for (let i = 0; i < Math.min(itemMatches.length, 5); i++) {\n        const item = itemMatches[i];\n        \n        // Extract title with better regex\n        const titleMatch = item.match(/<title>(?:<!\\[CDATA\\[)?([^\\]<]+)(?:\\]\\]>)?<\\/title>/i);\n        const title = titleMatch ? titleMatch[1].trim() : `n8n Blog Post ${i + 1}`;\n        \n        // Extract link\n        const linkMatch = item.match(/<link>([^<]+)<\\/link>/i);\n        const link = linkMatch ? linkMatch[1].trim() : 'https://blog.n8n.io';\n        \n        // Extract description with better handling\n        const descMatch = item.match(/<description>(?:<!\\[CDATA\\[)?([^\\]]+?)(?:\\]\\]>)?<\\/description>/i);\n        let description = descMatch ? descMatch[1].trim() : 'Latest n8n updates and features';\n        \n        // Clean HTML tags and limit length\n        description = description.replace(/<[^>]+>/g, '').substring(0, 200);\n        if (description.length === 200) description += '...';\n        \n        // Extract publication date\n        const pubDateMatch = item.match(/<pubDate>([^<]+)<\\/pubDate>/i);\n        const publishedDate = pubDateMatch ? pubDateMatch[1].trim() : new Date().toISOString();\n        \n        items.push({\n          title: title,\n          link: link,\n          description: description,\n          publishedDate: publishedDate,\n          type: 'blog_post',\n          source: 'n8n_blog'\n        });\n        \n        console.log(`Parsed item ${i + 1}: ${title}`);\n      }\n    } else {\n      console.log('No RSS items found in XML');\n    }\n  } catch (error) {\n    console.error('Error parsing RSS XML:', error.message);\n  }\n}\n\n// Always return at least one item (fallback)\nif (items.length === 0) {\n  console.log('Creating fallback item');\n  items.push({\n    title: 'Latest n8n Updates',\n    link: 'https://blog.n8n.io',\n    description: 'Check out the latest features and updates from the n8n team',\n    publishedDate: new Date().toISOString(),\n    type: 'blog_post',\n    source: 'n8n_blog'\n  });\n}\n\nconsole.log('Total items to return:', items.length);\nreturn items.map(item => ({ json: item }));",
+        "language": "javascript"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "parse-github-releases",
+      "name": "Parse GitHub Releases",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        600,
+        400
+      ],
+      "parameters": {
+        "jsCode": "// Parse GitHub releases\nconst releases = $input.first().json;\nconst items = [];\n\nif (Array.isArray(releases)) {\n  const recentReleases = releases.slice(0, 3);\n  \n  for (const release of recentReleases) {\n    items.push({\n      title: `n8n ${release.tag_name} Released`,\n      link: release.html_url || 'https://github.com/n8n-io/n8n/releases',\n      description: (release.body || 'New version released with exciting features and improvements').substring(0, 200),\n      publishedDate: release.published_at || new Date().toISOString(),\n      type: 'release',\n      version: release.tag_name || 'latest',\n      isPrerelease: release.prerelease || false,\n      source: 'github_releases'\n    });\n  }\n}\n\nif (items.length === 0) {\n  items.push({\n    title: 'n8n Latest Release',\n    link: 'https://github.com/n8n-io/n8n/releases',\n    description: 'Check out the latest n8n release with new features and improvements',\n    publishedDate: new Date().toISOString(),\n    type: 'release',\n    source: 'github_releases'\n  });\n}\n\nreturn items.map(item => ({ json: item }));",
+        "language": "javascript"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "merge-content",
+      "name": "Merge All Content",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        800,
+        300
+      ],
+      "parameters": {
+        "mode": "append"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "filter-recent-content",
+      "name": "Filter Recent Content",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1000,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Filter recent content or get latest items\nconst sevenDaysAgo = new Date();\nsevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);\n\nconst recentContent = [];\nconst allItems = $input.all();\n\nfor (const item of allItems) {\n  const publishedDate = new Date(item.json.publishedDate);\n  if (publishedDate >= sevenDaysAgo) {\n    recentContent.push(item);\n  }\n}\n\nif (recentContent.length === 0) {\n  allItems.sort((a, b) => new Date(b.json.publishedDate) - new Date(a.json.publishedDate));\n  return allItems.slice(0, 3);\n}\n\nreturn recentContent;",
+        "language": "javascript"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "prepare-ai-prompt",
+      "name": "Prepare AI Prompt",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Prepare content for AI\nconst allContent = $input.all();\nconst contentSummary = allContent.map(item => ({\n  title: item.json.title,\n  description: item.json.description,\n  type: item.json.type,\n  source: item.json.source,\n  link: item.json.link\n}));\n\nreturn [{ json: { content: contentSummary } }];",
+        "language": "javascript"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "generate-post-ideas",
+      "name": "Generate LinkedIn Post Ideas",
+      "type": "n8n-nodes-base.openAi",
+      "position": [
+        1400,
+        300
+      ],
+      "parameters": {
+        "model": "gpt-3.5-turbo-instruct",
+        "prompt": "You are a social media expert for n8n automation platform. Create 5 engaging LinkedIn posts based on this content: {{ JSON.stringify($json.content, null, 2) }}\n\nFormat each post as:\n\nPOST 1:\nTitle: [Catchy title]\nContent: [Engaging 100-150 word post with emojis]\nHashtags: [5-7 relevant hashtags]\nCTA: [Clear call-to-action]\n\n[Repeat for posts 2-5]\n\nMake posts professional, engaging, and appealing to developers and business users.",
+        "resource": "text",
+        "operation": "complete",
+        "maxTokens": 2000
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "format-post-ideas",
+      "name": "Format Post Ideas",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1600,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Format AI response into structured posts\nconst aiResponse = $input.first().json.choices?.[0]?.text || $input.first().json.text || '';\nconst postSections = aiResponse.split(/POST \\d+:/i).filter(section => section.trim().length > 0);\nconst formattedPosts = [];\n\nfor (let i = 0; i < Math.min(postSections.length, 5); i++) {\n  const section = postSections[i].trim();\n  \n  const titleMatch = section.match(/Title:\\s*([^\\n]+)/i);\n  const contentMatch = section.match(/Content:\\s*([\\s\\S]*?)(?=Hashtags:|$)/i);\n  const hashtagsMatch = section.match(/Hashtags:\\s*([^\\n]+)/i);\n  const ctaMatch = section.match(/CTA:\\s*([^\\n]+)/i);\n  \n  const post = {\n    id: `post_idea_${i + 1}`,\n    title: titleMatch ? titleMatch[1].trim() : `n8n Feature Post ${i + 1}`,\n    content: contentMatch ? contentMatch[1].trim() : 'Exciting n8n updates are here!',\n    hashtags: hashtagsMatch ? hashtagsMatch[1].trim() : '#n8n #automation #nocode #workflow',\n    callToAction: ctaMatch ? ctaMatch[1].trim() : 'Try n8n today!',\n    generatedAt: new Date().toISOString(),\n    status: 'draft'\n  };\n  \n  formattedPosts.push(post);\n}\n\nif (formattedPosts.length === 0) {\n  formattedPosts.push({\n    id: 'post_idea_1',\n    title: '🚀 Discover n8n Automation',\n    content: 'Ready to supercharge your workflows? 🔥 n8n connects your favorite tools without code! With 400+ integrations and visual workflows, automate anything. Join thousands transforming their productivity! ✨',\n    hashtags: '#n8n #automation #nocode #workflow #productivity',\n    callToAction: 'Start automating today - try n8n for free!',\n    generatedAt: new Date().toISOString(),\n    status: 'draft'\n  });\n}\n\nreturn formattedPosts.map(post => ({ json: post }));",
+        "language": "javascript"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "summary-node",
+      "name": "Create Summary",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1800,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Create summary\nconst posts = $input.all();\nconst summary = {\n  totalPosts: posts.length,\n  generatedAt: new Date().toISOString(),\n  posts: posts.map(post => ({\n    id: post.json.id,\n    title: post.json.title\n  })),\n  message: `🚀 ${posts.length} new LinkedIn post ideas generated!\\n\\nPosts:\\n${posts.map((post, i) => `${i+1}. ${post.json.title}`).join('\\n')}\\n\\nReady for review!`\n};\n\nreturn [{ json: summary }];",
+        "language": "javascript"
+      },
+      "typeVersion": 2
+    }
+  ],
+  "connections": {
+    "Format Post Ideas": {
+      "main": [
+        [
+          {
+            "node": "Create Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Content": {
+      "main": [
+        [
+          {
+            "node": "Filter Recent Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse RSS Content": {
+      "main": [
+        [
+          {
+            "node": "Merge All Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate LinkedIn Post Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch n8n Blog RSS": {
+      "main": [
+        [
+          {
+            "node": "Parse RSS Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Content Check": {
+      "main": [
+        [
+          {
+            "node": "Fetch n8n Blog RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch GitHub Releases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch GitHub Releases": {
+      "main": [
+        [
+          {
+            "node": "Parse GitHub Releases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Recent Content": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse GitHub Releases": {
+      "main": [
+        [
+          {
+            "node": "Merge All Content",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Generate LinkedIn Post Ideas": {
+      "main": [
+        [
+          {
+            "node": "Format Post Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "766a8df8-e2b6-43c1-8f7a-0be33ae1c8aa",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-27T01:28:00.625Z",
+      "updatedAt": "2025-09-27T01:28:00.625Z",
+      "role": "workflow:owner",
+      "workflowId": "uqytC8OOfziFP4wC",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
