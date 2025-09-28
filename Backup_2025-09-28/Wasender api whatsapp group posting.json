@@ -1,0 +1,149 @@
+{
+  "createdAt": "2025-09-19T03:16:01.299Z",
+  "updatedAt": "2025-09-19T03:20:46.000Z",
+  "id": "wx5x7r2YxUTkS2M1",
+  "name": "Wasender api whatsapp group posting",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3464bc08-939c-43b9-ab50-f760011ea641",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://www.wasenderapi.com/api/groups",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        272,
+        0
+      ],
+      "id": "6d63fc1c-ab15-4b63-af3a-f83546d29f15",
+      "name": "Wasender - get all groups"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a65fedf1-e118-4d37-af67-c55e5cfd5327",
+              "name": "Group-id",
+              "value": "={{ $json.data[113].id }}",
+              "type": "string"
+            },
+            {
+              "id": "a067e529-1cd1-4c42-a252-a7ff3bed6717",
+              "name": "Group-name",
+              "value": "={{ $json.data[113].name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        0
+      ],
+      "id": "9f44e320-ced1-4fc9-b1ad-135ebe272685",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/send-message",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json[\"Group-id\"] }}"
+            },
+            {
+              "name": "=text",
+              "value": "Hello everyone in the group!"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        688,
+        0
+      ],
+      "id": "e4090963-4c42-446f-8211-41460235fca9",
+      "name": "HTTP Request"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Wasender - get all groups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wasender - get all groups": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "adc607a2-86f4-4bb6-ab53-4852f1027671",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-19T03:16:01.306Z",
+      "updatedAt": "2025-09-19T03:16:01.306Z",
+      "role": "workflow:owner",
+      "workflowId": "wx5x7r2YxUTkS2M1",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
