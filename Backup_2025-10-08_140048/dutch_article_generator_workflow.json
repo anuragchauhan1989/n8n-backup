@@ -1,0 +1,1442 @@
+{
+  "createdAt": "2025-09-30T03:42:04.517Z",
+  "updatedAt": "2025-10-03T17:39:48.000Z",
+  "id": "stcCd4dvRSepFPlz",
+  "name": "dutch_article_generator_workflow",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok",
+          "mode": "list",
+          "cachedResultName": "Keyword Article Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "fa1e0f3d-734a-44f0-a621-50a39a0a6241",
+      "name": "Read Keywords from Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        -672,
+        160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.Keyword }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 21
+            }
+          },
+          "response": {}
+        }
+      },
+      "id": "afec788d-78c5-4f40-83bd-51afb6d981be",
+      "name": "SERP Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Je bent een expert content analist die onderzoeksdata analyseert voor het schrijven van Nederlandse SEO-artikelen. Analyseer de onderzoeksdata en geef een samenvatting van belangrijke trends, inzichten en statistieken.",
+              "role": "model"
+            },
+            {
+              "content": "=Analyseer deze onderzoeksdata voor het keyword \"{{ $json.Keyword }}\":\n\n📊 TOP SERP RESULTATEN:\n{{ $json.serp_summary.organic_text }}\n\n📰 RECENT NIEUWS:\n{{ $json.serp_summary.news_text }}\n\nGeef een gestructureerde samenvatting met:\n1. Belangrijkste trends en inzichten uit de SERP resultaten\n2. Relevante statistieken en feiten\n3. Recente ontwikkelingen uit het nieuws\n4. Aanbevelingen voor inhoud focus"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        880,
+        176
+      ],
+      "id": "941275c5-7286-4d88-8dad-270174a9c73d",
+      "name": "Analyze Research Data",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Je bent een expert content quality assessor die artikelen beoordeelt op kwaliteit, SEO en leesbaarheid en **alleen** JSON-objecten als antwoord geeft, zonder extra tekst of toelichtingen.",
+              "role": "model"
+            },
+            {
+              "content": "=Beoordeel de kwaliteit van dit Nederlandse artikel: \n\n{{ $json.content.parts[0].text }}\n\nGeef een objectieve beoordeling en feedback in een JSON-object met de volgende sleutels:\noverall_score (numerieke score tussen 1-10)\nseo_score (numerieke score tussen 1-10)\nreadability_score (numerieke score tussen 1-10)\ncontent_quality (numerieke score tussen 1-10)\npractical_value (numerieke score tussen 1-10)\ngeneral_structure (numerieke score tussen 1-10)\nfeedback (gedetailleerde feedback en verbeterpunten)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        160
+      ],
+      "id": "15dff44d-6099-48ff-8a49-2b79b04a693b",
+      "name": "Content Quality Check",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Je bent een expert Nederlandse content editor die artikelen verbetert op basis van feedback om ze van hogere kwaliteit te maken.\n\n",
+              "role": "model"
+            },
+            {
+              "content": "=Verbeter dit artikel op basis van de feedback:\nOrigineel artikel:\n{{ $('Write SEO Article').item.json.content }}\nFeedback:\n{{ $('Content Quality Check').item.json.content }}\nCreëer een verbeterde versie die:\n1. De feedback addresseert\n2. Beter SEO-geoptimaliseerd is\n3. Meer waarde biedt aan de lezer\n4. Professioneler en boeiender geschreven is\nBehoud het keyword: {{ $('Preserve Loop Context').item.json.Keyword }}\n\nGebruik de tool 'Artikelenbron' voor schrijfstijl, structuur en schrijfstijl.\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        256
+      ],
+      "id": "11ded22b-6b9a-4ec7-8690-98e272495a6a",
+      "name": "Revise Article",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -896,
+        160
+      ],
+      "id": "7af6e655-fc02-49da-b0ce-02eb9687f6e6",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract first line from document_content\nconst content = $json.document_content || '';\nconst title = content.split('\\n')[0].replace(/^#+\\s*/, '');\n\n// Return it as a field so next nodes can access it\nreturn [\n  {\n    json: {\n      ...$json,\n      title_from_content: title\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2752,
+        128
+      ],
+      "id": "44ba5985-0c72-4a07-a4d8-9bbe68a033b6",
+      "name": "TITLE EXTRACTOR"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://md2doc.n8n.aemalsayer.com",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "fileName",
+              "value": "={{ $json.title_from_content }}_{{ $json.Keyword }}\n"
+            },
+            {
+              "name": "output",
+              "value": "={{$json.document_content}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2928,
+        128
+      ],
+      "id": "6d1f45c0-2ace-40ad-b3ab-25774fd220d2",
+      "name": "DOC CREATOR",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "quality-threshold",
+              "leftValue": "={{ $json.overall_score }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "abd14569-0800-493c-b943-c96bdab920b6",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "58ca1f02-5b16-4d5e-aefe-dd82438db7f2",
+      "name": "Quality CHECK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok",
+          "mode": "list",
+          "cachedResultName": "Keyword Article Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1263961379,
+          "mode": "list",
+          "cachedResultName": "Error",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit#gid=1263961379"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Loop Over Items').first().json.row_number }}",
+            "keyword": "={{ $('Loop Over Items').first().json.Keyword }}",
+            "Error Message ": "={{ $json.error.message || $json.error }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Error Message ",
+              "displayName": "Error Message ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        352,
+        336
+      ],
+      "id": "20589609-1ff7-445b-ab6a-3a1b32917410",
+      "name": "FLAG ERROR1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok",
+          "mode": "list",
+          "cachedResultName": "Keyword Article Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1263961379,
+          "mode": "list",
+          "cachedResultName": "Error",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit#gid=1263961379"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Preserve Loop Context').item.json.row_number }}",
+            "keyword": "={{ $('Preserve Loop Context').item.json.Keyword }}",
+            "Error Message ": "={{ $json.error || $json.error.message }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Error Message ",
+              "displayName": "Error Message ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1216,
+        336
+      ],
+      "id": "e4629ab6-8c65-42d0-b9ed-5aecc2f8d731",
+      "name": "FLAG ERROR2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "document_title",
+              "name": "document_TITLE",
+              "value": "={{ $('Preserve Loop Context').item.json.Keyword }}",
+              "type": "string"
+            },
+            {
+              "id": "document_content",
+              "name": "document_content",
+              "value": "={{ $('Revise Article').isExecuted ? $('Revise Article').first().json.content.parts[0].text : $('Write SEO Article').first().json.content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "2f88b1fd-e533-43ed-96a7-b023ad4ae680",
+              "name": "row_number",
+              "value": "={{ $('Preserve Loop Context').item.json.row_number }}",
+              "type": "string"
+            },
+            {
+              "id": "ebf5d427-74c8-4304-9d60-ec128bf60b84",
+              "name": "Keyword",
+              "value": "={{ $('Preserve Loop Context').item.json.Keyword }}",
+              "type": "string"
+            },
+            {
+              "id": "4a63c586-ea66-4c57-88fe-a27eb0f8e212",
+              "name": "overall_score",
+              "value": "={{ $('EXTRACT SCORE').item.json.overall_score }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7a5c1ba0-7565-447f-b0d3-a57cf5729034",
+      "name": "FIELDS EXTRACTOR",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        2592,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate input structure\nif (!$json || typeof $json !== 'object') {\n  return [{\n    json: {\n      error: \"Invalid input: $json is not an object\",\n      overall_score: 5\n    }\n  }];\n}\n\n// Check if content.parts exists\nif (!$json.content || !$json.content.parts || !Array.isArray($json.content.parts) || $json.content.parts.length === 0) {\n  return [{\n    json: {\n      ...$json,\n      error: \"Invalid data structure - expected content.parts array from Gemini\",\n      overall_score: 5\n    }\n  }];\n}\n\n// Check if text exists\nif (!$json.content.parts[0].text) {\n  return [{\n    json: {\n      ...$json,\n      error: \"No text found in content.parts[0]\",\n      overall_score: 5\n    }\n  }];\n}\n\n// Get the text that contains the JSON\nconst raw = $json.content.parts[0].text;\n\n// Extract the JSON part between ```json and ```\nconst match = raw.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n\nif (!match) {\n  // Try without code blocks\n  try {\n    const parsed = JSON.parse(raw);\n    return [{\n      json: {\n        ...$json,\n        overall_score: parsed.overall_score || 5,\n        quality_report: parsed\n      }\n    }];\n  } catch (e) {\n    return [{\n      json: {\n        ...$json,\n        error: \"JSON block not found and raw text is not valid JSON\",\n        overall_score: 5\n      }\n    }];\n  }\n}\n\n// Parse the extracted JSON\ntry {\n  const parsed = JSON.parse(match[1]);\n  \n  // Return the overall_score AND preserve all existing data\n  return [{\n    json: {\n      ...$json,\n      overall_score: parsed.overall_score || 5,\n      quality_report: parsed\n    }\n  }];\n} catch (e) {\n  return [{\n    json: {\n      ...$json,\n      error: `Failed to parse quality score JSON: ${e.message}`,\n      overall_score: 5\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        160
+      ],
+      "id": "ea01d22e-7c04-4b92-9f09-36b14e2683d5",
+      "name": "EXTRACT SCORE",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3824,
+        336
+      ],
+      "id": "b1e02f47-5b05-4156-9051-7c630beb207e",
+      "name": "Wait",
+      "webhookId": "5b75839e-9e63-44f4-b8d7-0cdecb44d095"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7b46299d-6178-4bba-9cf2-82bd4398602d",
+              "leftValue": "={{ $json[\"Content Designed \"] }}",
+              "rightValue": "No",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        160
+      ],
+      "id": "e276d2a3-c89a-4f20-a3d0-de77f41cd07f",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        160
+      ],
+      "id": "196312d5-138e-4cdb-905e-d92af44f1bb2",
+      "name": "Loop Over Items",
+      "executeOnce": false
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        336,
+        160
+      ],
+      "id": "c5c4aba1-5461-4795-b133-56b6f92cdac4",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/news",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "0ec2b7f4b72011d02e47284cc7b2f0f74a0aad31"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.Keyword }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        176
+      ],
+      "id": "4abf5ac8-5d67-40da-8b66-6afa360c4c79",
+      "name": "SERP NEWS"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the loop item data\nconst loopItem = $('Loop Over Items').item.json;\n\n// Get all items from the merge (SERP Research + SERP NEWS + Supabase)\nconst mergedData = $input.all();\n\n// Separate SERP Research, SERP News, and Supabase data\nconst serpResearch = mergedData.find(item => item.json.organic || item.json.organic_results);\nconst serpNews = mergedData.find(item => item.json.news);\nconst supabaseData = mergedData.find(item => item.json.data || Array.isArray(item.json));\n\n// Extract and combine reference content from Supabase\nlet referenceContent = '';\nif (supabaseData) {\n  // Handle both single object and array responses\n  const rows = Array.isArray(supabaseData.json) ? supabaseData.json : [supabaseData.json];\n  \n  // Extract 'data' field from each row and combine\n  referenceContent = rows\n    .map(row => row.data)\n    .filter(data => data && data.trim().length > 0)\n    .join('\\n\\n--- REFERENCE DOCUMENT ---\\n\\n');\n}\n\n// Combine everything into a single output\nreturn [{\n  json: {\n    // Preserve all loop context\n    Keyword: loopItem.Keyword,\n    target_audience: loopItem.target_audience,\n    word_count: loopItem.word_count,\n    tone: loopItem.tone,\n    brand_voice: loopItem.brand_voice,\n    row_number: loopItem.row_number,\n    'Content Designed ': loopItem['Content Designed '],\n    \n    // Add structured SERP data\n    organic_results: serpResearch?.json?.organic || serpResearch?.json?.organic_results || [],\n    news: serpNews?.json?.news || [],\n    \n    // Add combined reference content from Supabase\n    reference_content: referenceContent || 'No reference content available',\n    \n    // Keep raw data for debugging if needed\n    serp_research_raw: serpResearch?.json || {},\n    serp_news_raw: serpNews?.json || {},\n    supabase_raw: supabaseData?.json || {},\n    reference_doc_count: referenceContent ? referenceContent.split('--- REFERENCE DOCUMENT ---').length : 0\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        176
+      ],
+      "id": "de665c3d-2c39-43ed-a89b-93bc328575db",
+      "name": "Preserve Loop Context"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "={{ $json.documentId }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        128
+      ],
+      "id": "8f35cadd-4886-46df-bb10-57aa506e835d",
+      "name": "Get a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "8qhis65GMrcNAKf9",
+          "name": "Google Docs account -cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload Reference Content",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Content FIle",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -496,
+        1120
+      ],
+      "id": "acdeb908-8181-40e4-93e8-53c51772ae45",
+      "name": "On form submission",
+      "webhookId": "81085a24-7b25-4da7-ba1a-6cf910fe7f00"
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        1520
+      ],
+      "id": "442362e9-7ae2-4921-9d3a-2ea62928365f",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        1504
+      ],
+      "id": "0c015b91-8b78-4251-9069-8c5bc8ff4e80",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Je bent een expert content analist die onderzoeksdata analyseert voor het schrijven van Nederlandse SEO-artikelen. Analyseer de onderzoeksdata en geef een samenvatting van belangrijke trends, inzichten en statistieken.",
+              "role": "model"
+            },
+            {
+              "content": "=Write an SEO-optimized article in Dutch for the keyword: \"{{ $('Preserve Loop Context').item.json.Keyword }}\"\n\nArticle specifications:\n- Desired word count: {{ $('Preserve Loop Context').item.json.word_count }}\nResearch data for context:\n{{ $json.content.parts[0].text }}\n\nUse the 'Article Source' tool for writing style, structure, and style for this  data {{ $json.content.parts[0].text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        160
+      ],
+      "id": "f4b09ee6-b8a5-46a2-8321-dde7db694df4",
+      "name": "Write SEO Article",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok",
+          "mode": "list",
+          "cachedResultName": "Keyword Article Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1263961379,
+          "mode": "list",
+          "cachedResultName": "Error",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit#gid=1263961379"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Preserve Loop Context').item.json.row_number }}",
+            "keyword": "={{ $('Preserve Loop Context').item.json.Keyword }}",
+            "Error Message ": "={{ $json.error || $json.error.message }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Error Message ",
+              "displayName": "Error Message ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2016,
+        336
+      ],
+      "id": "6735fff7-5697-4a14-aee5-f9f0ba5f3bd5",
+      "name": "FLAG ERROR3",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "value": "vector_store_key",
+          "mode": "list",
+          "cachedResultName": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        1120
+      ],
+      "id": "d6d00d0a-e13a-4c14-b24d-f445944754c2",
+      "name": "Insert Articles"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Geef voorbeelden van schrijfstijl, toon en structuur.",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        1312
+      ],
+      "id": "8065863b-ee17-4a2e-bc91-fa6d403d2a1d",
+      "name": "Article Source for style, structure and voice"
+    },
+    {
+      "parameters": {
+        "content": "## Add RAG to upload the docs to train the agent for structure, tone and voice\n",
+        "height": 784,
+        "width": 1184
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        1040
+      ],
+      "id": "ffe71419-faa1-4789-94ae-242327d8c317",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and format ONLY the essential SERP data\nconst organicResults = $json.organic_results || [];\nconst newsResults = $json.news || [];\n\n// Format top 5 organic results - only title and snippet\nconst topOrganic = organicResults.slice(0, 5).map(result => \n  `Titel: ${result.title}\\nSnippet: ${result.snippet}`\n).join('\\n\\n---\\n\\n');\n\n// Format top 3 news results - title, date, and snippet  \nconst topNews = newsResults.slice(0, 3).map(result => \n  `Titel: ${result.title}\\nDatum: ${result.date || 'N/A'}\\nSnippet: ${result.snippet}`\n).join('\\n\\n---\\n\\n');\n\n// Return ONLY the essential data\nreturn [{\n  json: {\n    // Keep only the necessary fields from original data\n    Keyword: $json.Keyword,\n    word_count: $json.word_count,\n    target_audience: $json.target_audience,\n    tone: $json.tone,\n    brand_voice: $json.brand_voice,\n    row_number: $json.row_number,\n    'Content Designed ': $json['Content Designed '],\n    \n    // Add ONLY the formatted summaries (no raw data)\n    serp_summary: {\n      organic_text: topOrganic || 'Geen SERP resultaten gevonden',\n      news_text: topNews || 'Geen nieuws artikelen gevonden'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        176
+      ],
+      "id": "a6f56625-8b75-4d7d-b8cc-7ca6a8641164",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "=Analyseer deze Nederlandse content op plagiaat en retourneer ALLEEN een getal tussen 0-10:\n{{ $json.content }}\n\n\nScore betekenis:\n0-2 = Origineel\n2.1-4 = Lage gelijkenis\n4.1-6 = Gemiddelde gelijkenis  \n6.1-8 = Hoge gelijkenis\n8.1-10 = Waarschijnlijk geplagieerd\n\nRetourneer alleen het getal, bijvoorbeeld: 5 ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        3296,
+        128
+      ],
+      "id": "cf519ba8-5452-4a6a-a072-359a8e1b60ff",
+      "name": "Analyze document for plagiarism",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok",
+          "mode": "list",
+          "cachedResultName": "Keyword Article Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15gTi2sIG7IofuV16AJ-OI9tPbaPxjaufIPew5COKdok/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Preserve Loop Context').item.json.row_number }}",
+            "Content Designed ": "Yes",
+            "quality_score": "={{ $('Quality CHECK').item.json.overall_score }}",
+            "article link": "={{ $('DOC CREATOR').item.json.url }}",
+            "plagiarism_result": "={{ $('Analyze document for plagiarism').item.json.content.parts[0].text }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Keyword",
+              "displayName": "Keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Content Designed ",
+              "displayName": "Content Designed ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "word_count",
+              "displayName": "word_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "quality_score",
+              "displayName": "quality_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "plagiarism_result",
+              "displayName": "plagiarism_result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "article link",
+              "displayName": "article link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3488,
+        128
+      ],
+      "id": "56bd88d1-20a1-4669-9845-3a61b886c67e",
+      "name": "Update sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Read Keywords from Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SERP Research": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FLAG ERROR1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Research Data": {
+      "main": [
+        [
+          {
+            "node": "Write SEO Article",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FLAG ERROR2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Quality Check": {
+      "main": [
+        [
+          {
+            "node": "EXTRACT SCORE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revise Article": {
+      "main": [
+        [
+          {
+            "node": "FIELDS EXTRACTOR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Keywords from Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TITLE EXTRACTOR": {
+      "main": [
+        [
+          {
+            "node": "DOC CREATOR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DOC CREATOR": {
+      "main": [
+        [
+          {
+            "node": "Get a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality CHECK": {
+      "main": [
+        [
+          {
+            "node": "FIELDS EXTRACTOR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Revise Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FLAG ERROR2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FLAG ERROR1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FIELDS EXTRACTOR": {
+      "main": [
+        [
+          {
+            "node": "TITLE EXTRACTOR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EXTRACT SCORE": {
+      "main": [
+        [
+          {
+            "node": "Quality CHECK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FLAG ERROR3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "SERP Research",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SERP NEWS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Preserve Loop Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SERP NEWS": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Preserve Loop Context": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a document": {
+      "main": [
+        [
+          {
+            "node": "Analyze document for plagiarism",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Insert Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert Articles",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert Articles",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Article Source for style, structure and voice",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write SEO Article": {
+      "main": [
+        [
+          {
+            "node": "Content Quality Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FLAG ERROR3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Article Source for style, structure and voice": {
+      "ai_tool": [
+        [
+          {
+            "node": "Write SEO Article",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Revise Article",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Analyze Research Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze document for plagiarism": {
+      "main": [
+        [
+          {
+            "node": "Update sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "d0dbf55f-5bd0-404f-b540-98943e712a48",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-30T03:42:04.534Z",
+      "updatedAt": "2025-09-30T03:42:04.534Z",
+      "role": "workflow:owner",
+      "workflowId": "stcCd4dvRSepFPlz",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
