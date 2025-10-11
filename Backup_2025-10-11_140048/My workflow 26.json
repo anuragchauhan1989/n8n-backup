@@ -1,0 +1,993 @@
+{
+  "createdAt": "2025-10-10T06:05:15.025Z",
+  "updatedAt": "2025-10-10T06:05:19.000Z",
+  "id": "emrC0wEUqN3BKFAj",
+  "name": "My workflow 26",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 14
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -352,
+        16
+      ],
+      "id": "8f0a4a37-abf5-4f9d-9cb7-f78685939595",
+      "name": "⏰ Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY",
+          "mode": "list",
+          "cachedResultName": "Youtube to blog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Ready"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -160,
+        16
+      ],
+      "id": "145319a8-66d4-4b61-89e9-a22680cf6fe7",
+      "name": "📊 Get Ready Videos from Sheet "
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9dba7679-09b8-43d3-8562-5e139d2a28a8",
+              "leftValue": "={{ $json.Transcript }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        16
+      ],
+      "id": "e5725c40-1a88-4ccd-a3d1-d2f53b965f17",
+      "name": "❓ Check Transcript Exist or Not "
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY",
+          "mode": "list",
+          "cachedResultName": "Youtube to blog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('📊 Get Ready Videos from Sheet ').item.json.row_number }}",
+            "Transcript": "={{ $json.content.parts[0].text }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Youtube Video Link",
+              "displayName": "Youtube Video Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Video ID",
+              "displayName": "Video ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Post made?",
+              "displayName": "Post made?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Transcript",
+              "displayName": "Transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "a2c72e65-6283-4cec-9b43-c56d9e892d20",
+      "name": "💾 Store Transcript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8a9698ff-4649-4992-8593-1768c09a26f5",
+              "name": "transcript",
+              "value": "={{ $('📊 Get Ready Videos from Sheet ').item.json.Transcript }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        176
+      ],
+      "id": "3a8c1521-7c1b-4578-a666-0f6b97eac119",
+      "name": "📝 Set Transcript Variable "
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is Youtube Video Transcript:\n{{ $json.Transcript || $json.transcript }}\n\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are expert Linkedin Post writer. Make sure tone is conversational and casual. Use some emojis and joke or two. Make sure no line is longer than tweet\nBelow are some of the example in which format the Linkedin Post need to be written\n\nExample 1: \nMost companies will lay off 70% of their engineers.\n\nNot because they’re failing…\n\nBut because they won’t need them anymore.\n\nHere’s why this is about to get wild:\n\nRight now, LLMs can write functional code.\nIn 12–18 months? They’ll write full-stack systems from prompts.\n\nThe shocking part?\n\nTo build the exact same product, a company will only need 20-30% of the engineers it has today.\n\nThis means:\n\nThe short term?\nMass layoffs.\nBrilliant devs getting blindsided.\n\nThe long term?\nCoding becomes elite.\n0.01% will still write code like rocket scientists.\nEveryone else will build apps like writing Google Docs.\n\nThink Notion + Midjourney + GitHub Copilot… on steroids.\n\nEngineering is not dying.\nIt’s just shifting to the hands of prompt-native creators.\n\nAnd the ones who adapt?\nWill ship 10x faster than entire legacy teams.\n\nSo…\n\nAre we entering the golden age of builders or the dark age of engineers?\n\nExample 2:\n🚨 Zomato just laid off 600 employees.\n\nWhy? Because their AI system, Nugget, now handles 80% of customer queries, managing 15 million+ chats a month without human intervention. 😲\n\nBut here’s the twist.\n These weren't underperformers. In fact, they were part of Zomato's Associate Accelerator Program (ZAAP)—a program that trained 1,500 freshers for customer success roles. \nThey were earning ₹4.5 LPA. And now? Replaced by software.\n\nAI didn’t just take over… it optimized the system.\n Nugget slashes costs, improves speed, and enhances accuracy. It doesn’t just replace employees—it makes the whole process leaner, faster, and cheaper.\n\nZomato’s move is a glimpse into the future of the workforce.\n\n Customer success roles are just the beginning. Tomorrow? Software engineers, marketers, analysts, even operations roles could follow.\n Not because the jobs disappear, but because AI will only need 20% of the workforce it once did.\n\nThis isn’t just about cost-cutting.\n\n It’s about survival.\n\nCompanies will shrink, but they’ll be more efficient, agile, and competitive.\n\nThe question now is—Would you trust AI to manage your job? Or your future?\n\nExample 3:\nMukesh Ambani’s daughter is using AI to disrupt the fashion industry in India. Here’s how\n\nFor years, global giants like Zara and H&M have dominated premium fashion in India. Billions in revenue, billions in data…\n\nbut they still don’t really know what Indians want.\n\nEnter Azorte — the game-changing fashion brand spearheaded by Isha Ambani, Mukesh Ambani’s daughter. \n\nAnd it’s not just another retail store.\n\nWhat if I told you that shopping at Azorte feels more like stepping into the future?\n\nHere’s what’s happening inside these stores:\nAI-powered trial rooms: No more awkwardly shouting for a different size.\nRequest it with a button and it’ll be brought to you.\n\nFashion Discovery Stations: These stations scan your body type and recommend perfect fits, all powered by AI.\n\nZero checkout lines: Shop, scan, and pay with your phone. No waiting in queues.\n\nBut here’s the kicker: Azorte isn’t just selling clothes. It’s collecting massive amounts of data on YOU.\n\nWhile Zara and H&M are guessing what Indians want, Azorte knows exactly what you like, what size you need, and how much you’re willing to pay. \n\nAll thanks to cutting-edge tech.\n\nAlready launched in Gurugram after successful openings in Mumbai and Pune, Azorte’s strategy is simple:\n\nBring international styles.\n\nMix it with Indian preferences.\n\nOffer it at prices lower than H&M and Zara.\n\nWhat looks like a fashion store? It’s actually Ambani’s calculated move to dominate the $100 billion Indian fashion market. \n\nA move that foreign competitors can’t match — because they don’t have the tech to do it.\n\nSo, have you visited Azorte yet?\n\n Would you choose a local, tech-powered brand over international giants like Zara or H&M?\n\nDrop your thoughts below\n\nFollow for more insights on how India’s billionaires are reshaping industries with cutting-edge tech.\n\nExample 4:\nHave you ever wondered why super rich people buy expensive paintings?\n\nThe real reason would shock you!\nIt's how they multiply 5 crore rupees into 15 crore rupees overnight and that too legally.\nSounds impossible?\n\nLet me give you a hint : It's the same reason why rich people buy expensive paintings.\n\nHere is how it works in 3 steps:\n\nStep one. They buy an artwork for 5 crore rupees at a luxury auction house.\n\nStep two. They activate their secret network of art galleries, critics, and publications to create massive hype around the painting.\n\nNow here's where it gets crazy. The same painting suddenly becomes worth 50 crore rupees.\nBut wait. The real genius move? They donate it.\nLet me break down the math for you.\n\nWith a tax rate of 30 percent, donating a painting worth 50 crore rupees saves them 15 crore rupees in taxes.\nLet that sink in for a moment.\nThey only spent 5 crore rupees on the painting. \nBut they saved 15 crore rupees in taxes. That's a pure profit of 10 crore rupees, completely legal.\n\nThis is exactly why ultra rich people are so obsessed with art. It was never about the paintings. It's about the money hack that works every single time.\n\nThe one percent have been using this strategy for decades, and now you know why. Every time you see an ultra rich person donating art to a museum, you'll know what's really happening behind the scenes.\n\nSave this before it gets taken down. And follow for more wealth secrets they don't teach in school.\n\n\nJust train yourself how this post are written \nThings to note:\n1. Use First three lines of the post to drive the attention\n2. There are three part in post - The Hook (Make people click on see more), The Story (Which keeps the user engaged), CTA (End with CTA to make reader take action)\n\nQuick Tips:\n1. Avoid bulky long paragraphs\n2. Break the post into small lines\n3. Make it readable and mobile optimized\n4. Keep it short and simple\n5. Use 3-4 hashtags\n6. Be authentic"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        -96
+      ],
+      "id": "c3d9f981-993c-4580-8b0e-468c885dc156",
+      "name": "🤖 AI LinkedIn Post Generator"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        496
+      ],
+      "id": "f2010cf3-d712-4d20-a34b-9ec061815125",
+      "name": "🎯 OpenAI Chat Model "
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $execution.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1680,
+        496
+      ],
+      "id": "b1ec4c07-2b43-4fd7-87bc-c0ce3dd77571",
+      "name": "🧠 Simple Memory"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"post\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t}\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1808,
+        496
+      ],
+      "id": "af9d89e4-c293-4aa7-9420-7db49a03ff50",
+      "name": "📊 Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "32a280f0-9f53-4014-90b9-b07b8e007f46",
+              "name": "post",
+              "value": "={{ $json.output.post }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        -80
+      ],
+      "id": "55d5a51e-9671-498c-bcdc-eb801c106c3a",
+      "name": "✏️ Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09EC9AJ9PB",
+          "mode": "list",
+          "cachedResultName": "bring-human-in-loop"
+        },
+        "message": "={{ $json.post }}",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Status",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approve"
+                  },
+                  {
+                    "option": "Disapprove"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Feedback",
+              "placeholder": "Enter your Feedback"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1888,
+        -80
+      ],
+      "id": "904eeaab-c43d-4b3f-8aaa-78700d70f0b1",
+      "name": "💬 Get Feedback from Slack",
+      "webhookId": "d6429295-2699-41ae-bcf1-10ee65ba9cf6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d2c0f2ef-3060-45d5-8050-332b6d514dbe",
+              "leftValue": "={{ $json.data.Status }}",
+              "rightValue": "Approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        -80
+      ],
+      "id": "7d4d74ae-ae9e-4673-a93c-16ff182381fe",
+      "name": "✅ If Approved?"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\"Based on the original post: {{ $('✏️ Edit Fields').item.json.post }}\nAnd the human feedback:  {{ $json.data.Feedback }}\nPlease revise the content accordingly...\"\n\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the expert agent on writing Linkedin Post.\nYou will get the Human Feedback on the post which AI agent has already generated. You have the memory which has all the information regarding previous version of post."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        144
+      ],
+      "id": "74bd6376-5942-4ac4-b599-7ab466853bcf",
+      "name": "🔄 AI Post Reviser"
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $('✏️ Edit Fields').first().json.post\n  .replace(/\\n/g, \"\\\\n\")\n  .replace(/\"/g, \"'\");\n\nreturn [\n  { json: { post } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2608,
+        -96
+      ],
+      "id": "0e47be97-b953-43e8-a665-9366efc62506",
+      "name": "🔗 Replace Line Breaks"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code Node - Extract Video ID from YouTube URL\n// Input: YouTube URL\n// Output: Video ID\n\nconst youtubeUrl = $('📊 Get Ready Videos from Sheet ').first().json['Youtube Video Link'];\n\nif (!youtubeUrl) {\n  throw new Error('No YouTube URL provided');\n}\n\nfunction extractVideoId(url) {\n  const patterns = [\n    /(?:youtube\\.com\\/watch\\?v=)([^&\\n?#]+)/, // youtube.com/watch?v=\n    /(?:youtu\\.be\\/)([^&\\n?#]+)/, // youtu.be/\n    /(?:youtube\\.com\\/embed\\/)([^&\\n?#]+)/, // youtube.com/embed/\n    /(?:youtube\\.com\\/v\\/)([^&\\n?#]+)/, // youtube.com/v/\n    /^([a-zA-Z0-9_-]{11})$/ // Direct video ID\n  ];\n  \n  for (const pattern of patterns) {\n    const match = url.match(pattern);\n    if (match && match[1]) {\n      return match[1];\n    }\n  }\n  \n  throw new Error('Could not extract video ID from URL');\n}\n\ntry {\n  const videoId = extractVideoId(youtubeUrl);\n  \n  return {\n    video_id: videoId,\n    original_url: youtubeUrl,\n    success: true\n  };\n  \n} catch (error) {\n  return {\n    error: error.message,\n    original_url: youtubeUrl,\n    success: false\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2816,
+        -96
+      ],
+      "id": "5e752a53-31cf-4e57-86c4-9fd7ed382e66",
+      "name": "🆔 Get Video ID"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "get",
+        "videoId": "={{ $json.video_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        3008,
+        -96
+      ],
+      "id": "63679502-10a3-4413-a0d6-29fcc8f533b9",
+      "name": "📺 Get Title & Thumbnail"
+    },
+    {
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/userinfo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2608,
+        96
+      ],
+      "id": "5b6683cc-99d4-4157-a8bd-90ec136033d5",
+      "name": "👤 Get LinkedIn User ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"author\": \"urn:li:person:{{ $json.sub }}\",\n    \"lifecycleState\": \"PUBLISHED\",\n    \"specificContent\": {\n        \"com.linkedin.ugc.ShareContent\": {\n            \"shareCommentary\": {\n                \"text\": \"{{ $('🔗 Replace Line Breaks').item.json.post }}\"\n            },\n            \"shareMediaCategory\": \"ARTICLE\",\n            \"media\": [\n                {\n                    \"status\": \"READY\",\n                    \"originalUrl\": \"{{ $('📊 Get Ready Videos from Sheet ').item.json['Youtube Video Link'] }}\",\n                    \"title\": {\n                        \"text\": \"{{ $('📺 Get Title & Thumbnail').item.json.snippet.title }}\"\n                    },\n                    \"thumbnails\": [{\n                        \"url\": \"{{ $('📺 Get Title & Thumbnail').item.json.snippet.thumbnails.high.url }}\"\n                    }]\n                }\n            ]\n        }\n    },\n    \"visibility\": {\n        \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"\n    }\n} ",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3008,
+        96
+      ],
+      "id": "a68efa9e-1971-47d1-8c45-ed2c12c3aeb1",
+      "name": "📤 LinkedIn Media Post "
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY",
+          "mode": "list",
+          "cachedResultName": "Youtube to blog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('📊 Get Ready Videos from Sheet ').item.json.row_number }}",
+            "Video Title": "={{ $('📺 Get Title & Thumbnail').item.json.snippet.title }}",
+            "Status": "Completed",
+            "Post Made?": "yes",
+            "Linkedin Post Text": "={{ $('🔗 Replace Line Breaks').item.json.post }}",
+            "Video Thumbnail": "={{ $('📺 Get Title & Thumbnail').item.json.snippet.thumbnails.high.url }}",
+            "Video Id": "={{ $('🆔 Get Video ID').item.json.video_id }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Youtube Video Link",
+              "displayName": "Youtube Video Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video Title",
+              "displayName": "Video Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video Thumbnail",
+              "displayName": "Video Thumbnail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Video Id",
+              "displayName": "Video Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Transcript",
+              "displayName": "Transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Post Made?",
+              "displayName": "Post Made?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Linkedin Post Text",
+              "displayName": "Linkedin Post Text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2816,
+        224
+      ],
+      "id": "ccac8c9d-2e5c-41a5-82cb-478e165e5f4d",
+      "name": "✅ Update Sheet Status"
+    },
+    {
+      "parameters": {
+        "url": "https://youtube-transcript3.p.rapidapi.com/api/transcript",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "videoId",
+              "value": "={{ $json['Video Id'] }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-rapidapi-host",
+              "value": "youtube-transcript3.p.rapidapi.com"
+            },
+            {
+              "name": "x-rapidapi-key",
+              "value": "05524f56d8msh14c1e4571b1a256p1683c5jsn3f291b843e54"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        272,
+        -96
+      ],
+      "id": "f10413b6-74cb-4cf0-b91e-06e1bebabe1a",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the transcript data from the previous node\nconst transcriptData = $input.first().json;\n\n// Initialize variable to store clean transcript\nlet cleanTranscript = '';\n\n// Check if transcript exists and is an array\nif (transcriptData.transcript && Array.isArray(transcriptData.transcript)) {\n  \n  // Extract only the text from each segment and join them\n  cleanTranscript = transcriptData.transcript\n    .map(segment => {\n      // Decode HTML entities (like &#39; to ')\n      let text = segment.text || '';\n      \n      // Replace common HTML entities\n      text = text\n        .replace(/&#39;/g, \"'\")\n        .replace(/&quot;/g, '\"')\n        .replace(/&amp;/g, '&')\n        .replace(/&lt;/g, '<')\n        .replace(/&gt;/g, '>')\n        .replace(/&nbsp;/g, ' ');\n      \n      return text;\n    })\n    .join(' ')  // Join all text segments with a space\n    .trim();    // Remove leading/trailing whitespace\n    \n} else if (typeof transcriptData.transcript === 'string') {\n  // If transcript is already a string, just clean it\n  cleanTranscript = transcriptData.transcript\n    .replace(/&#39;/g, \"'\")\n    .replace(/&quot;/g, '\"')\n    .replace(/&amp;/g, '&')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&nbsp;/g, ' ')\n    .trim();\n}\n\n// Return the formatted data with clean transcript\nreturn [{\n  json: {\n    ...($json),  // Keep all existing fields\n    'Transcript': cleanTranscript,  // Add/update the clean transcript\n    transcriptLength: cleanTranscript.length,  // Optional: track length\n    transcriptWordCount: cleanTranscript.split(' ').length  // Optional: track word count\n  }\n}];\n\n// Log for debugging\nconsole.log('Transcript extracted successfully');\nconsole.log('Character count:', cleanTranscript.length);\nconsole.log('Word count:', cleanTranscript.split(' ').length);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -96
+      ],
+      "id": "20006d1a-b356-4c1b-934f-5cf726c67b6c",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert content writer who specializes in converting YouTube video transcripts into well-structured YouTube Timestamps with engaging titles.\n\nTASK: Transform the provided clean YouTube transcript into a well-structured YouTube Timestamps list.\n\nREQUIREMENTS:\n\n1. Create 5-10 timestamp entries (depending on video length)\n\n2. Each timestamp should have a descriptive, engaging title (3-8 words)\n\n3. Timestamps should mark significant topic changes, key points, or important moments\n\n4. Use proper timestamp format: MM:SS or HH:MM:SS\n\n5. Titles should be specific and actionable (avoid generic phrases like \"Introduction\" or \"Conclusion\")\n\n6. Focus on the most valuable and searchable content segments\n\n7. *ALL TIMESTAMPS MUST BE UNDER actual video length NO EXCEPTIONS*\n\nIMPORTANT: Do NOT include any headers like \"# YouTube Timestamps\" or similar. Start directly with the first timestamp.\n\nTIMING GUIDELINES:\n\nPosition timestamps at the START of topic transitions, not in the middle\n\nIf a topic begins at 3:45, use 3:45 as the timestamp\n\nErr on the side of being early rather than late\n\nThink about when a viewer would want to jump to that section\n\nOUTPUT FORMAT:\n00:00 Video title or main topic introduction\nMM:SS Specific topic or key point title MM:SS Another important segment title [Continue for all major segments]\nEXAMPLE OUTPUT:\n00:00 Why most people fail at productivity\n02:45 The 3-step morning routine that changed everything\n05:20 How to eliminate decision fatigue completely\n08:15 The productivity app setup I actually use\n12:30 Common mistakes that kill your momentum\n15:45 Building systems that work on autopilot\n\nINPUT: You'll receive a clean, continuous YouTube transcript below\n",
+              "role": "model"
+            },
+            {
+              "content": "=Input: {{ $json.Transcript }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        544,
+        -96
+      ],
+      "id": "c3dafb95-c39d-436d-9f0f-8bd55ea237e1",
+      "name": "Create Timestamp",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AddN13YCTv8VpGh7",
+          "name": "Google Gemini(PaLM) Api account -cognigenai"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "⏰ Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "📊 Get Ready Videos from Sheet ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Get Ready Videos from Sheet ": {
+      "main": [
+        [
+          {
+            "node": "❓ Check Transcript Exist or Not ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ Check Transcript Exist or Not ": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "📝 Set Transcript Variable ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💾 Store Transcript": {
+      "main": [
+        [
+          {
+            "node": "🤖 AI LinkedIn Post Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📝 Set Transcript Variable ": {
+      "main": [
+        [
+          {
+            "node": "🤖 AI LinkedIn Post Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 AI LinkedIn Post Generator": {
+      "main": [
+        [
+          {
+            "node": "✏️ Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎯 OpenAI Chat Model ": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🤖 AI LinkedIn Post Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "🔄 AI Post Reviser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧠 Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "🤖 AI LinkedIn Post Generator",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "🔄 AI Post Reviser",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "🤖 AI LinkedIn Post Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "🔄 AI Post Reviser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✏️ Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "💬 Get Feedback from Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💬 Get Feedback from Slack": {
+      "main": [
+        [
+          {
+            "node": "✅ If Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ If Approved?": {
+      "main": [
+        [
+          {
+            "node": "🔗 Replace Line Breaks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🔄 AI Post Reviser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔄 AI Post Reviser": {
+      "main": [
+        [
+          {
+            "node": "✏️ Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔗 Replace Line Breaks": {
+      "main": [
+        [
+          {
+            "node": "🆔 Get Video ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🆔 Get Video ID": {
+      "main": [
+        [
+          {
+            "node": "📺 Get Title & Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📺 Get Title & Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "👤 Get LinkedIn User ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "👤 Get LinkedIn User ID": {
+      "main": [
+        [
+          {
+            "node": "📤 LinkedIn Media Post ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📤 LinkedIn Media Post ": {
+      "main": [
+        [
+          {
+            "node": "✅ Update Sheet Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Create Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Timestamp": {
+      "main": [
+        [
+          {
+            "node": "💾 Store Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "85d833f3-0537-49ab-ad1d-6b123145ef86",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-10T06:05:15.032Z",
+      "updatedAt": "2025-10-10T06:05:15.032Z",
+      "role": "workflow:owner",
+      "workflowId": "emrC0wEUqN3BKFAj",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
