@@ -1,0 +1,462 @@
+{
+  "createdAt": "2025-10-12T06:09:14.052Z",
+  "updatedAt": "2025-10-12T08:21:51.000Z",
+  "id": "GXvtcuhojPplQXHf",
+  "name": "KIWI Gift Hamper ChatBot",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        304
+      ],
+      "id": "23883dfe-00ab-4d8c-8319-761e7652bf81",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -192,
+        304
+      ],
+      "id": "d6ef7f2c-9b0a-4f0e-8c25-fc43b462206e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}\n{{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a gift hamper assistant collecting customer requirements.\n\nCONTEXT: The user's FIRST message is their BUDGET (already asked in welcome message).\n\nCOLLECT THESE 4 FIELDS:\n1. Budget per piece ✅ (user provides first)\n2. Quantity \n3. Delivery date/timeframe\n4. Item preferences\n\nRULES:\n- Review the ENTIRE conversation history before responding\n- Track what's already been collected\n- If user gives multiple details at once, acknowledge all of them\n- Ask for ONLY the NEXT missing field\n- NEVER repeat questions for data already provided\n\nQUESTION FLOW:\n- Missing quantity? Ask: \"Great! What is your total Quantity? (e.g., 50 pieces)\"\n- Missing when? Ask: \"Perfect! When do you need the delivery? (Eg. 15 oct)\"\n- Missing items? Ask: \"Finally, any item preferences? (e.g., 4 dry fruits, diya, candle)\"\n\nWhen ALL 4 fields are collected, respond with ONLY this exact JSON format:\n\n{\n  \"status\": \"DATA_COMPLETE\",\n  \"budget\": \"[exact budget value]\",\n  \"quantity\": \"[exact quantity value]\",\n  \"when\": \"[exact delivery date/time]\",\n  \"itemPreference\": \"[exact item preference or 'no' if none]\"\n}\n\nIMPORTANT: \n- Output ONLY the JSON, nothing else\n- Use the EXACT values the user provided\n- Review the full conversation to get all 4 values"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        16
+      ],
+      "id": "0ce36fe7-4289-4fa1-bc0b-6845af025766",
+      "name": "Data Collector"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get AI response\nlet aiResponse = ($input.item.json.output || $input.item.json.text || '').trim();\n\nlet sessionData = {\n    budget: null,\n    quantity: null,\n    when: null,\n    itemPreference: null\n};\n\nlet isComplete = false;\n\n// Try to parse as JSON\ntry {\n    // Remove markdown code blocks if present\n    const jsonMatch = aiResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/) || \n                     aiResponse.match(/```\\s*([\\s\\S]*?)\\s*```/) ||\n                     [null, aiResponse];\n    \n    const jsonString = jsonMatch[1] || aiResponse;\n    const parsed = JSON.parse(jsonString);\n    \n    // Check if it's the completion response\n    if (parsed.status === 'DATA_COMPLETE') {\n        isComplete = true;\n        sessionData = {\n            budget: parsed.budget || null,\n            quantity: parsed.quantity || null,\n            when: parsed.when || null,\n            itemPreference: parsed.itemPreference || null\n        };\n        aiResponse = 'DATA_COMPLETE'; // Don't show JSON to user\n    }\n} catch (e) {\n    // Not JSON, it's a question - that's fine\n    isComplete = false;\n}\n\nreturn [{\n    json: {\n        isComplete: isComplete,\n        sessionData: sessionData,\n        aiResponse: aiResponse\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        16
+      ],
+      "id": "52a12b3d-7b1f-4283-a81a-0bac8bea80ba",
+      "name": "Parse & Route"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a1b4115e-7181-486a-99aa-22f56c8a6fe9",
+              "leftValue": "={{ $json.isComplete }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        16
+      ],
+      "id": "979fbc1c-2f2a-4137-be39-262c1cdfc3f8",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get session data from Parse & Route\nconst data = $input.item.json;\nconst session = data.sessionData;\n\n// Build search query based on item preferences\nlet searchTerms = [];\nconst items = (session.itemPreference || '').toLowerCase();\n\n// Extract relevant search terms\nif (items.includes('dry fruit') || items.includes('fruit') || items.includes('nuts') || items.includes('almond') || items.includes('cashew')) {\n  searchTerms.push('dry fruits', 'almonds', 'cashew', 'pistachio', 'walnut', 'anjeer');\n}\nif (items.includes('diya')) {\n  searchTerms.push('diya', 'lamp');\n}\nif (items.includes('candle')) {\n  searchTerms.push('candle');\n}\nif (items.includes('chocolate')) {\n  searchTerms.push('chocolate', 'ferrero');\n}\nif (items.includes('sweet') || items.includes('mithai')) {\n  searchTerms.push('sweet', 'mithai', 'ladoo');\n}\n\n// Add box/packaging terms\nsearchTerms.push('gift box', 'packaging');\n\n// Build final query\nconst query = `gift hamper items ${searchTerms.join(' ')} budget ${session.budget} ${session.itemPreference}`;\n\nreturn [{ \n  json: { \n    query: query,\n    sessionData: session\n  } \n}];"
+      },
+      "id": "e99a54fc-9e17-4a5d-b03b-8569cbd7400c",
+      "name": "Prepare AI Query",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        640,
+        0
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemPromptTemplate": "You are a friendly and precise Gift Hamper Product Consultant. Your primary goal is to simulate a complete customer interaction and provide a perfect gift hamper proposal.\n\nCUSTOMER INPUTS (Do not alter the variable content):\n- Budget: {{ $('Prepare AI Query').first().json.sessionData.budget }}\n- Quantity: {{ $('Prepare AI Query').first().json.sessionData.quantity }}\n- Delivery: {{ $('Prepare AI Query').first().json.sessionData.when }}\n- Preference: {{ $('Prepare AI Query').first().json.sessionData.itemPreference }}\n\nCRITICAL TASK STEPS:\n1. Select items and a suitable box from the context that match the customer's preferences and budget.\n2. **CRITICAL ARITHMETIC STEP (Chain-of-Thought):** To ensure 100% accuracy, you must first calculate the total product cost by summing the prices in groups of no more than 5, and then sum the group totals. This calculation must be flawless.\n3. Use the EXACT price from the context; do not calculate discounts.\n4. Output the final response using the exact conversational format below.\n\nRESPONSE FORMAT:\n\nWelcome to Kiwi Gift Hamper! 🎉\n\nI'll help you create the perfect custom gift hamper.\n\nWhat is your Budget per piece? (e.g., 1000/-)\n->{{ $('Prepare AI Query').first().json.sessionData.budget }}\n\nWhat is your quantity? (e.g., 100pcs). There is 40% off over buying 200 pieces and 35% below 200 pieces\n->{{ $('Prepare AI Query').first().json.sessionData.quantity }}\n\n💡 We have a special offer for 200+ pieces with extra 10% discount!\nWhen do you need it? (e.g., 10th Oct)\n->{{ $('Prepare AI Query').first().json.sessionData.when }}\n\nDo you have any item preference? (e.g., I need 4 dry fruits in the hamper plus diya and candle)\n-->{{ $('Prepare AI Query').first().json.sessionData.itemPreference }}\n\n📦 *Selected Products:*\n* [Product Name]: Rs [Exact Price]\n* [Product Name]: Rs [Exact Price]\n* [Continue listing all selected products]\n\n📐 *Box:*\n[Box Name], Price: Rs [Exact Price]\n\n💰 *Cost:*\n* Products: Rs [Total calculated in CoT Step 2]\n* Box: Rs [Exact Box Price]\n* Total per piece: Rs [Products Total + Box Price]\n* Budget: Rs {{ $('Prepare AI Query').first().json.sessionData.budget }}\n* Status: [Within budget / Over budget]\n\nCRITICAL RULES (For final output):\n- Use ONLY products from the context.\n- DO NOT include box dimensions, sizes, or measurements.\n- The 'Products' cost must be the verified, exact sum of all listed product prices.\n\nContext: {context}"
+        }
+      },
+      "id": "00556e63-a8b1-4c86-b781-ba88229b6f3b",
+      "name": "RAG Product Search",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "position": [
+        800,
+        0
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the output from RAG Product Search\nconst ragOutput = $input.item.json;\n\n// Extract the AI response text from multiple possible locations\nlet aiResponse = '';\n\nif (ragOutput.output) {\n  aiResponse = ragOutput.output;\n} else if (ragOutput.text) {\n  aiResponse = ragOutput.text;\n} else if (ragOutput.response) {\n  aiResponse = typeof ragOutput.response === 'string' \n    ? ragOutput.response \n    : JSON.stringify(ragOutput.response);\n} else {\n  // Fallback: stringify entire response\n  aiResponse = JSON.stringify(ragOutput);\n}\n\n// Get session data\nconst sessionData = $('Prepare AI Query').first().json.sessionData;\n\n// ===== ROBUST CLEANING =====\n\n// 1. Remove JSON wrapper if present ({\"text\":\"...\", \"...\"})\naiResponse = aiResponse.replace(/^\\s*\\{\\s*\"text\"\\s*:\\s*\"/, '');  // Remove {\"text\":\"\naiResponse = aiResponse.replace(/\"\\s*\\}\\s*$/, '');              // Remove \"} at end\n\n// 2. Handle other JSON patterns\naiResponse = aiResponse.replace(/^\\s*\\{[^}]*\"(?:message|response|output)\"\\s*:\\s*\"/, '');\naiResponse = aiResponse.replace(/\",?\\s*\"[^\"]*\"\\s*:.*\\}\\s*$/, '');\n\n// 3. Clean escape characters\naiResponse = aiResponse\n  .replace(/\\\\n/g, '\\n')           // Escaped newlines to real newlines\n  .replace(/\\\\r/g, '')             // Remove carriage returns\n  .replace(/\\\\t/g, '  ')           // Tabs to spaces\n  .replace(/\\\\\"/g, '\"')            // Escaped quotes to normal quotes\n  .replace(/\\\\\\\\/g, '\\\\')          // Double backslash to single\n  .replace(/\\\\'/g, \"'\");           // Escaped apostrophes\n\n// 4. Remove markdown/formatting artifacts\naiResponse = aiResponse\n  .replace(/\\*\\*/g, '')            // Remove bold markdown\n  .replace(/Rs\\s+/g, '₹')          // Rs to rupee symbol\n  .trim();                         // Remove leading/trailing whitespace\n\n// 5. Final safety check - if still wrapped in quotes, remove them\nif (aiResponse.startsWith('\"') && aiResponse.endsWith('\"')) {\n  aiResponse = aiResponse.slice(1, -1);\n}\n\n// 6. Remove any remaining curly braces at start/end if they're orphaned\naiResponse = aiResponse.replace(/^\\{/, '').replace(/\\}$/, '');\n\nreturn [{ \n  json: { \n    aiResponse: aiResponse,\n    sessionData: sessionData\n  } \n}];"
+      },
+      "id": "e255749f-31ef-4982-92c2-931d3ed53089",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1104,
+        0
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "topK": 500
+      },
+      "id": "f642598a-17f6-4c95-8c7f-c4ff9c3f1950",
+      "name": "Vector Retriever",
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "position": [
+        896,
+        176
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "cgragtest",
+          "mode": "list",
+          "cachedResultName": "cgragtest"
+        },
+        "options": {
+          "pineconeNamespace": "RAGkiwiAgent"
+        }
+      },
+      "id": "67ba3e53-5824-4a90-ab9e-37adef004b92",
+      "name": "Pinecone Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        816,
+        320
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "pineconeApi": {
+          "id": "aWTuoJ6ldBZ2gPsm",
+          "name": "PineconeApi account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "45ae9d38-fe39-4f33-99c8-f9c482469ed5",
+      "name": "Gemini Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "position": [
+        816,
+        464
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "df61b595-e581-4e1a-a71a-abe1102193a4",
+      "name": "Gemini Chat",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        736,
+        176
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.aiResponse }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "78bc83b1-1e76-433c-bf3b-299eec6f4570",
+      "name": "Respond to Chat1"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Welcome to Kiwi Gift Hamper! 🎉 \nI'll help you create the perfect custom gift hamper.\nWhat is your Budget per piece? (e.g., 1000/-)\n",
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -512,
+        16
+      ],
+      "id": "a85006b5-8394-47ae-a79a-d391411a8f5c",
+      "name": "When chat message received",
+      "webhookId": "c092f59a-5548-49c8-8b40-e2ed3a4f489f"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.aiResponse }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        416,
+        112
+      ],
+      "id": "4e8428b8-0af7-4b54-a6e7-d0b173e014a5",
+      "name": "Respond to Chat"
+    }
+  ],
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Data Collector",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Data Collector",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Collector": {
+      "main": [
+        [
+          {
+            "node": "Parse & Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Route": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Query": {
+      "main": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Product Search": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Data Collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Chat": {
+      "main": [
+        [
+          {
+            "node": "Data Collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "When chat message received": [
+      {
+        "json": {
+          "action": "sendMessage",
+          "sessionId": "f74524a6-9690-46ea-9a2f-1990065cbd7c",
+          "chatInput": "5000"
+        }
+      }
+    ]
+  },
+  "versionId": "e03cc597-16e8-489f-97f5-a3281430d0f8",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-10-12T06:09:14.054Z",
+      "updatedAt": "2025-10-12T06:09:14.054Z",
+      "role": "workflow:owner",
+      "workflowId": "GXvtcuhojPplQXHf",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
