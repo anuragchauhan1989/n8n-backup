@@ -1,0 +1,1012 @@
+{
+  "createdAt": "2025-09-25T08:03:13.894Z",
+  "updatedAt": "2025-10-01T13:14:10.000Z",
+  "id": "Doq6cC4zb2Icymxn",
+  "name": "complete_enrichment_workflow_task2",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b70f5d47-6c04-459c-94a2-e00e18471fba",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Accounts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "3a12c045-1142-4cb3-8390-551cd46c255f",
+      "name": "1. Read Companies from Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        304,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "250b679f-e8f1-45cb-9337-8ad9cf63bb00",
+      "name": "Split Companies for Processing",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        800,
+        0
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "companyName",
+              "stringValue": "={{ $json[\"Account Name\"] }}"
+            },
+            {
+              "name": "country",
+              "stringValue": "={{ $json.Country }}"
+            },
+            {
+              "name": "city",
+              "stringValue": "={{ $json.City }}"
+            }
+          ]
+        },
+        "include": "selected",
+        "options": {}
+      },
+      "id": "525145ad-86a0-47eb-9a85-4cd8e08b6c4e",
+      "name": "Extract Company Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1088,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.companyName }}"
+            },
+            {
+              "name": "gl",
+              "value": "={{ $json.country === 'US - United States of America' ? 'us' : 'uk' }}"
+            },
+            {
+              "name": "=location",
+              "value": "={{ $json.city && $json.country ? $json.city + ', ' + $json.country : $json.country }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "050c767c-59e5-4923-be52-0ce78dc30d0b",
+      "name": "2. Scrape Company Information",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1504,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = items[0].json;\n\n// Initialize output fields\nlet company_name = \"\";\nlet website = \"\";\nlet domain = \"\";\nlet description = \"\";\nlet industry = \"\";\nlet linkedin_url = \"\";\nlet linkedin_profile = \"\";\n\n// Check if we have organic search results\nif (input.organic && Array.isArray(input.organic)) {\n  \n  // 1. Extract LinkedIn URL\n  const linkedinResult = input.organic.find(r => \n    r.link && r.link.includes(\"linkedin.com/company/\")\n  );\n  \n  if (linkedinResult) {\n    linkedin_url = linkedinResult.link;\n    // Extract clean LinkedIn profile path\n    try {\n      const urlParts = linkedin_url.split(\"linkedin.com/company/\");\n      if (urlParts[1]) {\n        // Remove trailing slash and query parameters\n        linkedin_profile = urlParts[1].split('/')[0].split('?')[0];\n      }\n    } catch (e) {\n      linkedin_profile = linkedin_url;\n    }\n  }\n  \n  // 2. Extract description from Wikipedia if available\n  const wikiResult = input.organic.find(r => \n    r.link && r.link.includes(\"wikipedia.org\")\n  );\n  \n  if (wikiResult && wikiResult.snippet) {\n    description = wikiResult.snippet;\n  }\n  \n  // 3. Extract company website (prioritize non-social media, non-wiki sites)\n  const websiteResult = input.organic.find(r => \n    r.link && \n    !r.link.includes(\"linkedin.com\") && \n    !r.link.includes(\"wikipedia.org\") &&\n    !r.link.includes(\"facebook.com\") &&\n    !r.link.includes(\"twitter.com\") &&\n    !r.link.includes(\"instagram.com\") &&\n    (r.link.includes(\".com\") || r.link.includes(\".io\") || \n     r.link.includes(\".co\") || r.link.includes(\".net\") ||\n     r.link.includes(\".org\"))\n  );\n  \n  if (websiteResult) {\n    website = websiteResult.link;\n    // Extract domain name\n    try {\n      const url = new URL(website);\n      domain = url.hostname.replace('www.', '');\n    } catch (e) {\n      domain = website;\n    }\n  }\n  \n  // 4. Extract company name from first result or knowledge graph\n  if (input.knowledgeGraph && input.knowledgeGraph.title) {\n    company_name = input.knowledgeGraph.title;\n  } else if (input.organic[0] && input.organic[0].title) {\n    // Clean up the title (remove common suffixes)\n    company_name = input.organic[0].title\n      .replace(/ - Home$/, '')\n      .replace(/ - Official Site$/, '')\n      .replace(/ - Wikipedia$/, '')\n      .replace(/ \\| LinkedIn$/, '')\n      .trim();\n  }\n  \n  // 5. Extract industry/type from knowledge graph if available\n  if (input.knowledgeGraph && input.knowledgeGraph.type) {\n    industry = input.knowledgeGraph.type;\n  } else if (input.knowledgeGraph && input.knowledgeGraph.attributes) {\n    // Check for industry in attributes\n    const industryAttr = input.knowledgeGraph.attributes.find(attr => \n      attr.name && attr.name.toLowerCase().includes('industry')\n    );\n    if (industryAttr && industryAttr.value) {\n      industry = industryAttr.value;\n    }\n  }\n  \n  // 6. If no description from Wikipedia, use first organic result snippet\n  if (!description && input.organic[0] && input.organic[0].snippet) {\n    description = input.organic[0].snippet;\n  }\n  \n  // 7. Fallback: Use knowledge graph description if available\n  if (!description && input.knowledgeGraph && input.knowledgeGraph.description) {\n    description = input.knowledgeGraph.description;\n  }\n}\n\n// Return the extracted data\nreturn [{\n  json: {\n    company_name: company_name || \"Not found\",\n    website: website || \"Not found\",\n    domain: domain || \"Not found\",\n    description: description || \"Not found\",\n    industry: industry || \"Not found\",\n    linkedin_url: linkedin_url || \"Not found\",\n    linkedin_profile: linkedin_profile || \"Not found\"\n  }\n}];"
+      },
+      "id": "95d3d070-5182-4424-94bd-1803ca12861f",
+      "name": "Extract Company Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.domain }} CEO LinkedIn site:linkedin.com/in/"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "dda66ea0-549b-415d-8ce2-9e6e77553adc",
+      "name": "3. Find CEO LinkedIn Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1952,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allData = [];\nfor (const item of $input.all()) {\n  const searchResults = item.json.organic || [];\n  const prevData = $('Extract Company Details').all()[0]?.json || {};\n  \n  let ceoName = '';\n  let ceoLinkedin = '';\n  let ceoTitle = '';\n\n  for (const result of searchResults) {\n    const title = result.title || '';\n    const snippet = result.snippet || '';\n    const link = result.link || '';\n    \n    if (link.includes('linkedin.com/in/')) {\n      const titleLower = title.toLowerCase();\n      const snippetLower = snippet.toLowerCase();\n      \n      if (titleLower.includes('ceo') || titleLower.includes('chief executive') ||\n          titleLower.includes('founder') || titleLower.includes('president') ||\n          snippetLower.includes('ceo') || snippetLower.includes('chief executive')) {\n        \n        const nameMatch = title.match(/^([^|\\-]+)/);\n        if (nameMatch) {\n          ceoName = nameMatch[1].trim();\n          ceoLinkedin = link;\n          \n          if (snippetLower.includes('ceo') || snippetLower.includes('chief executive officer')) {\n            ceoTitle = 'CEO';\n          } else if (snippetLower.includes('founder')) {\n            ceoTitle = 'Founder';\n          } else if (snippetLower.includes('president')) {\n            ceoTitle = 'President';\n          } else {\n            ceoTitle = 'Executive';\n          }\n          break;\n        }\n      }\n    }\n  }\n\n  allData.push({\n    ...prevData,\n    ceo_name: ceoName || 'Not found',\n    ceo_title: ceoTitle || 'Not found',\n    ceo_linkedin: ceoLinkedin || 'Not found'\n  });\n}\n\nreturn allData;"
+      },
+      "id": "ca501997-bfe5-42d8-b9b7-bc613bf9a200",
+      "name": "Extract CEO Information",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const ceoName = item.json.ceo_name || \"\";\n  const parts = ceoName.trim().split(/\\s+/);\n\n  return {\n    json: {\n      ...item.json,\n      first_name: parts[0] || \"\",\n      last_name: parts.length > 1 ? parts[parts.length - 1] : \"\"\n    }\n  };\n});"
+      },
+      "id": "4551b3b1-b10d-4b2a-8de7-ec9140927e66",
+      "name": "Split CEO Name",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2416,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hunter.io/v2/email-finder?domain={{ $json.domain }}&first_name={{ $json.first_name }}&last_name={{ $json.last_name }}&api_key=cdf1ba76c5d3f5d994ac2152754dacf6b0fad52b",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "20a7c659-4150-4eb7-82b1-a32890ddcb2f",
+      "name": "Find CEO Email Address",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2608,
+        0
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allData = [];\nconst inputItems = $input.all();\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  let emailData = null;\n  \n  if (item.json && item.json.data) {\n    emailData = item.json.data;\n  }\n  \n  const prevNodes = $('Split CEO Name').all();\n  let prevData = {};\n  \n  if (prevNodes.length > 0 && i < prevNodes.length) {\n    prevData = prevNodes[i].json;\n  }\n  \n  const companyName = prevData.company_name || 'Unknown';\n  const ceoName = prevData.ceo_name || '';\n  \n  let ceoEmail = '';\n  let matchMethod = '';\n  \n  if (emailData && emailData.email) {\n    const email = emailData.email;\n    const position = (emailData.position || '').toLowerCase();\n    const score = emailData.score || 0;\n    \n    let isMatch = false;\n    \n    if (position.includes('ceo') || position.includes('chief executive') ||\n        position.includes('founder') || position.includes('president')) {\n      isMatch = true;\n      matchMethod = `Executive position: ${position}`;\n    }\n    \n    if (!isMatch && score > 80) {\n      const emailLocal = email.split('@')[0].toLowerCase();\n      const genericPrefixes = ['info', 'contact', 'support', 'sales', 'admin'];\n      const isGeneric = genericPrefixes.some(prefix => emailLocal.startsWith(prefix));\n      \n      if (!isGeneric) {\n        isMatch = true;\n        matchMethod = `High confidence score: ${score}`;\n      }\n    }\n    \n    if (isMatch) {\n      ceoEmail = email;\n    }\n  }\n  \n  const result = {\n    ...prevData,\n    ceo_email: ceoEmail || 'Not found',\n    email_match_method: matchMethod || 'No valid email found',\n    hunter_score: emailData?.score || 0\n  };\n  \n  allData.push(result);\n}\n\nreturn allData;"
+      },
+      "id": "0933aed9-073f-44e1-b079-7b49b7d000f2",
+      "name": "Extract Email Information",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2944,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/news",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.company_name }} recent news"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "dfcabb36-d378-40ed-a1da-4341176e1617",
+      "name": "4. Scrape Recent Company News",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        3504,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allData = [];\n\nfor (const item of $input.all()) {\n  const newsResults = item.json.news || [];\n  const prevData = $('Extract Email Information').all()[0]?.json || {};\n  \n  let recentNews = [];\n  let newsTopics = [];\n\n  for (const article of newsResults.slice(0, 3)) {\n    const title = article.title || '';\n    const snippet = article.snippet || '';\n    const link = article.link || '';\n    const date = article.date || '';\n    const source = article.source || '';\n    \n    if (title && snippet) {\n      recentNews.push({\n        title: title,\n        snippet: snippet,\n        link: link,\n        date: date,\n        source: source\n      });\n      \n      const titleLower = title.toLowerCase();\n      if (titleLower.includes('funding') || titleLower.includes('investment')) {\n        newsTopics.push('Funding/Investment');\n      }\n      if (titleLower.includes('partnership') || titleLower.includes('collaboration')) {\n        newsTopics.push('Partnership');\n      }\n      if (titleLower.includes('product') || titleLower.includes('launch')) {\n        newsTopics.push('Product Launch');\n      }\n      if (titleLower.includes('expansion') || titleLower.includes('growth')) {\n        newsTopics.push('Expansion');\n      }\n      if (titleLower.includes('acquisition') || titleLower.includes('merger')) {\n        newsTopics.push('M&A');\n      }\n    }\n  }\n\n  let newsSummary = '';\n  if (recentNews.length > 0) {\n    const latestNews = recentNews[0];\n    newsSummary = `Latest: ${latestNews.title} - ${latestNews.snippet.substring(0, 150)}...`;\n  }\n\n  allData.push({\n    ...prevData,\n    recent_news: recentNews,\n    news_summary: newsSummary || 'No recent news found',\n    news_topics: [...new Set(newsTopics)],\n    news_count: recentNews.length\n  });\n}\n\nreturn allData;"
+      },
+      "id": "278e89b2-3a38-4681-970f-f653eba3eb5e",
+      "name": "Extract News Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3792,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Based on the following company information, write a personalized outreach email:\n\nCompany: {{ $json.company_name }}\nCEO: {{ $json.ceo_name }} ({{ $json.ceo_title }})\nEmail: {{ $json.ceo_email }}\nWebsite: {{ $json.website }}\nRecent News: {{ $json.news_summary }}\n\nWrite a brief, professional outreach email that:\n1. Addresses the CEO by name\n2. References their recent news or achievements\n3. Proposes a relevant business opportunity\n4. Keeps it under 150 words\n5. Has a clear call-to-action\n\nFormat as a complete email with subject line."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "7bf96a25-b0fe-4770-b24a-4b64b138f628",
+      "name": "5. Generate Personalized Outreach with Gemini",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        3984,
+        0
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "outreach_email",
+              "stringValue": "={{ $json.content?.parts?.[0]?.text || 'No email generated' }}"
+            },
+            {
+              "name": "company_name",
+              "stringValue": "={{ $('Extract News Content').all()[0].json.company_name || 'Unknown' }}"
+            },
+            {
+              "name": "ceo_name",
+              "stringValue": "={{ $('Extract News Content').all()[0].json.ceo_name || 'Unknown' }}"
+            },
+            {
+              "name": "ceo_email",
+              "stringValue": "={{ $('Extract News Content').all()[0].json.ceo_email || 'Unknown' }}"
+            },
+            {
+              "name": "website",
+              "stringValue": "={{ $('Extract News Content').all()[0].json.website || 'Unknown' }}"
+            },
+            {
+              "name": "news_summary",
+              "stringValue": "={{ $('Extract News Content').all()[0].json.news_summary || 'No news' }}"
+            }
+          ]
+        },
+        "include": "=selected",
+        "options": {}
+      },
+      "id": "6b2de309-1b13-49cb-ba3c-ccea9b48af0a",
+      "name": "Prepare Data for Sheet Update",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        4352,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "error_message",
+              "stringValue": "=ERROR: {{ $json.error?.message || 'Unknown error occurred' }}"
+            },
+            {
+              "name": "error_node",
+              "stringValue": "={{ $json.error?.node || $json.$node?.name || 'Unknown node' }}"
+            },
+            {
+              "name": "company_name",
+              "stringValue": "={{ $('Extract Company Data').first().$json.companyName || 'Unknown Company' }}"
+            },
+            {
+              "name": "ceo_name",
+              "stringValue": "=ERROR - Could not process"
+            },
+            {
+              "name": "ceo_email",
+              "stringValue": "=ERROR - Could not process"
+            },
+            {
+              "name": "website",
+              "stringValue": "=ERROR - Could not process"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e37b6a3e-3dba-40bf-ac52-7c587d10bc1e",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1296,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Accounts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Split Companies for Processing').item.json.row_number }}",
+            "company_name": "={{ $json.company_name }}",
+            "ceo_email": "={{ $json.ceo_email }}",
+            "website": "={{ $json.website }}",
+            "news_summary": "={{ $json.news_summary }}",
+            "outreach_email": "={{ $json.outreach_email }}",
+            "ceo_name": "={{ $json.ceo_name }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Account Name",
+              "displayName": "Account Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Industry Segment",
+              "displayName": "Industry Segment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "company_name",
+              "displayName": "company_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ceo_name",
+              "displayName": "ceo_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ceo_email",
+              "displayName": "ceo_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "news_summary",
+              "displayName": "news_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "outreach_email",
+              "displayName": "outreach_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "process",
+              "displayName": "process",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4608,
+        0
+      ],
+      "id": "401d5740-9195-45ec-a1f4-c272688207d8",
+      "name": "Update Data in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1205487078,
+          "mode": "list",
+          "cachedResultName": "Error",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=1205487078"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "error_node": "={{ $json.error_node }}",
+            "error_message": "={{ $json.error_message }}",
+            "company_name": "={{ $json.company_name }}",
+            "ceo_name": "={{ $json.ceo_name }}",
+            "ceo_email": "={{ $json.ceo_email }}",
+            "website": "={{ $json.website }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "error_node",
+              "displayName": "error_node",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_name",
+              "displayName": "company_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ceo_name",
+              "displayName": "ceo_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ceo_email",
+              "displayName": "ceo_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1504,
+        224
+      ],
+      "id": "f4b3f21e-06c5-4ad5-80bb-5a43d3dca7bf",
+      "name": "Error Logger",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.process }}",
+                    "rightValue": "need",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "390273c7-752d-4052-bfc7-62977c7a3656"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        512,
+        0
+      ],
+      "id": "b32eccb1-d031-442b-a290-50b7e8c395ef",
+      "name": "Switch"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "1. Read Companies from Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Read Companies from Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Companies for Processing": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract Company Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Company Data": {
+      "main": [
+        [
+          {
+            "node": "2. Scrape Company Information",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Scrape Company Information": {
+      "main": [
+        [
+          {
+            "node": "Extract Company Details",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Company Details": {
+      "main": [
+        [
+          {
+            "node": "3. Find CEO LinkedIn Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Find CEO LinkedIn Profile": {
+      "main": [
+        [
+          {
+            "node": "Extract CEO Information",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract CEO Information": {
+      "main": [
+        [
+          {
+            "node": "Split CEO Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split CEO Name": {
+      "main": [
+        [
+          {
+            "node": "Find CEO Email Address",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find CEO Email Address": {
+      "main": [
+        [
+          {
+            "node": "Extract Email Information",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Information": {
+      "main": [
+        [
+          {
+            "node": "4. Scrape Recent Company News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Scrape Recent Company News": {
+      "main": [
+        [
+          {
+            "node": "Extract News Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract News Content": {
+      "main": [
+        [
+          {
+            "node": "5. Generate Personalized Outreach with Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Generate Personalized Outreach with Gemini": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data for Sheet Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Error Logger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data for Sheet Update": {
+      "main": [
+        [
+          {
+            "node": "Update Data in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Data in sheet": {
+      "main": [
+        [
+          {
+            "node": "Split Companies for Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Logger": {
+      "main": [
+        [
+          {
+            "node": "Split Companies for Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Split Companies for Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "b82c2b9e-ed54-45e7-b44f-d32f300d062f",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-25T08:03:13.898Z",
+      "updatedAt": "2025-09-25T08:03:13.898Z",
+      "role": "workflow:owner",
+      "workflowId": "Doq6cC4zb2Icymxn",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
