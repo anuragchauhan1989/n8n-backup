@@ -1,0 +1,469 @@
+{
+  "createdAt": "2025-10-15T07:12:44.269Z",
+  "updatedAt": "2025-10-15T07:46:54.000Z",
+  "id": "vJIXst5qgg8QxG4o",
+  "name": "My workflow 34",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "id": "1f3579f2-4d84-4f9f-96ad-88cec78583c1",
+      "name": "Daily Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        32,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appSyRFfQAU9hVeAP",
+          "mode": "list",
+          "cachedResultName": "LinkedIn",
+          "cachedResultUrl": "https://airtable.com/appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblv3Eqz4W1fJFWO6",
+          "mode": "list",
+          "cachedResultName": "Prospects",
+          "cachedResultUrl": "https://airtable.com/appSyRFfQAU9hVeAP/tblv3Eqz4W1fJFWO6"
+        },
+        "filterByFormula": "=AND({Connection Sent} = 1, {Connection Accepted} = 0)",
+        "options": {}
+      },
+      "id": "0a8312ec-040a-4589-9561-4372bbfd0b41",
+      "name": "Get Pending Connections",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        256,
+        16
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "notes": "Find records where connection sent but not yet accepted"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "appSyRFfQAU9hVeAP",
+          "mode": "list",
+          "cachedResultName": "LinkedIn",
+          "cachedResultUrl": "https://airtable.com/appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblHka3dAzfcJHXiX",
+          "mode": "list",
+          "cachedResultName": "LinkedIn",
+          "cachedResultUrl": "https://airtable.com/appSyRFfQAU9hVeAP/tblHka3dAzfcJHXiX"
+        },
+        "id": "rec61Ba4vOz199sEr",
+        "options": {}
+      },
+      "id": "87e5d5d4-510d-4af2-a51f-343c79732779",
+      "name": "Get LinkedIn Account Credentials",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        16
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.phantombuster.com/api/v2/agents/launch",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Phantombuster-Key-1",
+              "value": "=x4jNsyxYKGl0B4U0KZJ7kjt4F6Xku17xm6f3mWk4QzY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": \"1799863188753171\",\n  \"argument\": {\n    \"sessionCookie\": \"{{ $json['Session Cookie'] }}\",\n    \"userAgent\": \"{{ $json['User Agent'] }}\",\n    \"sortBy\": \"Recently added\",\n    \"numberOfProfiles\": 100,\n    \"onlyRetrieveProfilesAfterDate\": true,\n    \"dateAfter\": \"{{$now.minus({ days: 7 }).toFormat('MM-dd-yyyy')}}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "399e1990-7c6e-464d-8147-23b310f438ec",
+      "name": "Launch Phantombuster Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        928,
+        16
+      ],
+      "notes": "Check connections from last 7 days"
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "id": "5e810d6d-2259-4d54-97f9-8e55bae75d01",
+      "name": "Wait for Results",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1152,
+        16
+      ],
+      "webhookId": "phantom-wait-webhook"
+    },
+    {
+      "parameters": {
+        "url": "https://api.phantombuster.com/api/v2/containers/fetch-result-object",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ $('Launch Phantombuster Check').item.json.containerId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Phantombuster-Key-1",
+              "value": "={{ $env.PHANTOMBUSTER_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "616f1417-dffd-4da7-9157-f3bee9ef6d66",
+      "name": "Get Phantombuster Results",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1376,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the Phantombuster results\nconst results = JSON.parse($input.first().json.resultObject);\n\n// Filter for accepted connections only\nconst acceptedConnections = results.filter(item => \n  !item.error && \n  item.connectedProfileUrl\n);\n\nreturn acceptedConnections.map(conn => ({\n  json: {\n    fullName: conn.fullName,\n    profileUrl: conn.profileUrl,\n    connectedProfileUrl: conn.connectedProfileUrl,\n    connectionDate: conn.connectionDate\n  }\n}));"
+      },
+      "id": "762c56f0-0d9b-4216-947a-1065ec049d09",
+      "name": "Parse Accepted Connections",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        16
+      ],
+      "notes": "Extract only connections that were accepted"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "filterByFormula": "=OR(\n  LOWER(TRIM({profileUrl_n8n})) = LOWER(TRIM(\"{{ $json.profileUrl }}\")),\n  LOWER(TRIM({Employee_LinkedIn_URL})) = LOWER(TRIM(\"{{ $json.profileUrl }}\"))\n)",
+        "options": {}
+      },
+      "id": "7c9ba5e0-aae7-4ac5-a6b2-ab2c016ea115",
+      "name": "Find Record in Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1824,
+        16
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "55f7f0d8-1731-4c28-a81e-cb190c06c083",
+      "name": "Record Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2048,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Connection_Request_Accepted_Flag": true,
+            "Connection Status": "Accepted Request",
+            "Connection_LinkedIn_Account_URL": "={{ $('Parse Accepted Connections').item.json.connectedProfileUrl }}"
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "79646fb4-d454-4bf8-93a2-e340de0b7ea0",
+      "name": "Update to Accepted",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        2272,
+        16
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "notes": "Mark connection as accepted"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7a819830-0578-4716-b759-7daaa9752df4",
+              "name": "sessionCookie",
+              "value": "={{ $json['Session Cookie'] }}",
+              "type": "string"
+            },
+            {
+              "id": "0e35f37e-0aed-4187-a742-f9c74f94d8bf",
+              "name": "userAgent",
+              "value": "={{ $json['User Agent'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        16
+      ],
+      "id": "ca02388f-3219-4ea3-a17d-fe1ae59621ef",
+      "name": "Set LinkedIn Account"
+    }
+  ],
+  "connections": {
+    "Daily Check": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Connections": {
+      "main": [
+        [
+          {
+            "node": "Get LinkedIn Account Credentials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LinkedIn Account Credentials": {
+      "main": [
+        [
+          {
+            "node": "Set LinkedIn Account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Phantombuster Check": {
+      "main": [
+        [
+          {
+            "node": "Wait for Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Results": {
+      "main": [
+        [
+          {
+            "node": "Get Phantombuster Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phantombuster Results": {
+      "main": [
+        [
+          {
+            "node": "Parse Accepted Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Accepted Connections": {
+      "main": [
+        [
+          {
+            "node": "Find Record in Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Record in Airtable": {
+      "main": [
+        [
+          {
+            "node": "Record Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Found?": {
+      "main": [
+        [
+          {
+            "node": "Update to Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set LinkedIn Account": {
+      "main": [
+        [
+          {
+            "node": "Launch Phantombuster Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "d8a13d48-9bd9-48d1-ab13-f9b79a95546e",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-15T07:12:44.287Z",
+      "updatedAt": "2025-10-15T07:12:44.287Z",
+      "role": "workflow:owner",
+      "workflowId": "vJIXst5qgg8QxG4o",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-10-15T06:08:04.737Z",
+      "updatedAt": "2025-10-15T06:08:04.737Z",
+      "id": "VvUGsEvtU8eC3Jpv",
+      "name": "linkedin (ben)"
+    },
+    {
+      "createdAt": "2025-10-14T06:14:45.369Z",
+      "updatedAt": "2025-10-14T06:14:45.369Z",
+      "id": "XAy8G8Xz9fes7e4g",
+      "name": "production"
+    }
+  ]
+}
