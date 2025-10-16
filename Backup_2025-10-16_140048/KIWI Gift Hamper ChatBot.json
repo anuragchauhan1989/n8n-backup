@@ -1,0 +1,476 @@
+{
+  "createdAt": "2025-10-12T06:09:14.052Z",
+  "updatedAt": "2025-10-16T08:26:06.000Z",
+  "id": "GXvtcuhojPplQXHf",
+  "name": "KIWI Gift Hamper ChatBot",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        16
+      ],
+      "id": "6cff2af7-3ef4-447f-8d02-8c4c80403f36",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        16
+      ],
+      "id": "54f49951-ec7f-466c-a68f-366cec28e9be",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are Kiwi's gift hamper assistant collecting 4 requirements:\n\n1. Budget per piece\n2. Quantity\n3. Delivery date (10-30 October 2025)\n4. Item preferences\n\nCRITICAL: Users may provide MULTIPLE values in a SINGLE message!\n\nPARSING RULES:\n- If message has 2+ numbers: First = Budget, Second = Quantity\n- Examples:\n  * \"1000 for 200 people\" → Budget: 1000, Quantity: 200\n  * \"Budget 1500, 200 pieces\" → Budget: 1500, Quantity: 200\n  * \"2000 rs for 150\" → Budget: 2000, Quantity: 150\n  * \"I need 250 hampers at 1200 each\" → Budget: 1200, Quantity: 250\n\n- If message has ONLY 1 number:\n  * First user message → Budget (as before)\n  * Second user message → Quantity\n  \n- Dates in message: Extract day (10-30)\n  * \"1000 for 200 on 16 oct\" → Budget: 1000, Qty: 200, Date: 16\n  \n- Item keywords: Extract preferences\n  * \"1000 for 200, dry fruits and diya\" → All 3 fields extracted!\n\nCONVERSATION FLOW:\n1. Check what's ALREADY collected in conversation history\n2. Parse current message for ALL available data\n3. Update what you have\n4. Ask for ONLY what's still missing\n\nQUESTIONS (ask only if missing):\n- Missing budget? → \"What is your Budget per piece? (e.g., 1000/-)\"\n- Missing quantity? → \"Great! What's your total Quantity? (40% off for 200+ pieces, 35% off below 200)\"\n- Missing date? → \"Perfect! When do you need delivery? (e.g., 16 Oct)\"\n- Missing items? → \"Any item preferences? (e.g., dry fruits, diya, candle, or say 'no')\"\n\nIMPORTANT - NEVER SUGGEST ITEMS:\n- DO NOT list potential items or categories\n- DO NOT mention specific products like \"chocolates\", \"soaps\", \"keychains\", etc.\n- ONLY ask: \"Any item preferences? (e.g., dry fruits, diya, candle, or say 'no')\"\n- If user asks \"what items do you have?\", respond: \"I'll show you available options after you provide your requirements. Any item preferences? (or say 'no')\"\n- Let the RAG system suggest items based on what's actually in the catalog\n\nEXAMPLES:\n\nExample 1 - Multi-value first message:\nUser: \"1000 for 200 people\"\nYou: \"Perfect! Budget ₹1000 per piece for 200 people. 🎉 You qualify for our 40% discount!\nWhen do you need the delivery? (e.g., 16 Oct)\"\n\nExample 2 - All data at once:\nUser: \"Budget 1500, 150 pieces, 20 oct, dry fruits\"\nYou: \"Excellent! I have everything:\n- Budget: ₹1500/piece\n- Quantity: 150 (35% discount)\n- Delivery: 20 October 2025\n- Preferences: dry fruits\n\nLet me create your perfect hamper! 🎁\"\n[Output JSON immediately]\n\nExample 3 - Traditional single value:\nUser: \"2000\"\nYou: \"Great! What's your total Quantity? (40% off for 200+ pieces, 35% off below 200)\"\n\nExample 4 - User asks about items:\nUser: \"What items can you include?\"\nYou: \"I'll show you available options once I have your requirements. What is your Budget per piece? (e.g., 1000/-)\"\n\nExample 5 - User asks for suggestions:\nUser: \"Can you share what items are available?\"\nYou: \"I'll provide personalized suggestions based on your requirements. Any item preferences? (e.g., dry fruits, diya, candle, or say 'no')\"\n\nWHEN ALL 4 COLLECTED, output ONLY JSON (no markdown, no other text):\n{\n  \"status\": \"DATA_COMPLETE\",\n  \"budget\": \"[exact value]\",\n  \"quantity\": \"[exact value]\",\n  \"when\": \"[day] October 2025\",\n  \"itemPreference\": \"[value or 'no']\"\n}\n\nDATE RULES:\n- Valid: 10-30 only\n- Extract from: \"16\", \"16oct\", \"oct 16\", \"october 16\"\n- Format as: \"16 October 2025\"\n- Invalid? Ask again\n\nCRITICAL RULES:\n- Extract ALL data from each message\n- Never ask for data already provided\n- Acknowledge multiple pieces of info when given\n- Be smart about parsing natural language\n- Show enthusiasm when discount threshold is reached\n- NEVER list potential items - only ask for preferences\n- Let RAG handle product suggestions after data is complete"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -160,
+        -272
+      ],
+      "id": "ac2517be-1f0a-4158-b788-6c5d77855dec",
+      "name": "Data Collector"
+    },
+    {
+      "parameters": {
+        "jsCode": "let aiResponse = ($input.item.json.output || $input.item.json.text || '').trim();\n\nlet sessionData = {\n    budget: null,\n    quantity: null,\n    when: null,\n    itemPreference: null\n};\n\nlet isComplete = false;\n\n// Try to parse as JSON\ntry {\n    // Remove markdown code blocks if present\n    const jsonMatch = aiResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/) || \n                     aiResponse.match(/```\\s*([\\s\\S]*?)\\s*```/) ||\n                     [null, aiResponse];\n    \n    const jsonString = jsonMatch[1] || aiResponse;\n    const parsed = JSON.parse(jsonString);\n    \n    // Check if it's the completion response\n    if (parsed.status === 'DATA_COMPLETE') {\n        isComplete = true;\n        sessionData = {\n            budget: parsed.budget || null,\n            quantity: parsed.quantity || null,\n            when: parsed.when || null,\n            itemPreference: parsed.itemPreference || null\n        };\n        \n        // Log for debugging\n        console.log('✅ DATA_COMPLETE - Session Data:', JSON.stringify(sessionData, null, 2));\n        \n        // Validate that all fields have values\n        if (!sessionData.budget || !sessionData.quantity || !sessionData.when) {\n            console.error('⚠️ WARNING: Missing data in sessionData:', sessionData);\n        }\n        \n        aiResponse = 'DATA_COMPLETE'; // Don't show JSON to user\n    }\n} catch (e) {\n    // Not JSON, it's a question - that's fine\n    isComplete = false;\n    console.log('Not JSON, continuing conversation...');\n}\n\nreturn [{\n    json: {\n        isComplete: isComplete,\n        sessionData: sessionData,\n        aiResponse: aiResponse\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        -272
+      ],
+      "id": "450fe731-ebb0-4c7c-9dd5-4466d805ad3f",
+      "name": "Parse & Route"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a1b4115e-7181-486a-99aa-22f56c8a6fe9",
+              "leftValue": "={{ $json.isComplete }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        352,
+        -272
+      ],
+      "id": "5a2e38bc-26ec-4bd6-875c-8efa700308a7",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst session = data.sessionData;\n\n// Validate session data exists\nif (!session || !session.budget || !session.quantity || !session.when) {\n  throw new Error('Session data is incomplete');\n}\n\nconst items = (session.itemPreference || '').toLowerCase();\nlet searchTerms = [];\n\n// If user said 'no' or 'mo', search for ALL popular items\nif (items === 'no' || items === 'mo' || items === 'none') {\n  searchTerms.push('dry fruits', 'almonds', 'cashew', 'chocolate', 'diya', 'candle', 'sweet', 'gift', 'hamper', 'box');\n  console.log('User said no preference - searching ALL popular items');\n} else {\n  // Extract specific preferences\n  if (items.includes('dry fruit') || items.includes('fruit') || items.includes('nuts') || items.includes('almond') || items.includes('cashew')) {\n    searchTerms.push('dry fruits', 'almonds', 'cashew', 'pistachio', 'walnut', 'anjeer');\n  }\n  if (items.includes('diya')) {\n    searchTerms.push('diya', 'lamp');\n  }\n  if (items.includes('candle')) {\n    searchTerms.push('candle');\n  }\n  if (items.includes('chocolate')) {\n    searchTerms.push('chocolate', 'ferrero');\n  }\n  if (items.includes('sweet') || items.includes('mithai')) {\n    searchTerms.push('sweet', 'mithai', 'ladoo');\n  }\n  \n  // If no specific terms matched, search broadly\n  if (searchTerms.length === 0) {\n    searchTerms.push('gift', 'hamper', 'premium');\n  }\n}\n\n// Always add box/packaging terms\nsearchTerms.push('gift box', 'packaging');\n\n// Build final query - broader for better results\nconst query = `gift hamper ${searchTerms.join(' ')} budget around ${session.budget} rupees`;\n\nconsole.log('RAG Search Query:', query);\nconsole.log('Session Data:', JSON.stringify(session, null, 2));\n\nreturn [{ \n  json: { \n    query: query,\n    sessionData: {\n      budget: session.budget,\n      quantity: session.quantity,\n      when: session.when,\n      itemPreference: session.itemPreference\n    }\n  } \n}];"
+      },
+      "id": "d7028e25-def5-49f3-a881-c7dd25fb8858",
+      "name": "Prepare AI Query",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        672,
+        -288
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemPromptTemplate": "You are a Gift Hamper Product Consultant with access to a product catalog. Create a personalized gift hamper recommendation.\n\nCUSTOMER REQUIREMENTS:\n- Budget PER PIECE: ₹{{ $('Apply Discount Logic').first().json.sessionData.budget }}\n- Quantity: {{ $('Apply Discount Logic').first().json.sessionData.quantity }} pieces\n- Delivery date: {{ $('Apply Discount Logic').first().json.sessionData.when }}\n- Item preferences: {{ $('Apply Discount Logic').first().json.sessionData.itemPreference }}\n- Discount Applied: {{ $('Apply Discount Logic').first().json.sessionData.discountPercent }}%\n\nIMPORTANT: You are designing ONE hamper. The customer will order {{ $('Apply Discount Logic').first().json.sessionData.quantity }} of these identical hampers.\n\n⚠️ CRITICAL UNIQUENESS RULE:\n- Each product can appear ONLY ONCE in the list\n- If you see the same product name multiple times in context, SELECT IT ONLY ONCE\n- Before outputting, deduplicate your product list\n- NEVER write the same product name twice\n- Example: If context has \"Charkhi - 100g\" 5 times, you write it ONCE only\n\nYOUR TASK:\n1. Find products from catalog that match customer preferences\n2. Select 3-5 DIFFERENT, UNIQUE products (each product name appears ONCE only)\n3. Choose ONE appropriate gift box\n4. Calculate the TOTAL COST PER PIECE (one hamper)\n5. The system will automatically multiply by quantity later\n\nSELECTION RULES:\n- Budget ₹{{ $('Apply Discount Logic').first().json.sessionData.budget }} is for ONE hamper\n- Select 3-5 UNIQUE products - NO DUPLICATES WHATSOEVER\n- Each product should appear EXACTLY ONCE in your output\n- Create variety - pick different types of items\n- Include ONLY ONE gift box\n- Products + Box should total around ₹{{ $('Apply Discount Logic').first().json.sessionData.budget }} per hamper\n- Use ONLY products from the context below\n- If preference is \"no\", suggest popular bestselling items\n- If you cannot find exact items, select closest alternatives WITHOUT mentioning what's missing\n- NEVER apologize for missing items\n- Focus on what you CAN provide\n\nHOW TO ENSURE UNIQUENESS:\n1. Read all retrieved products from context\n2. Create a mental unique list (remove duplicates)\n3. Pick 3-5 different items from unique list\n4. Write each product ONCE only\n5. Double-check: Does any product name appear twice? If YES, remove duplicates\n\nOUTPUT FORMAT:\n🎁 **Your Personalized Gift Hamper**\n\n📦 **Selected Products:**\n- [Product 1 Name] - [Category] - [Weight] - ₹[Price]\n- [Product 2 Name] - [Category] - [Weight] - ₹[Price]\n- [Product 3 Name] - [Category] - [Weight] - ₹[Price]\n[Each product appears ONCE only]\n\n📐 **Gift Box:**\n- [Box Name] - ₹[Price]\n\n💰 **Cost Breakdown (Per Hamper):**\n- Products Total: ₹[sum]\n  Calculation: [P1] + [P2] + [P3] = ₹[total]\n- Box: ₹[box price]\n- **Total per piece: ₹[sum]**\n- Your Budget: ₹{{ $('Apply Discount Logic').first().json.sessionData.budget }}\n- Status: ✅ Within Budget / ⚠️ Slightly Over\n\nCRITICAL RULES:\n1. Design for ONE hamper only\n2. Show cost PER PIECE (per hamper)\n3. DO NOT multiply by quantity\n4. Stay within per-piece budget\n5. Use actual product names and prices from catalog\n6. Show clear calculation\n7. DO NOT write template variables like {{ }} in output\n8. Write only ACTUAL VALUES\n9. DO NOT apologize for missing items\n10. Present what you have confidently\n11. If preferences not in catalog, pick best alternatives silently\n12. ⚠️ ABSOLUTE RULE: NEVER REPEAT SAME PRODUCT - each appears ONCE only\n13. Create diverse hampers with variety\n14. Before outputting, verify NO product name is repeated\n15. If you accidentally selected duplicates, remove them and pick different products\n\nContext from product catalog:\n{context}"
+        }
+      },
+      "id": "f10835ad-ad27-40ef-ab68-f1894a73601b",
+      "name": "RAG Product Search",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "position": [
+        1040,
+        -288
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "jsCode": "const ragOutput = $input.item.json;\n\n// Extract the AI response text\nlet aiResponse = '';\nif (ragOutput.output) {\n  aiResponse = ragOutput.output;\n} else if (ragOutput.text) {\n  aiResponse = ragOutput.text;\n} else if (ragOutput.response) {\n  aiResponse = typeof ragOutput.response === 'string' \n    ? ragOutput.response \n    : JSON.stringify(ragOutput.response);\n} else {\n  aiResponse = JSON.stringify(ragOutput);\n}\n\n// Get session data\nconst sessionData = $('Prepare AI Query').first().json.sessionData;\nconst quantity = parseInt(sessionData.quantity) || 0;\n\n// Clean JSON wrapping\naiResponse = aiResponse\n  .replace(/^\\s*\\{\\s*\"text\"\\s*:\\s*\"?/, '')\n  .replace(/\"\\s*\\}\\s*$/, '')\n  .trim();\n\n// Clean response formatting\naiResponse = aiResponse\n  .replace(/\\\\\\\\n/g, '\\n')\n  .replace(/\\\\n/g, '\\n')\n  .replace(/nn/g, '\\n')\n  .replace(/Rs\\s+/g, '₹')\n  .trim();\n\n// Extract total per piece\nlet cleanResponse = aiResponse.replace(/\\s+/g, ' ');\nconst allTotals = [...cleanResponse.matchAll(/Total:\\s*₹?\\s*([\\d,]+\\.?\\d*)/gi)];\nconst totalPerPieceMatch = allTotals.length > 0 ? allTotals[allTotals.length - 1] : null;\n\nlet totalPerPiece = 0;\nif (totalPerPieceMatch) {\n  totalPerPiece = parseFloat(totalPerPieceMatch[1].replace(/,/g, ''));\n  console.log('Total Per Piece: ' + totalPerPiece);\n} else {\n  console.error('ERROR: Could not find Total Cost per piece');\n}\n\n// Calculate grand total\nconst grandTotal = totalPerPiece * quantity;\nconst deliveryDate = sessionData.when || 'Date Missing';\n\nconsole.log('Per Piece: ₹' + totalPerPiece + ', Quantity: ' + quantity + ', Grand Total: ₹' + grandTotal);\n\n// Build new order summary\nconst orderSummaryRegex = /📦\\s*\\*?\\*?Order Summary:\\*?\\*?[\\s\\S]*?(?:Delivery:[\\s\\S]*?)(?=\\n\\n|\\n---|$)/g;\nconst newOrderSummary = '📦 **Order Summary:**\\n- Quantity: ' + quantity + ' pieces\\n- Cost per piece: ₹' + totalPerPiece.toFixed(2) + '\\n- **Grand Total: ₹' + grandTotal.toLocaleString('en-IN') + '**\\n- Delivery: ' + deliveryDate;\n\nif (orderSummaryRegex.test(aiResponse)) {\n  aiResponse = aiResponse.replace(orderSummaryRegex, '').trim().replace(/---$/g, '').trim();\n  aiResponse = aiResponse + '\\n\\n' + newOrderSummary;\n} else {\n  aiResponse = aiResponse + '\\n\\n' + newOrderSummary;\n}\n\nreturn [{\n  json: {\n    aiResponse: aiResponse,\n    sessionData: sessionData,\n    grandTotal: grandTotal,\n    perPieceTotal: totalPerPiece\n  }\n}];"
+      },
+      "id": "5f662e96-80fe-460a-9d2e-cf244367502b",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1424,
+        -288
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "topK": 30
+      },
+      "id": "7b0fa5cd-602f-43b6-8e36-3421c08a566d",
+      "name": "Vector Retriever",
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "position": [
+        1136,
+        -112
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "cgragtest",
+          "mode": "list",
+          "cachedResultName": "cgragtest"
+        },
+        "options": {
+          "pineconeNamespace": "RAGkiwiAgentFINAL"
+        }
+      },
+      "id": "dc4d952b-a856-4953-b2cb-e85542b3e442",
+      "name": "Pinecone Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        1056,
+        32
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "pineconeApi": {
+          "id": "aWTuoJ6ldBZ2gPsm",
+          "name": "PineconeApi account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "19bc9764-43cd-4bb4-8dc2-1460bf650b15",
+      "name": "Gemini Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "position": [
+        1056,
+        176
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "87fb99ae-7f3e-4ec1-9dc5-eb24389ac622",
+      "name": "Gemini Chat",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        976,
+        -112
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.aiResponse }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        -288
+      ],
+      "id": "dd243007-2cd4-41e2-81e5-2bb1a63bfeda",
+      "name": "Respond to Chat1"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Welcome to Kiwi Gift Hamper! 🎉\nI'll help you create the perfect custom gift hamper.\n\nWhat is your Budget per piece? (e.g., 1000/-)",
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        -272
+      ],
+      "id": "2c56b78d-6c97-4fc3-9c80-27a185f7e9c0",
+      "name": "When chat message received",
+      "webhookId": "c092f59a-5548-49c8-8b40-e2ed3a4f489f"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.aiResponse }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -176
+      ],
+      "id": "1f5f2d99-99da-4781-915a-6c7f443baf9c",
+      "name": "Respond to Chat"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sessionData = $input.item.json.sessionData;\nconst query = $input.item.json.query;\n\n// --- FIX START ---\n// Always normalize quantity safely to a number\nconst quantity = Number(sessionData.quantity?.toString().replace(/[^0-9]/g, '') || 0);\n\n// Determine discount correctly\nlet discountPercent = quantity >= 200 ? 40 : 35;\nlet discountMessage = quantity >= 200\n  ? '40% discount (200+ pieces)'\n  : '35% discount (below 200 pieces)';\n\nconsole.log(`Quantity: ${quantity}, Applying: ${discountMessage}`);\n// --- FIX END ---\n\nreturn [{\n  json: {\n    query,\n    sessionData: {\n      ...sessionData,\n      discountPercent,\n      discountMessage\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        -288
+      ],
+      "id": "ac3044ad-a8fe-496d-b783-b1db27d31d3c",
+      "name": "Apply Discount Logic"
+    }
+  ],
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Data Collector",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Data Collector",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Collector": {
+      "main": [
+        [
+          {
+            "node": "Parse & Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Route": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Query": {
+      "main": [
+        [
+          {
+            "node": "Apply Discount Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Product Search": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Data Collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Chat": {
+      "main": [
+        [
+          {
+            "node": "Data Collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Discount Logic": {
+      "main": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "a214139a-b5fc-4e53-8ea4-a8ae2ef7359f",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-10-12T06:09:14.054Z",
+      "updatedAt": "2025-10-12T06:09:14.054Z",
+      "role": "workflow:owner",
+      "workflowId": "GXvtcuhojPplQXHf",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
