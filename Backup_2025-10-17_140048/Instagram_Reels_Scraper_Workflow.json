@@ -1,0 +1,391 @@
+{
+  "createdAt": "2025-09-12T14:10:42.754Z",
+  "updatedAt": "2025-09-13T08:52:35.000Z",
+  "id": "ZZo5Stmt7wkY25cF",
+  "name": "Instagram_Reels_Scraper_Workflow",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "69cd780b-32bd-483d-b5f7-be68fca070c3",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appeSs9tysGPGRNNF",
+          "mode": "list",
+          "cachedResultName": "Instagram Reel Scraper",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblnNG4AEu7fI3w6T",
+          "mode": "list",
+          "cachedResultName": "List of creators",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF/tblnNG4AEu7fI3w6T"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "ab6ccab5-1550-48d5-9e9b-26b46121a33e",
+      "name": "Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/shu8hvrXbJbY3Eb9W/run-sync-get-dataset-items",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer apify_api_LyejgszWoomN0nKSKA5k5lDmjVu6yk0vS3U5"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"addParentData\": false,\n    \"directUrls\": [\n        \"https://www.instagram.com/{{ $json['Instagram ID'] }}/\"\n    ],\n    \"enhanceUserSearchWithFacebookPage\": false,\n    \"isUserReelFeedURL\": false,\n    \"isUserTaggedFeedURL\": false,\n    \"onlyPostsNewerThan\": \"15 days\",\n    \"resultsLimit\": 20,\n    \"resultsType\": \"posts\",\n    \"searchLimit\": 1,\n    \"searchType\": \"hashtag\"\n}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        704,
+        144
+      ],
+      "id": "6207da71-7f4d-4046-950d-b4e07a0314cc",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "videoPlayCount",
+              "order": "descending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        960,
+        144
+      ],
+      "id": "379973c0-23bf-436c-8334-1ef4d2071d41",
+      "name": "Sort"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "9717ed5b-46af-43c4-a900-ff63c7241ad6",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        144
+      ],
+      "id": "6dcc62bb-6ff7-4a58-8f62-c2c35bf51365",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appeSs9tysGPGRNNF",
+          "mode": "list",
+          "cachedResultName": "Instagram Reel Scraper",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblIhAtnI8pBOJgnT",
+          "mode": "list",
+          "cachedResultName": "Best Performing Reels",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF/tblIhAtnI8pBOJgnT"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Likes": "={{ $json.likesCount }}",
+            "Reel Url": "={{ $json.url }}",
+            "Creator Name": "={{ $json.ownerUsername }}",
+            "Caption": "={{ $json.caption }}",
+            "Comments": "={{ $json.commentsCount }}",
+            "Date and Time": "=  {{ $json.timestamp }}",
+            "Hashtags": "={{ $json.hashtags.toJsonString() }}",
+            "Views": "={{ $json.videoPlayCount }}",
+            "Duration": "={{ $json.videoDuration }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Creator Name",
+              "displayName": "Creator Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reel Url",
+              "displayName": "Reel Url",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Duration",
+              "displayName": "Duration",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Views",
+              "displayName": "Views",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Likes",
+              "displayName": "Likes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comments",
+              "displayName": "Comments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date and Time",
+              "displayName": "Date and Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1472,
+        144
+      ],
+      "id": "d7d775d3-851b-432f-8309-3053e076c1f1",
+      "name": "Airtable1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Sort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Airtable1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "b0f7c483-b1fe-4118-9354-aec41e2d4c18",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-12T14:10:42.757Z",
+      "updatedAt": "2025-09-12T14:10:42.757Z",
+      "role": "workflow:owner",
+      "workflowId": "ZZo5Stmt7wkY25cF",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
