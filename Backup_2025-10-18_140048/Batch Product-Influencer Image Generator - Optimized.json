@@ -1,0 +1,495 @@
+{
+  "createdAt": "2025-10-17T09:10:23.464Z",
+  "updatedAt": "2025-10-17T13:28:02.000Z",
+  "id": "csOQbv11yv5FEOPv",
+  "name": "Batch Product-Influencer Image Generator - Optimized",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "manual_trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        -208,
+        0
+      ],
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "list_product_images",
+      "name": "List Product Images",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3",
+            "cachedResultName": "ZenshopProd"
+          }
+        },
+        "options": {},
+        "resource": "fileFolder",
+        "returnAll": true
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      },
+      "typeVersion": 3
+    },
+    {
+      "id": "list_influencer_images",
+      "name": "List Influencer Images",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        0,
+        208
+      ],
+      "parameters": {
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa",
+            "cachedResultName": "ZenshopInfluencer"
+          }
+        },
+        "options": {},
+        "resource": "fileFolder",
+        "returnAll": true
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      },
+      "typeVersion": 3
+    },
+    {
+      "id": "iterate_products",
+      "name": "Iterate Products",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        256,
+        0
+      ],
+      "parameters": {
+        "options": {},
+        "batchSize": 1
+      },
+      "typeVersion": 3
+    },
+    {
+      "id": "download_product",
+      "name": "Download Product Image",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        512,
+        0
+      ],
+      "parameters": {
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {},
+        "operation": "download"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      },
+      "typeVersion": 3
+    },
+    {
+      "id": "product_to_base64",
+      "name": "Product to Base64",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        704,
+        0
+      ],
+      "parameters": {
+        "options": {},
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "data",
+        "destinationFieldName": "data"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "combine_product_influencers",
+      "name": "Combine Product with All Influencers",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        880,
+        112
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javascript",
+        "jsCode": "// Get current product data with base64\nconst productData = $input.item.json;\n\n// Get ALL influencers at once from the List Influencer Images node\nconst influencers = $node[\"List Influencer Images\"].json;\n\nif (!influencers || !Array.isArray(influencers) || influencers.length === 0) {\n  throw new Error('No influencers found. Please check the List Influencer Images node.');\n}\n\n// Create all combinations for this product in one go\nconst combinations = [];\n\nfor (const influencer of influencers) {\n  combinations.push({\n    json: {\n      // Product data\n      productBase64: productData.data || productData.productBase64,\n      productName: productData.name?.replace(/\\.[^/.]+$/, '') || 'product',\n      productId: productData.id,\n      \n      // Influencer data  \n      influencerId: influencer.id,\n      influencerName: influencer.name?.replace(/\\.[^/.]+$/, '') || 'influencer'\n    }\n  });\n}\n\nconsole.log(`Created ${combinations.length} combinations for product ${productData.name}`);\n\nreturn combinations;"
+      },
+      "typeVersion": 2.5
+    },
+    {
+      "id": "iterate_influencers",
+      "name": "Iterate Influencers",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        1104,
+        112
+      ],
+      "parameters": {
+        "options": {},
+        "batchSize": 1
+      },
+      "typeVersion": 3
+    },
+    {
+      "id": "download_influencer",
+      "name": "Download Influencer Image",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        1360,
+        144
+      ],
+      "parameters": {
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.influencerId }}"
+        },
+        "options": {},
+        "operation": "download"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      },
+      "typeVersion": 3
+    },
+    {
+      "id": "influencer_to_base64",
+      "name": "Influencer to Base64",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        1584,
+        144
+      ],
+      "parameters": {
+        "options": {},
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "data",
+        "destinationFieldName": "influencerBase64"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "generate_image",
+      "name": "Generate Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1760,
+        112
+      ],
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      { \"text\": \"Create a natural, lifestyle image where the person from image 2 is using or showcasing the hair care product from image 1. The scene should be authentic and relatable - the person could be: holding the product while styling their hair in a bathroom mirror, applying the product to their hair, showing off their styled hair while holding the product, or sitting in a well-lit space examining or presenting the product. The setting should feel like a real moment - could be a modern bathroom, bedroom vanity, or salon setting. The person should look confident and happy with natural lighting that highlights both their hair and the product. The photo should feel like authentic user-generated content or influencer content, not overly professional. Vary the angle and composition to create visual interest. Only return the final generated image.\" },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/png\",\n          \"data\": \"{{ $json.productBase64 }}\"\n        }\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/jpeg\",\n          \"data\": \"{{ $json.influencerBase64 }}\"\n        }\n      }\n    ]\n  }]\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cAWTpPjxWun8tUIM",
+          "name": "Header Auth account - google"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "set_result",
+      "name": "Set Result",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1952,
+        112
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "image_result",
+              "name": "image_result",
+              "type": "string",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}"
+            },
+            {
+              "id": "product_name",
+              "name": "product_name",
+              "type": "string",
+              "value": "={{ $json.productName }}"
+            },
+            {
+              "id": "influencer_name",
+              "name": "influencer_name",
+              "type": "string",
+              "value": "={{ $json.influencerName }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "convert_to_file",
+      "name": "Convert to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "position": [
+        2160,
+        112
+      ],
+      "parameters": {
+        "options": {},
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "binaryPropertyName": "data"
+      },
+      "typeVersion": 1.1
+    },
+    {
+      "id": "upload_result",
+      "name": "Upload Result",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        2352,
+        112
+      ],
+      "parameters": {
+        "name": "=Product_{{ $json.product_name }}_Influencer_{{ $json.influencer_name }}_{{ $now.format('yyyy-MM-dd_HH-mm-ss') }}.png",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "options": {},
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1",
+          "cachedResultName": "Zenshop Ad creative"
+        },
+        "operation": "upload"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      },
+      "typeVersion": 3
+    }
+  ],
+  "connections": {
+    "Set Result": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Result": {
+      "main": [
+        [
+          {
+            "node": "Iterate Influencers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Set Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "List Product Images",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "List Influencer Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Upload Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Iterate Products": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download Product Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product to Base64": {
+      "main": [
+        [
+          {
+            "node": "Combine Product with All Influencers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Iterate Influencers": {
+      "main": [
+        [
+          {
+            "node": "Iterate Products",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Influencer Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Product Images": {
+      "main": [
+        [
+          {
+            "node": "Iterate Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Influencer to Base64": {
+      "main": [
+        [
+          {
+            "node": "Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Product Image": {
+      "main": [
+        [
+          {
+            "node": "Product to Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Influencer Images": {
+      "main": []
+    },
+    "Download Influencer Image": {
+      "main": [
+        [
+          {
+            "node": "Influencer to Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Product with All Influencers": {
+      "main": [
+        [
+          {
+            "node": "Iterate Influencers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "fb73bbff-f9c9-422d-9c73-f092eb903502",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-17T09:10:23.466Z",
+      "updatedAt": "2025-10-17T09:10:23.466Z",
+      "role": "workflow:owner",
+      "workflowId": "csOQbv11yv5FEOPv",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
