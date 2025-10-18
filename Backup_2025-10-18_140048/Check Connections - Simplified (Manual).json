@@ -1,0 +1,202 @@
+{
+  "createdAt": "2025-10-15T06:12:45.340Z",
+  "updatedAt": "2025-10-15T11:45:36.000Z",
+  "id": "GVpBy5nWxgC6E8LY",
+  "name": "Check Connections - Simplified (Manual)",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "a1b2c3d4",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "e5f6g7h8",
+      "name": "Read LinkedIn Connections CSV",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        220,
+        400
+      ],
+      "parameters": {
+        "filePath": "/tmp/linkedin_connections.csv"
+      },
+      "notes": "Upload a CSV exported from LinkedIn with columns: Full Name, Profile URL, Connected On"
+    },
+    {
+      "id": "i9j0k1l2",
+      "name": "Parse CSV",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        440,
+        400
+      ],
+      "parameters": {
+        "batchSize": 50,
+        "options": {}
+      }
+    },
+    {
+      "id": "m3n4o5p6",
+      "name": "Get Pending Connections from Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        660,
+        400
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "filterByFormula": "AND({Connection_Request_Sent_Flag} = TRUE(), {Connection_Request_Accepted_Flag} = FALSE())",
+        "options": {
+          "returnAll": true
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "q7r8s9t0",
+      "name": "Match Accepted Connections",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        400
+      ],
+      "parameters": {
+        "jsCode": "// Get pending connections from Airtable\nconst pendingConnections = $items('Get Pending Connections from Airtable').map(item => item.json);\n\n// Get accepted connections from LinkedIn CSV\nconst acceptedConnections = $input.all().map(item => item.json);\n\n// Normalize function for matching\nconst normalize = (str) => {\n  if (!str) return '';\n  return String(str).toLowerCase().trim().replace(/\\s+/g, ' ');\n};\n\n// Find matches\nconst matches = [];\n\nfor (const pending of pendingConnections) {\n  const pendingName = normalize(pending.Employee_Full_Name || '');\n  const pendingUrl = normalize(pending.profileUrl_n8n || pending.Employee_LinkedIn_URL || '');\n  \n  // Look for match in accepted connections\n  const match = acceptedConnections.find(accepted => {\n    const acceptedName = normalize(accepted['Full Name'] || accepted.fullName || '');\n    const acceptedUrl = normalize(accepted['Profile URL'] || accepted.profileUrl || '');\n    \n    // Match by name OR URL\n    return (pendingName && acceptedName && pendingName === acceptedName) ||\n           (pendingUrl && acceptedUrl && pendingUrl === acceptedUrl);\n  });\n  \n  if (match) {\n    matches.push({\n      id: pending.id,\n      Employee_Full_Name: pending.Employee_Full_Name,\n      matchedName: match['Full Name'] || match.fullName,\n      matchedUrl: match['Profile URL'] || match.profileUrl,\n      connectedOn: match['Connected On'] || match.timestamp\n    });\n  }\n}\n\nreturn matches.map(m => ({ json: m }));"
+      }
+    },
+    {
+      "id": "u1v2w3x4",
+      "name": "Update Connection Status",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        400
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Connection_Request_Accepted_Flag": true,
+            "Connection Status": "Accepted Request"
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Read LinkedIn Connections CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read LinkedIn Connections CSV": {
+      "main": [
+        [
+          {
+            "node": "Parse CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse CSV": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Connections from Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Connections from Airtable": {
+      "main": [
+        [
+          {
+            "node": "Match Accepted Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match Accepted Connections": {
+      "main": [
+        [
+          {
+            "node": "Update Connection Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "5b2f736c-87b4-491c-92c4-87a890b04e69",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-15T06:12:45.342Z",
+      "updatedAt": "2025-10-15T06:12:45.342Z",
+      "role": "workflow:owner",
+      "workflowId": "GVpBy5nWxgC6E8LY",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
