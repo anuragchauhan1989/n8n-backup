@@ -1,0 +1,582 @@
+{
+  "createdAt": "2025-10-21T07:38:57.580Z",
+  "updatedAt": "2025-10-21T08:18:46.000Z",
+  "id": "k52ILGJ2xKczmi5H",
+  "name": "My workflow 108",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa",
+            "mode": "list",
+            "cachedResultName": "ZenshopInfluencer",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -32,
+        224
+      ],
+      "id": "8b4cc317-f281-4ff9-b033-3dbfdf060008",
+      "name": "list_influencer_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        784,
+        -48
+      ],
+      "id": "692fb3f6-65aa-4730-816d-57f8247a2e6f",
+      "name": "product_image_to_base64"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        544,
+        224
+      ],
+      "id": "9245513a-6e80-422a-b451-2afb232863bf",
+      "name": "influencer_image_to_base_64"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        240
+      ],
+      "id": "288c7d2d-219f-4bdd-a3c9-c21f2e1b15d8",
+      "name": "generate_image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cAWTpPjxWun8tUIM",
+          "name": "Header Auth account - google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1136,
+        240
+      ],
+      "id": "ee73abd3-b790-42ce-840d-b523804e99ca",
+      "name": "get_image",
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "name": "=AD Image #{{ $runIndex + 1 }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1",
+          "mode": "list",
+          "cachedResultName": "Zenshop Ad creative",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1312,
+        256
+      ],
+      "id": "70d7caeb-3946-4a64-a8bd-beb629433c84",
+      "name": "upload_image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "524da01b-f8b9-4c2c-9e28-319455903e4d",
+              "name": "=image_result",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        976,
+        240
+      ],
+      "id": "2f376d9d-b899-4f9b-a97f-a531ea6af7ab",
+      "name": "set_result"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3",
+            "mode": "list",
+            "cachedResultName": "ZenshopProd",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        176,
+        0
+      ],
+      "id": "09eac108-1190-47df-ad23-0744ab34dc21",
+      "name": "List_Product_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        368,
+        0
+      ],
+      "id": "28f6aa18-eb2e-4fec-8b78-13c276599ff3",
+      "name": "Loop Over Product"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3423e0c2-9383-4d37-8426-fa1a0d30e5cd",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "product_image",
+              "type": "any"
+            },
+            {
+              "name": "product_name"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -208,
+        224
+      ],
+      "id": "4e5017d7-c9e9-469a-b3f6-f16247227887",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        160,
+        224
+      ],
+      "id": "785a9a90-1191-4c8f-ba52-05c7466338d1",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "const runIndex = $runIndex;\nconst productImage = $('When Executed by Another Workflow').item.json.product_image;\nconst influencerImage = $node['influencer_image_to_base_64'].json.data;\n\n// Determine which prompt to use\nlet promptText;\n\nif (runIndex % 2 === 0) {\n  // Before/After prompt - ENHANCED VERSION\n  const poseVariation = Math.floor(runIndex / 2) % 4;\n  const poses = [\n    'front view, AFTER side shows person smiling with hand gently touching hair',\n    'slight angle, AFTER side shows person with head slightly tilted, hair cascading',\n    'three-quarter view, AFTER side shows hair flowing over shoulder with confident smile',\n    'front view, AFTER side shows person with both hands running through voluminous hair'\n  ];\n  \n  // Enhanced bilingual taglines for before/after\n  const taglineVariation = Math.floor(runIndex / 2) % 5;\n  const beforeAfterTaglines = [\n    { english: 'Flat Hair? Not Anymore.', urdu: 'کیا آپ کے بال پتلے ہیں؟ اب نہیں!' },\n    { english: 'From Thin to Fabulous', urdu: 'پتلے سے شاندار تک' },\n    { english: 'Your Hair Transformation', urdu: 'آپ کے بالوں کی تبدیلی' },\n    { english: 'Volume That Lasts', urdu: 'والیوم جو دیرپا ہو' },\n    { english: 'Instant Hair Goals', urdu: 'فوری خوبصورت بال' }\n  ];\n  \n  const selectedTagline = beforeAfterTaglines[taglineVariation];\n  \n  promptText = `Create a PREMIUM QUALITY before/after split-screen comparison for luxury hair extensions, exactly matching high-end salon advertisement photography style.\n\nCRITICAL VISUAL REQUIREMENTS:\n- Canvas split: EXACTLY 50/50 vertical split with subtle white or gradient divider\n- Resolution: High-definition, crisp, professional quality\n- Color grading: Warm, luxurious tones with perfect skin smoothing\n- Background: Soft bokeh effect, elegant neutral interior (beige/cream tones)\n\nBEFORE SIDE (LEFT):\n- Text overlay: \"BEFORE\" in elegant serif font (60pt, positioned at top-left corner)\n- Hair appearance: Flat, thin, shoulder-length, lacking volume\n- Hair texture: Straight, lifeless, no shine\n- Expression: Neutral or slightly concerned\n- Pose: Simple, straight-on or slight angle\n- Hair color: Natural brown/dark tones from influencer image\n\nAFTER SIDE (RIGHT):\n- Text overlay: \"AFTER\" in matching serif font (60pt, positioned at top-right corner)\n- Hair appearance: DRAMATICALLY transformed with luxurious extensions from product image\n- Hair texture: Voluminous waves, glossy shine, bouncy movement\n- Hair length: Significantly longer (at least 8-10 inches added)\n- Expression: Radiant smile, confident and happy\n- Pose: ${poses[poseVariation]}\n- Hair color: Seamlessly blended with natural color but fuller\n\nBOTTOM OVERLAY BAR (CRITICAL):\n- Create a semi-transparent golden/beige overlay bar at the bottom (15% of image height)\n- Center the following bilingual text in the overlay:\n  - Line 1: \"${selectedTagline.english}\" in elegant serif font (white/cream color)\n  - Line 2: \"${selectedTagline.urdu}\" in Noto Nastaliq Urdu or similar professional Urdu font\n  - Ensure Urdu text is properly rendered RIGHT-TO-LEFT with correct letter joining\n  - Add subtle drop shadow for text legibility\n\nSTYLING SPECIFICATIONS:\n- Match the exact aesthetic of professional hair extension brands (like Bellami, Luxy Hair)\n- Use the influencer's facial features, skin tone from image 2\n- Apply professional beauty retouching (skin smoothing, eye brightening)\n- Ensure dramatic but believable transformation\n- Lighting: Soft, flattering, with catchlights in eyes\n- Overall mood: Aspirational, luxurious, confidence-boosting\n\nBRAND WATERMARK:\n- Small \"ZEN\" logo or text in corner (optional, subtle)\n\nOutput a single, cohesive before/after comparison image with professional finish.`;\n\n} else {\n  // Lifestyle photo prompt - ENHANCED VERSION\n  const angleVariation = Math.floor(runIndex / 2) % 6;\n  const taglineIndex = Math.floor(runIndex / 2) % 8;\n  \n  const taglines = [\n    { english: 'Effortless Glamour, Instantly', urdu: 'فوری طور پر آسان گلیمر' },\n    { english: 'Your Best Hair Every Day', urdu: 'ہر دن آپ کے بہترین بال' },\n    { english: 'Length, Volume, Confidence', urdu: 'لمبائی، والیوم، اعتماد' },\n    { english: 'Transform in Seconds', urdu: 'سیکنڈوں میں تبدیلی' },\n    { english: 'Luxury Hair Made Easy', urdu: 'آسانی سے لگژری بال' },\n    { english: 'Be Unstoppable', urdu: 'رکنے والی نہیں' },\n    { english: 'Hair That Turns Heads', urdu: 'بال جو توجہ کھینچیں' },\n    { english: 'Feel Beautiful, Be Beautiful', urdu: 'خوبصورت محسوس کریں، خوبصورت بنیں' }\n  ];\n  \n  const scenarios = [\n    'professional woman in power suit at modern office building, hair in sleek high ponytail',\n    'elegant evening look with hair in Hollywood waves, luxury hotel or restaurant setting',\n    'casual chic in designer outfit, hair flowing naturally, upscale shopping district',\n    'business meeting ready, hair in polished low bun with face-framing pieces',\n    'social media worthy shot, hair in voluminous curls, trendy cafe or rooftop',\n    'confident stride in urban setting, hair flowing dramatically with movement'\n  ];\n  \n  const selectedTagline = taglines[taglineIndex];\n  \n  promptText = `Create a LUXURY LIFESTYLE photograph showcasing premium hair extensions, matching the quality of high-end beauty campaigns (think L'Oréal, Pantene premium lines).\n\nVISUAL EXCELLENCE REQUIREMENTS:\n- Photography style: High-fashion editorial, magazine-quality\n- Resolution: Crystal clear, professional photography\n- Color palette: Warm, luxurious tones with rich contrast\n- Composition: Rule of thirds, dynamic but elegant\n\nMODEL & HAIR SPECIFICATIONS:\n- Use facial features and skin tone from influencer image (image 2)\n- Hair MUST incorporate the exact style, color, and texture from product image (image 1)\n- Hair appearance: Impossibly gorgeous, glossy, voluminous, flowing\n- Hair length: Dramatic length that catches attention\n- Hair movement: Natural flow suggesting softness and quality\n- Shine level: High-gloss, healthy, luxurious finish\n\nSCENARIO: ${scenarios[angleVariation]}\n\nPROFESSIONAL STYLING:\n- Makeup: Flawless, glowing skin, defined eyes, nude-pink lips\n- Outfit: Chic, modern, color-coordinated with setting\n- Accessories: Minimal, elegant (small earrings, delicate jewelry)\n- Expression: Confident, approachable, aspirational\n\nTEXT OVERLAY DESIGN (CRITICAL):\nCreate an elegant text overlay system:\n\nOPTION A - Centered Overlay (40% of images):\n- Position: Center of image\n- Background: Subtle blur or semi-transparent white/gold gradient behind text\n- Line 1: \"${selectedTagline.english}\"\n- Font: Elegant serif (Playfair Display or similar), 48-56pt\n- Line 2: \"${selectedTagline.urdu}\"\n- Urdu Font: MUST use proper Urdu typography (Jameel Noori Nastaleeq or Noto Nastaliq Urdu)\n- Color: White or soft gold with subtle shadow\n\nOPTION B - Bottom Bar (60% of images):\n- Create premium overlay bar at bottom (like the reference images)\n- Height: 12-15% of image\n- Background: Semi-transparent gold/beige gradient\n- Text centered in bar with same bilingual format as above\n\nURDU TEXT REQUIREMENTS (ABSOLUTELY CRITICAL):\n- Font MUST support proper Urdu script rendering\n- Characters MUST connect properly (نستعلیق style preferred)\n- Direction MUST be right-to-left\n- Diacritical marks (اعراب) must be properly positioned\n- If any character appears disconnected or box-like, the image is unusable\n\nBRAND IDENTITY:\n- Subtle \"ZEN HAIR EXTENSIONS\" watermark in corner\n- Instagram-ready square format consideration\n- Premium, aspirational mood throughout\n\nTECHNICAL POLISH:\n- Apply professional beauty retouching\n- Enhance eyes with subtle brightening\n- Ensure skin looks flawless but natural\n- Color grade for warm, inviting tones\n- Add subtle lens flare or bokeh for luxury feel\n\nOutput a single lifestyle image that would fit perfectly in a premium beauty brand's social media or print campaign.`;\n}\n\n// Build the request body with enhanced parameters\nconst requestBody = {\n  contents: [\n    {\n      parts: [\n        {\n          text: promptText\n        },\n        {\n          inline_data: {\n            mime_type: \"image/png\",\n            data: productImage\n          }\n        },\n        {\n          inline_data: {\n            mime_type: \"image/jpeg\",\n            data: influencerImage\n          }\n        }\n      ]\n    }\n  ],\n  generationConfig: {\n    temperature: 0.4,  // Lower for more consistent results\n    topK: 40,\n    topP: 0.95,\n    maxOutputTokens: 8192\n  }\n};\n\nreturn {\n  json: {\n    requestBody: JSON.stringify(requestBody)\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        208
+      ],
+      "id": "b0cb884b-5a6a-4faf-8b61-3722aba114a0",
+      "name": "Build Prompt"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "k52ILGJ2xKczmi5H",
+          "mode": "list",
+          "cachedResultName": "My workflow 108"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "product_image": "={{ $json.data }}",
+            "product_name": "={{ $('Download Product Image').item.json.name }}"
+          },
+          "matchingColumns": [
+            "product_image"
+          ],
+          "schema": [
+            {
+              "id": "product_image",
+              "displayName": "product_image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        976,
+        16
+      ],
+      "id": "7814cbb5-2f9a-4f44-aca6-b7582d8fed16",
+      "name": "Call 'My workflow 108'"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        592,
+        16
+      ],
+      "id": "02079650-3fd0-433a-bcd6-6a5d9109b960",
+      "name": "Download Product Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        368,
+        240
+      ],
+      "id": "bc638e28-12e6-4840-8851-96d4d7c00b8a",
+      "name": "Download Influencer Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "list_influencer_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "influencer_image_to_base_64": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_image": {
+      "main": [
+        [
+          {
+            "node": "set_result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_image": {
+      "main": [
+        [
+          {
+            "node": "upload_image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload_image": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_result": {
+      "main": [
+        [
+          {
+            "node": "get_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List_Product_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Product": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download Product Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "List_Product_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "list_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download Influencer Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "generate_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "product_image_to_base64": {
+      "main": [
+        [
+          {
+            "node": "Call 'My workflow 108'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'My workflow 108'": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Product Image": {
+      "main": [
+        [
+          {
+            "node": "product_image_to_base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Influencer Image": {
+      "main": [
+        [
+          {
+            "node": "influencer_image_to_base_64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "cad39c0a-11db-45a2-b3dd-b2913211f29e",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-21T07:38:57.584Z",
+      "updatedAt": "2025-10-21T07:38:57.584Z",
+      "role": "workflow:owner",
+      "workflowId": "k52ILGJ2xKczmi5H",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
