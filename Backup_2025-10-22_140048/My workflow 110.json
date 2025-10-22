@@ -1,0 +1,359 @@
+{
+  "createdAt": "2025-10-22T07:39:36.578Z",
+  "updatedAt": "2025-10-22T07:40:35.000Z",
+  "id": "ir8343NbClGjgOUD",
+  "name": "My workflow 110",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "db6880d1-6c8b-4f8e-b612-370445d83a5e",
+      "name": "Schedule Trigger (02:00 IST)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "profile-update-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ad7e6e78-9ed1-4528-b91b-339e84ae9e85",
+      "name": "Webhook Trigger (Form Submission)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        16,
+        128
+      ],
+      "webhookId": "profile-update-trigger"
+    },
+    {
+      "parameters": {},
+      "id": "f20b0954-6b61-452f-a98f-61bc27cdf1e7",
+      "name": "Merge Triggers",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        224,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery"
+      },
+      "id": "47765afc-45d6-4c13-af06-c2af0fdca822",
+      "name": "Fetch Student Data (Supabase)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        416,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d6178c6f-1f07-4be6-9384-98a47457fc9f",
+      "name": "Split By Student",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        624,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const studentData = $input.item.json;\n\nconst prompt = `You are an AI assistant helping fitness coaches understand their students better.\n\nGenerate a comprehensive student profile based on the following data:\n\n**Student Information:**\n- Name: ${studentData.name}\n- Email: ${studentData.email}\n\n**Medical & Restrictions:**\n${studentData.medical_concerns || 'None reported'}\n${studentData.exercise_restrictions || 'None reported'}\n\n**Goals & Motivation:**\n${studentData.goals || 'Not specified'}\n${studentData.motivation || 'Not specified'}\n\n**Assessment Data:**\n- Strength: ${studentData.strength_assessment || 'Not assessed'}\n- Mobility: ${studentData.mobility_assessment || 'Not assessed'}\n- Flexibility: ${studentData.flexibility_assessment || 'Not assessed'}\n- Posture: ${studentData.posture_notes || 'Not assessed'}\n\n**Coach Feedback:**\n${studentData.coach_feedback || 'No feedback yet'}\n\n**Weekly Summary:**\n${studentData.weekly_summary || 'No summary available'}\n\n**Attendance & Engagement:**\n- History: ${studentData.attendance_history || 'No data'}\n- Engagement Score: ${studentData.engagement_score || 'N/A'}\n\n---\n\nPlease generate a structured JSON profile with the following format:\n\n{\n  \"student_id\": \"${studentData.student_id}\",\n  \"medical_summary\": \"Brief summary of medical concerns and restrictions\",\n  \"goals_summary\": \"Summary of goals and motivation\",\n  \"physical_assessment\": {\n    \"strength\": \"Assessment summary\",\n    \"mobility\": \"Assessment summary\",\n    \"flexibility\": \"Assessment summary\",\n    \"posture\": \"Assessment summary\"\n  },\n  \"progress_notes\": \"Key progress milestones and improvements\",\n  \"coach_insights\": \"Summary of coach feedback and observations\",\n  \"engagement_summary\": \"Attendance patterns and engagement level\",\n  \"key_considerations\": [\"Important point 1\", \"Important point 2\"],\n  \"last_updated\": \"${new Date().toISOString()}\"\n}`;\n\nreturn {\n  json: {\n    student_id: studentData.student_id,\n    prompt: prompt,\n    student_data: studentData\n  }\n};"
+      },
+      "id": "8d5e76d6-55c4-4ed9-b7c3-d6b29244756c",
+      "name": "Prepare LLM Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "20a51fa1-c9a9-4b3a-90d8-69ec6ed7d547",
+      "name": "LLM Summarizer (OpenAI)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        32
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert"
+      },
+      "id": "1048f9b5-f9c1-42e1-9bbc-466e0036ff83",
+      "name": "Store Full Profile (Supabase)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.success }}",
+              "value2": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "48301247-defc-4cad-be9b-ac6c653b2b6d",
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $workflow('WF-2: Short Profile Generator').id }}",
+        "options": {}
+      },
+      "id": "841f78ca-9ded-4f8f-aa61-0245f1cdc060",
+      "name": "Trigger WF-2",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const itemData = $input.item.json;\n\nconst logEntry = {\n  workflow: 'WF-1: Full Profile Builder',\n  student_id: itemData.student_id,\n  status: 'completed',\n  timestamp: new Date().toISOString(),\n  trigger_type: itemData.trigger_type || 'scheduled'\n};\n\nreturn { json: logEntry };"
+      },
+      "id": "c1ae7409-a024-4221-a169-fd269e8b32c6",
+      "name": "Log Completion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert"
+      },
+      "id": "d5066711-0c1f-41d6-9df1-8ab3deccba6e",
+      "name": "Store Log (Supabase)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Profile generated successfully', student_id: $json.student_id } }}",
+        "options": {}
+      },
+      "id": "dbd4de9d-1aa2-4cfd-9867-5bbadc68e7eb",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorData = $input.item.json;\n\nconst errorLog = {\n  workflow: 'WF-1: Full Profile Builder',\n  student_id: errorData.student_id || 'unknown',\n  status: 'failed',\n  error_message: errorData.error || 'Unknown error',\n  timestamp: new Date().toISOString()\n};\n\nreturn { json: errorLog };"
+      },
+      "id": "b204a2ab-9e1f-443c-94c9-3935bda7d2ed",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        128
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (02:00 IST)": {
+      "main": [
+        [
+          {
+            "node": "Merge Triggers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger (Form Submission)": {
+      "main": [
+        [
+          {
+            "node": "Merge Triggers",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Triggers": {
+      "main": [
+        [
+          {
+            "node": "Fetch Student Data (Supabase)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Student Data (Supabase)": {
+      "main": [
+        [
+          {
+            "node": "Split By Student",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split By Student": {
+      "main": [
+        [
+          {
+            "node": "Prepare LLM Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Full Profile (Supabase)": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Trigger WF-2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger WF-2": {
+      "main": [
+        [
+          {
+            "node": "Log Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Completion": {
+      "main": [
+        [
+          {
+            "node": "Store Log (Supabase)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Log (Supabase)": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "e139d833-a795-46d9-9821-02964c790c87",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-22T07:39:36.584Z",
+      "updatedAt": "2025-10-22T07:39:36.584Z",
+      "role": "workflow:owner",
+      "workflowId": "ir8343NbClGjgOUD",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
