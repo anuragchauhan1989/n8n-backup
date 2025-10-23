@@ -1,0 +1,28 @@
+{
+  "createdAt": "2025-10-17T10:36:25.625Z",
+  "updatedAt": "2025-10-17T13:25:05.000Z",
+  "id": "8jJQG7hIa6yR50nI",
+  "name": "My workflow 41check",
+  "active": false,
+  "isArchived": true,
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "8fde3413-2155-4ca3-98fa-14146303aeb0",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-17T10:36:25.627Z",
+      "updatedAt": "2025-10-17T10:36:25.627Z",
+      "role": "workflow:owner",
+      "workflowId": "8jJQG7hIa6yR50nI",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
