@@ -1,0 +1,507 @@
+{
+  "createdAt": "2025-10-17T09:03:31.403Z",
+  "updatedAt": "2025-10-17T10:33:44.931Z",
+  "id": "Rg2UAsU3C8qfkyKW",
+  "name": "Batch Product-Influencer Image Generator_back up",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "3aba9a9e-e94d-48ed-bb93-4a721270a91d",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        -400,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa",
+            "mode": "list",
+            "cachedResultName": "ZenshopInfluencer",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa"
+          }
+        },
+        "options": {}
+      },
+      "id": "35ae247d-94b7-43f6-bf03-ab88e4235f89",
+      "name": "List Influencer Images",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        -176,
+        280
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3",
+            "mode": "list",
+            "cachedResultName": "ZenshopProd",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3"
+          }
+        },
+        "options": {}
+      },
+      "id": "115ab941-204d-4883-bb68-a6c90f2acdf6",
+      "name": "List Product Images",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        -176,
+        472
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "merge-all-combinations",
+      "name": "Create All Combinations",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        48,
+        400
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "iterate-combinations",
+      "name": "Process Each Combination",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        272,
+        400
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {}
+      },
+      "id": "download-influencer",
+      "name": "Download Influencer Image",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        496,
+        208
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id_1 }}"
+        },
+        "options": {}
+      },
+      "id": "download-product",
+      "name": "Download Product Image",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        496,
+        400
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "data",
+        "destinationKey": "data",
+        "options": {}
+      },
+      "id": "influencer-base64",
+      "name": "Influencer to Base64",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        720,
+        208
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "data",
+        "destinationKey": "data",
+        "options": {}
+      },
+      "id": "product-base64",
+      "name": "Product to Base64",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        720,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      { \"text\": \"Create a realistic lifestyle photo showcasing the hair product from image 1. Generate a scene where someone with beautiful, long, flowing hair similar in style and color to the hair extensions shown in image 1 is photographed in a casual, relatable setting like outdoors, at home, or in an everyday location. Use the person's appearance from image 2 as reference for facial features and style. They should look confident and happy, with the hair clearly visible and flowing naturally. Use angle variation {{ $runIndex % 5 }}: 0=front view facing camera with hair framing the face, 1=side profile showing hair length and volume, 2=back view showcasing the full length and texture, 3=three-quarter angle showing both face and hair flow, 4=dynamic pose with hair in motion or being touched naturally. The photo should feel authentic like a friend took it, not overly professional. The lighting should be natural and flattering, emphasizing the hair's texture, shine, and length. Only return the final generated image.\" },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/png\",\n          \"data\": \"{{ $node['Product to Base64'].json.data }}\"\n        }\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/jpeg\",\n          \"data\": \"{{ $node['Influencer to Base64'].json.data }}\"\n        }\n      }\n    ]\n  }],\n  \"generationConfig\": {\n    \"temperature\": 0.4,\n    \"topK\": 32,\n    \"topP\": 1,\n    \"maxOutputTokens\": 4096\n  }\n}",
+        "options": {}
+      },
+      "id": "e4dab41c-881e-4833-8106-eb5f502fee45",
+      "name": "Generate Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1168,
+        304
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cAWTpPjxWun8tUIM",
+          "name": "Header Auth account - google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "image_result",
+              "name": "image_result",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}",
+              "type": "string"
+            },
+            {
+              "id": "product_name",
+              "name": "product_name",
+              "value": "={{ $('Download Product Image').json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "influencer_name",
+              "name": "influencer_name",
+              "value": "={{ $('Download Influencer Image').json.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ba2c446a-6fb0-4f1c-9b43-d0e08423d1f8",
+      "name": "Set Result",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1392,
+        304
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "binaryPropertyName": "data",
+        "options": {}
+      },
+      "id": "d8c504df-3838-4de2-9718-f59a9226b47f",
+      "name": "Convert to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "position": [
+        1616,
+        304
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "name": {
+          "__rl": true,
+          "value": "=Product_{{ $('Set Result').item.json.product_name.split('.')[0] }}_Influencer_{{ $('Set Result').item.json.influencer_name.split('.')[0] }}_{{ $now.format('yyyy-MM-dd_HH-mm-ss') }}",
+          "mode": "expression"
+        },
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1",
+          "mode": "list",
+          "cachedResultName": "Zenshop Ad creative",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1"
+        },
+        "options": {}
+      },
+      "id": "dc938562-e371-4986-9c6b-3e9966c24d56",
+      "name": "Upload Result",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        1840,
+        376
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "merge-images",
+      "name": "Merge Base64 Images",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        944,
+        304
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "List Influencer Images",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "List Product Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Influencer Images": {
+      "main": [
+        [
+          {
+            "node": "Create All Combinations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Product Images": {
+      "main": [
+        [
+          {
+            "node": "Create All Combinations",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create All Combinations": {
+      "main": [
+        [
+          {
+            "node": "Process Each Combination",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Each Combination": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download Influencer Image",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download Product Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Influencer Image": {
+      "main": [
+        [
+          {
+            "node": "Influencer to Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Product Image": {
+      "main": [
+        [
+          {
+            "node": "Product to Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Set Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Result": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Upload Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Result": {
+      "main": [
+        [
+          {
+            "node": "Process Each Combination",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Influencer to Base64": {
+      "main": [
+        [
+          {
+            "node": "Merge Base64 Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product to Base64": {
+      "main": [
+        [
+          {
+            "node": "Merge Base64 Images",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Base64 Images": {
+      "main": [
+        [
+          {
+            "node": "Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "00a11c8e-c2fe-4068-a6a3-9bf646e26807",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-17T09:03:31.410Z",
+      "updatedAt": "2025-10-17T09:03:31.410Z",
+      "role": "workflow:owner",
+      "workflowId": "Rg2UAsU3C8qfkyKW",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
