@@ -1,0 +1,482 @@
+{
+  "createdAt": "2025-10-01T13:56:45.567Z",
+  "updatedAt": "2025-10-07T10:36:54.000Z",
+  "id": "OZlK5rTc651WEsY1",
+  "name": "Lead Enrichment workflow_ak",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json['Account Name'] }}"
+            },
+            {
+              "name": "gl",
+              "value": "={{ $json.Country === 'US - United States of America' ? 'us' : 'uk' }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.City && $json.Country ? $json.City + ', ' + $json.Country : $json.Country }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "94c3cc22-da7f-47c1-a97a-a1c6abf8acee",
+      "name": "1. Serper - Search Company",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -496,
+        96
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = items[0].json;\n\n// Initialize output fields\nlet company_name = \"\";\nlet website = \"\";\nlet domain = \"\";\nlet description = \"\";\nlet industry = \"\";\nlet linkedin_url = \"\";\nlet linkedin_company_id = \"\";\n\n// Helper function to extract clean domain from URL\nfunction getDomain(url) {\n  if (!url) return null;\n  \n  try {\n    const fullUrl = url.startsWith('http') ? url : 'https://' + url;\n    const urlObj = new URL(fullUrl);\n    return urlObj.hostname.replace(/^(www\\.|m\\.)/, '');\n  } catch {\n    const match = url.match(/(?:https?:\\/\\/)?(?:www\\.|m\\.)?([^\\/\\?#]+)/);\n    return match ? match[1] : null;\n  }\n}\n\n// List of domains to skip\nconst skipDomains = ['linkedin.com', 'facebook.com', 'twitter.com', 'instagram.com', \n                     'wikipedia.org', 'youtube.com', 'crunchbase.com', 'glassdoor.com'];\n\n// Check if we have organic search results\nif (input.organic && Array.isArray(input.organic)) {\n  \n  // 1. Extract LinkedIn URL\n  const linkedinResult = input.organic.find(r => \n    r.link && r.link.includes(\"linkedin.com/company/\")\n  );\n  \n  if (linkedinResult) {\n    linkedin_url = linkedinResult.link;\n    try {\n      const urlParts = linkedin_url.split(\"linkedin.com/company/\");\n      if (urlParts[1]) {\n        linkedin_company_id = urlParts[1].split('/')[0].split('?')[0];\n      }\n    } catch (e) {\n      linkedin_company_id = \"\";\n    }\n  }\n  \n  // 2. Extract description from Wikipedia if available\n  const wikiResult = input.organic.find(r => \n    r.link && r.link.includes(\"wikipedia.org\")\n  );\n  \n  if (wikiResult && wikiResult.snippet) {\n    description = wikiResult.snippet;\n  }\n  \n  // 3. Extract company website and domain (FIXED)\n  // First check knowledge graph\n  if (input.knowledgeGraph?.website) {\n    website = input.knowledgeGraph.website;\n    domain = getDomain(website);\n  }\n  \n  // If not found in knowledge graph, check organic results\n  if (!domain) {\n    const websiteResult = input.organic.find(r => {\n      if (!r.link) return false;\n      const extractedDomain = getDomain(r.link);\n      return extractedDomain && !skipDomains.some(skip => extractedDomain.includes(skip));\n    });\n    \n    if (websiteResult) {\n      website = websiteResult.link;\n      domain = getDomain(website);\n    }\n  }\n  \n  // 4. Extract company name\n  if (input.knowledgeGraph && input.knowledgeGraph.title) {\n    company_name = input.knowledgeGraph.title;\n  } else if (input.organic[0] && input.organic[0].title) {\n    company_name = input.organic[0].title\n      .replace(/ - Home$/, '')\n      .replace(/ - Official Site$/, '')\n      .replace(/ - Wikipedia$/, '')\n      .replace(/ \\| LinkedIn$/, '')\n      .trim();\n  }\n  \n  // 5. Extract industry\n  if (input.knowledgeGraph && input.knowledgeGraph.type) {\n    industry = input.knowledgeGraph.type;\n  }\n  \n  // 6. Description fallback\n  if (!description && input.organic[0] && input.organic[0].snippet) {\n    description = input.organic[0].snippet;\n  }\n  \n  if (!description && input.knowledgeGraph && input.knowledgeGraph.description) {\n    description = input.knowledgeGraph.description;\n  }\n}\n\nreturn [{\n  json: {\n    company_name: company_name || \"Not found\",\n    website: website || \"Not found\",\n    domain: domain || \"Not found\",\n    description: description || \"Not found\",\n    industry: industry || \"Not found\",\n    linkedin_url: linkedin_url || \"Not found\",\n    linkedin_company_id: linkedin_company_id || \"Not found\"\n  }\n}];"
+      },
+      "id": "1a4db6e9-c7fa-4e66-bf79-d445089e18de",
+      "name": "2. Extract Company Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.domain }}",
+              "operation": "notEqual",
+              "value2": "Not found"
+            }
+          ]
+        }
+      },
+      "id": "c8b1eb1a-19ee-4e68-84ed-cca2106c0526",
+      "name": "3. Check if Domain Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/v1/organizations/enrich",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": ".G6ZLNWxopo9qggWpXeyDtw"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"domain\": \"{{ $json.domain }}\"\n}",
+        "options": {}
+      },
+      "id": "da4720f5-3967-4f00-8f0e-bb00d784327c",
+      "name": "4a. Apollo - Enrich Company",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        176,
+        0
+      ],
+      "notes": "Get Apollo organization ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/v1/mixed_people/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"organization_ids\": [\"{{ $json.organization.id }}\"],\n  \"person_titles\": [\"CEO\", \"Chief Executive Officer\", \"Founder\", \"Co-Founder\", \"Founder & CEO\", \"Co-founder & CEO\"],\n  \"page\": 1,\n  \"per_page\": 3\n}",
+        "options": {}
+      },
+      "id": "7846a84d-a57a-4a10-a0a3-4f210fdf6e3c",
+      "name": "5a. Apollo - Search CEO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        400,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "notes": "Find CEO by title"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/v1/people/match",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"first_name\": \"{{ $json.people[0].first_name }}\",\n  \"last_name\": \"{{ $json.people[0].last_name }}\",\n  \"organization_name\": \"{{ $json.people[0].organization_name }}\",\n  \"reveal_personal_emails\": true,\n  \"reveal_phone_number\": false\n}",
+        "options": {}
+      },
+      "id": "733e714a-4d57-4fe3-834f-2b2f0c37764a",
+      "name": "6a. Apollo - Get CEO Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        624,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "notes": "Get full CEO profile with email"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/memo23~linkedin-company-people-scraper/runs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"startUrls\": [\"{{ $('2. Extract Company Details').item.json.linkedin_url }}\"],\n  \"maxResults\": 10,\n  \"cookie\": \"YOUR_LINKEDIN_COOKIES\"\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "3a784af6-711b-4503-820e-7b26c53e8ae9",
+      "name": "4b. Apify - Scrape LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        400,
+        192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "notes": "Fallback: Scrape LinkedIn if Apollo fails"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Wait for Apify actor to complete and get results\nconst runData = items[0].json;\nconst runId = runData.data.id;\nconst token = \"YOUR_APIFY_TOKEN\";\n\n// Wait for run to complete (polling)\nlet status = 'RUNNING';\nlet attempts = 0;\nconst maxAttempts = 30;\n\nwhile (status === 'RUNNING' && attempts < maxAttempts) {\n  await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds\n  \n  const statusResponse = await $httpRequest({\n    method: 'GET',\n    url: `https://api.apify.com/v2/actor-runs/${runId}?token=${token}`,\n    headers: {\n      'Content-Type': 'application/json'\n    }\n  });\n  \n  status = statusResponse.data.status;\n  attempts++;\n}\n\n// Get dataset results\nconst datasetId = runData.data.defaultDatasetId;\nconst resultsResponse = await $httpRequest({\n  method: 'GET',\n  url: `https://api.apify.com/v2/datasets/${datasetId}/items?token=${token}`,\n  headers: {\n    'Content-Type': 'application/json'\n  }\n});\n\nconst employees = resultsResponse;\n\n// Find CEO/Founder\nconst ceo = employees.find(emp => \n  emp.position && (\n    emp.position.toLowerCase().includes('ceo') ||\n    emp.position.toLowerCase().includes('chief executive') ||\n    emp.position.toLowerCase().includes('founder')\n  )\n);\n\nif (ceo) {\n  return [{\n    json: {\n      ceo_name: ceo.name || 'Not found',\n      ceo_title: ceo.position || 'Not found',\n      ceo_linkedin_url: ceo.profileUrl || 'Not found',\n      ceo_email: 'Not available from LinkedIn scraper',\n      ceo_photo_url: ceo.image || '',\n      data_source: 'Apify LinkedIn Scraper'\n    }\n  }];\n} else {\n  return [{\n    json: {\n      ceo_name: 'Not found',\n      ceo_email: 'Not found',\n      ceo_linkedin_url: 'Not found',\n      error: 'No CEO found in LinkedIn data',\n      data_source: 'Apify LinkedIn Scraper'\n    }\n  }];\n}"
+      },
+      "id": "b244d02a-e583-426b-be99-8706e54fb8ed",
+      "name": "5b. Wait & Extract CEO from LinkedIn",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        192
+      ],
+      "notes": "Wait for Apify to finish and extract CEO"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node receives data from either Apollo or Apify path\nconst inputData = items[0].json;\n\n// Check which path we came from and format accordingly\nif (inputData.person) {\n  // Apollo path\n  const person = inputData.person;\n  return [{\n    json: {\n      ceo_name: person.name || `${person.first_name} ${person.last_name}`,\n      ceo_first_name: person.first_name || \"\",\n      ceo_last_name: person.last_name || \"\",\n      ceo_title: person.title || \"\",\n      ceo_email: person.email || \"Not found\",\n      ceo_linkedin_url: person.linkedin_url || \"Not found\",\n      ceo_photo_url: person.photo_url || \"\",\n      company_name: person.organization_name || \"\",\n      ceo_headline: person.headline || \"\",\n      data_source: \"Apollo.io\",\n      email_status: person.email_status || \"\"\n    }\n  }];\n} else {\n  // Apify path or already formatted\n  return [{\n    json: inputData\n  }];\n}"
+      },
+      "id": "446a6dc3-7932-4acf-bfab-fb1f88365293",
+      "name": "7. Format CEO Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        96
+      ],
+      "notes": "Standardize output format"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge company data with CEO data\nconst companyData = $('2. Extract Company Details').item.json;\nconst ceoData = items[0].json;\n\nreturn [{\n  json: {\n    // Company information\n    company_name: companyData.company_name,\n    company_website: companyData.website,\n    company_domain: companyData.domain,\n    company_description: companyData.description,\n    company_industry: companyData.industry,\n    company_linkedin: companyData.linkedin_url,\n    \n    // CEO information\n    ceo_name: ceoData.ceo_name,\n    ceo_first_name: ceoData.ceo_first_name || \"\",\n    ceo_last_name: ceoData.ceo_last_name || \"\",\n    ceo_title: ceoData.ceo_title,\n    ceo_email: ceoData.ceo_email,\n    ceo_linkedin_url: ceoData.ceo_linkedin_url,\n    ceo_photo_url: ceoData.ceo_photo_url || \"\",\n    ceo_headline: ceoData.ceo_headline || \"\",\n    \n    // Metadata\n    data_source: ceoData.data_source,\n    email_status: ceoData.email_status || \"\",\n    enrichment_date: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "330eae65-aabc-47ac-9e1b-526545e37680",
+      "name": "8. Merge Company + CEO Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        96
+      ],
+      "notes": "Combine all data into final output"
+    },
+    {
+      "parameters": {},
+      "id": "a92e33ed-dbf4-40b4-a15f-499eaa607049",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Accounts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "d8295299-983b-45e9-96ba-6f8e57a2bf70",
+      "name": "1. Read Companies from Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -944,
+        96
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.process }}",
+                    "rightValue": "NA",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "390273c7-752d-4052-bfc7-62977c7a3656"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -720,
+        96
+      ],
+      "id": "36941370-eb73-40b0-ba78-af0e0bc3b2f8",
+      "name": "Switch"
+    }
+  ],
+  "connections": {
+    "1. Serper - Search Company": {
+      "main": [
+        [
+          {
+            "node": "2. Extract Company Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Extract Company Details": {
+      "main": [
+        [
+          {
+            "node": "3. Check if Domain Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Check if Domain Found": {
+      "main": [
+        [
+          {
+            "node": "4a. Apollo - Enrich Company",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4b. Apify - Scrape LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4a. Apollo - Enrich Company": {
+      "main": [
+        [
+          {
+            "node": "5a. Apollo - Search CEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5a. Apollo - Search CEO": {
+      "main": [
+        [
+          {
+            "node": "6a. Apollo - Get CEO Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6a. Apollo - Get CEO Details": {
+      "main": [
+        [
+          {
+            "node": "7. Format CEO Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4b. Apify - Scrape LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "5b. Wait & Extract CEO from LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5b. Wait & Extract CEO from LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "7. Format CEO Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Format CEO Data": {
+      "main": [
+        [
+          {
+            "node": "8. Merge Company + CEO Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "1. Read Companies from Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Read Companies from Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "1. Serper - Search Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "c863c96a-5ba5-4dce-a3a8-bb10fa17b74d",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-01T13:56:45.573Z",
+      "updatedAt": "2025-10-01T13:56:45.573Z",
+      "role": "workflow:owner",
+      "workflowId": "OZlK5rTc651WEsY1",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
