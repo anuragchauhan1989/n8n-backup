@@ -1,0 +1,577 @@
+{
+  "createdAt": "2025-10-10T10:55:20.467Z",
+  "updatedAt": "2025-10-10T11:32:21.000Z",
+  "id": "oLihWCRq71jFfr4V",
+  "name": "My workflow 29",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hamper-order",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "bc9736d4-f541-4d24-a2a5-e707494cfcc5",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1104,
+        324
+      ],
+      "webhookId": "fa89c5c7-3227-40b5-989c-9455370ad4bf"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Conversation state manager\nconst body = $input.item.json.body || $input.item.json;\nconst userMessage = body.message || '';\nconst currentStep = body.step || 0;\nconst sessionData = body.sessionData || {};\n\nconst questions = [\n  { id: 0, field: 'budget', question: 'What is your Budget? (e.g., 1000/-)', type: 'number' },\n  { id: 1, field: 'quantity', question: 'What is your quantity? (e.g., 100pcs)', type: 'number' },\n  { id: 2, field: 'deadline', question: 'When do you need it? (e.g., 10th Oct)', type: 'text' },\n  { id: 3, field: 'hasReference', question: 'Do you have any reference image? (yes/no)', type: 'boolean' },\n  { id: 4, field: 'itemPreference', question: 'What items would you like in the hamper? (e.g., 4 dry fruits, diya, candle)', type: 'text' },\n  { id: 5, field: 'packagingPreference', question: 'Do you have any packaging preference? (e.g., box type)', type: 'text' }\n];\n\nconst currentQuestion = questions[currentStep];\n\nif (currentStep > 0 && userMessage) {\n  const prevQuestion = questions[currentStep - 1];\n  sessionData[prevQuestion.field] = userMessage;\n}\n\n// Bulk discount check\nlet specialMessage = null;\nif (currentStep === 1 && userMessage) {\n  const qty = parseInt(userMessage.replace(/[^0-9]/g, ''));\n  if (qty >= 200) {\n    specialMessage = '🎉 Great news! We have a special offer for 200+ pieces with 10% discount!';\n  }\n}\n\nreturn {\n  json: {\n    currentStep: currentStep,\n    nextStep: currentStep + 1,\n    userMessage: userMessage,\n    sessionData: sessionData,\n    currentQuestion: currentQuestion,\n    specialMessage: specialMessage,\n    isComplete: currentStep >= questions.length,\n    sessionId: body.sessionId || $execution.id,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "ac6bb5a5-a9a3-4553-bcde-f2d00127f25d",
+      "name": "Conversation Manager",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        324
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "step-check",
+              "leftValue": "={{ $json.currentStep }}",
+              "rightValue": 4,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "20036c33-9bd4-4d3b-b414-05eee753a27b",
+      "name": "Check Item Preference Step",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        324
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "name",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        }
+      },
+      "id": "4ff568c5-5894-4ee0-b30f-0d0b1ab5773e",
+      "name": "Fetch Product Catalog with Sizes",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -432,
+        104
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform products with SIZE information for embeddings\nconst products = $input.all();\n\nconst documents = products.map(product => {\n  const data = product.json;\n  \n  // Create rich text including SIZE dimensions\n  const text = `\nProduct Name: ${data.ItemName || data.Name || 'Unknown'}\nCategory: ${data.Category || 'General'}\nPrice: Rs ${data.Price || 0}\nDescription: ${data.Description || ''}\nSize: ${data.Length || 0}cm x ${data.Width || 0}cm x ${data.Height || 0}cm\nVolume: ${data.Volume || 0} cubic cm\nWeight: ${data.Weight || 0}g\nOccasion: ${data.Occasion || 'Any'}\nTags: ${data.Tags || ''}\nAvailable: ${data.Available || 'Yes'}\n`.trim();\n\n  return {\n    json: {\n      pageContent: text,\n      metadata: {\n        name: data.ItemName || data.Name,\n        category: data.Category,\n        price: parseFloat(data.Price) || 0,\n        length: parseFloat(data.Length) || 0,\n        width: parseFloat(data.Width) || 0,\n        height: parseFloat(data.Height) || 0,\n        volume: parseFloat(data.Volume) || 0,\n        weight: parseFloat(data.Weight) || 0,\n        available: (data.Available || 'Yes') === 'Yes'\n      }\n    }\n  };\n});\n\nreturn documents;"
+      },
+      "id": "9e037b70-e020-4918-91bf-701b88a0e66a",
+      "name": "Prepare Product Data with Sizes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        104
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "87f6444e-b253-45d6-a8a3-ede2e94e7d69",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        88,
+        224
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0d1e93ae-1dc6-4120-8cf2-aab9938cd1a9",
+      "name": "Vector Store Insert",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemoryInsert",
+      "typeVersion": 1,
+      "position": [
+        16,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "41ec9024-258f-462e-b8fe-653db0e82c75",
+      "name": "Vector Store Retriever",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemoryLoad",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        1144
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "maxTokens": 800,
+          "temperature": 0.3
+        }
+      },
+      "id": "72890e14-f860-47be-9c75-15c927507d83",
+      "name": "GPT Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        88,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert packaging consultant for gift hampers.\n\nCustomer Request: {{ $('Conversation Manager').item.json.sessionData.itemPreference }}\nBudget per piece: Rs {{ $('Conversation Manager').item.json.sessionData.budget }}\n\nBased on the retrieved products WITH THEIR SIZE DIMENSIONS, you must:\n\n1. **Select appropriate products** that match the customer's request\n2. **Calculate total dimensions** needed for all items\n3. **Recommend packaging box size** based on:\n   - Total volume of all items\n   - Add 20% space for cushioning/padding\n   - Standard box sizes: Small (20x15x10cm), Medium (30x20x15cm), Large (40x30x20cm), XL (50x40x25cm)\n\nProvide your response in this format:\n\n**Selected Items:**\n[List each item with its size]\n\n**Size Calculation:**\n- Total volume needed: [X] cubic cm\n- With 20% padding: [Y] cubic cm\n\n**Recommended Box:**\n- Size: [dimensions]\n- Type: [Ratan Jali / Wooden / Eco-Friendly]\n- Price: Rs [amount]\n\n**Total Cost Breakdown:**\n- Items: Rs [amount]\n- Packaging: Rs [amount]\n- Per piece total: Rs [amount]",
+        "options": {}
+      },
+      "id": "551ed5a0-93a8-4fa8-aef5-994103d6779a",
+      "name": "RAG: Product Selection + Size Calculation",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response and extract packaging recommendations\nconst aiResponse = $('RAG: Product Selection + Size Calculation').first().json;\nconst sessionData = $('Conversation Manager').item.json.sessionData;\n\nconst responseText = aiResponse.text || aiResponse.response || '';\n\n// Extract recommended box size using regex\nconst boxSizeMatch = responseText.match(/Size:\\s*([0-9]+)\\s*x\\s*([0-9]+)\\s*x\\s*([0-9]+)/i);\nconst recommendedBox = boxSizeMatch ? {\n  length: parseInt(boxSizeMatch[1]),\n  width: parseInt(boxSizeMatch[2]),\n  height: parseInt(boxSizeMatch[3]),\n  dimensions: `${boxSizeMatch[1]}x${boxSizeMatch[2]}x${boxSizeMatch[3]}cm`\n} : null;\n\n// Extract packaging type\nconst packagingTypes = ['Ratan Jali', 'Wooden', 'Eco-Friendly', 'Luxury'];\nconst packagingType = packagingTypes.find(type => \n  responseText.toLowerCase().includes(type.toLowerCase())\n) || 'Standard Box';\n\nreturn {\n  json: {\n    aiRecommendation: responseText,\n    recommendedBox: recommendedBox,\n    packagingType: packagingType,\n    sessionData: sessionData,\n    step: 4\n  }\n};"
+      },
+      "id": "afcb2dfa-40d0-4aef-9774-cec70b825d02",
+      "name": "Parse Size Recommendations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "complete-check",
+              "leftValue": "={{ $('Conversation Manager').item.json.isComplete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bed61722-a379-4fdd-bb3b-93442694ff0e",
+      "name": "Check Conversation Complete",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        472
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate final quotation with packaging size calculations\nconst sessionData = $('Conversation Manager').item.json.sessionData;\nconst aiData = $('Parse Size Recommendations').item.json;\n\nconst budget = parseInt(sessionData.budget) || 1000;\nconst quantity = parseInt(sessionData.quantity.replace(/[^0-9]/g, '')) || 100;\n\n// Packaging cost based on size\nconst boxSize = aiData.recommendedBox;\nlet packagingCost = 150; // base cost\n\nif (boxSize) {\n  const volume = boxSize.length * boxSize.width * boxSize.height;\n  if (volume > 15000) packagingCost = 250; // Large/XL\n  else if (volume > 9000) packagingCost = 200; // Medium-Large\n  else if (volume > 3000) packagingCost = 150; // Medium\n  else packagingCost = 120; // Small\n}\n\n// Add type premium\nif (aiData.packagingType?.includes('Ratan')) packagingCost += 0;\nelse if (aiData.packagingType?.includes('Wooden')) packagingCost += 50;\nelse if (aiData.packagingType?.includes('Luxury')) packagingCost += 100;\nelse if (aiData.packagingType?.includes('Eco')) packagingCost -= 30;\n\nconst bulkDiscount = quantity >= 200 ? 10 : 0;\nconst itemCost = budget - packagingCost;\nconst subtotal = budget * quantity;\nconst discountAmount = (subtotal * bulkDiscount) / 100;\nconst finalTotal = subtotal - discountAmount;\n\nconst quotation = {\n  quotationId: `QT-${Date.now()}`,\n  timestamp: new Date().toISOString(),\n  customerDetails: {\n    budget: budget,\n    quantity: quantity,\n    deadline: sessionData.deadline,\n    preferences: sessionData.itemPreference\n  },\n  packagingDetails: {\n    recommendedSize: boxSize ? boxSize.dimensions : 'Medium (30x20x15cm)',\n    boxLength: boxSize?.length || 30,\n    boxWidth: boxSize?.width || 20,\n    boxHeight: boxSize?.height || 15,\n    packagingType: aiData.packagingType,\n    packagingCost: packagingCost,\n    sizeJustification: aiData.aiRecommendation\n  },\n  itemsBreakdown: {\n    itemCost: itemCost,\n    aiRecommendedItems: aiData.aiRecommendation\n  },\n  pricing: {\n    pricePerPiece: budget,\n    itemCostPerPiece: itemCost,\n    packagingCostPerPiece: packagingCost,\n    quantity: quantity,\n    subtotal: subtotal,\n    discountPercent: bulkDiscount,\n    discountAmount: discountAmount,\n    finalTotal: finalTotal\n  },\n  specialOffer: bulkDiscount > 0 ? `🎉 ${bulkDiscount}% bulk discount applied!` : null\n};\n\nreturn { json: quotation };"
+      },
+      "id": "30b8728d-ea8b-4c26-a5c0-c9dcc753adf4",
+      "name": "Generate Quotation with Box Size",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "=Create a professional product photograph showing a {{ $('Parse Size Recommendations').item.json.packagingType }} gift box (dimensions: {{ $('Parse Size Recommendations').item.json.recommendedBox?.dimensions || '30x20x15cm' }}) containing {{ $('Conversation Manager').item.json.sessionData.itemPreference }}. Show the box partially open with items visible. Studio lighting, elegant presentation, corporate gifting quality.",
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "24d20636-b694-4d9c-8115-ebce0db23032",
+      "name": "Generate Product Visualization",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "QuotationID": "={{ $('Generate Quotation with Box Size').item.json.quotationId }}",
+            "Timestamp": "={{ $('Generate Quotation with Box Size').item.json.timestamp }}",
+            "Budget": "={{ $('Generate Quotation with Box Size').item.json.customerDetails.budget }}",
+            "Quantity": "={{ $('Generate Quotation with Box Size').item.json.customerDetails.quantity }}",
+            "Deadline": "={{ $('Generate Quotation with Box Size').item.json.customerDetails.deadline }}",
+            "Items": "={{ $('Generate Quotation with Box Size').item.json.customerDetails.preferences }}",
+            "BoxSize": "={{ $('Generate Quotation with Box Size').item.json.packagingDetails.recommendedSize }}",
+            "PackagingType": "={{ $('Generate Quotation with Box Size').item.json.packagingDetails.packagingType }}",
+            "PackagingCost": "={{ $('Generate Quotation with Box Size').item.json.packagingDetails.packagingCost }}",
+            "Subtotal": "={{ $('Generate Quotation with Box Size').item.json.pricing.subtotal }}",
+            "Discount": "={{ $('Generate Quotation with Box Size').item.json.pricing.discountAmount }}",
+            "FinalTotal": "={{ $('Generate Quotation with Box Size').item.json.pricing.finalTotal }}",
+            "Status": "Pending"
+          }
+        },
+        "options": {}
+      },
+      "id": "b090dbcf-3330-4853-9f29-439a3b6ea4f9",
+      "name": "Save Order to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        368,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format final response\nconst quotation = $('Generate Quotation with Box Size').item.json;\nconst imageUrl = $('Generate Product Visualization').first()?.json?.data?.[0]?.url || null;\n\nreturn {\n  json: {\n    success: true,\n    conversationComplete: true,\n    message: '✨ Your custom gift hamper quotation with smart packaging is ready!',\n    quotation: quotation,\n    productVisualization: imageUrl,\n    packagingInsights: {\n      recommendedBoxSize: quotation.packagingDetails.recommendedSize,\n      boxDimensions: `${quotation.packagingDetails.boxLength} x ${quotation.packagingDetails.boxWidth} x ${quotation.packagingDetails.boxHeight} cm`,\n      packagingType: quotation.packagingDetails.packagingType,\n      whyThisSize: 'Calculated based on item dimensions + 20% cushioning space'\n    },\n    nextSteps: [\n      '1. Review quotation and packaging size',\n      '2. Confirm your order',\n      '3. Make payment',\n      '4. Production and delivery by ' + quotation.customerDetails.deadline\n    ]\n  }\n};"
+      },
+      "id": "fb1055d7-f0f3-41a3-8446-daa8e6488072",
+      "name": "Format Final Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format conversation response\nconst convData = $('Conversation Manager').item.json;\nconst aiData = $('Parse Size Recommendations').first()?.json;\n\nlet response = {\n  success: true,\n  conversationComplete: false,\n  currentStep: convData.currentStep,\n  nextStep: convData.nextStep,\n  sessionId: convData.sessionId\n};\n\n// Add AI recommendations if available\nif (aiData && aiData.aiRecommendation) {\n  response.message = aiData.aiRecommendation + '\\n\\n' + (convData.currentQuestion?.question || '');\n  response.packagingRecommendation = {\n    boxSize: aiData.recommendedBox?.dimensions,\n    packagingType: aiData.packagingType\n  };\n} else if (convData.specialMessage) {\n  response.message = convData.specialMessage + '\\n\\n' + convData.currentQuestion.question;\n} else if (convData.currentQuestion) {\n  response.message = convData.currentQuestion.question;\n} else {\n  response.message = 'Processing...';\n}\n\nreturn { json: response };"
+      },
+      "id": "27175f78-7c54-48ff-bfb1-151b110d279e",
+      "name": "Format Conversation Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        692
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "options": {}
+      },
+      "id": "51d750e5-fa39-4ae5-b15c-b129489d1903",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        816,
+        596
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "b419b37d-c992-4fa1-97b5-df127b01a1dc",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        596
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Conversation Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Manager": {
+      "main": [
+        [
+          {
+            "node": "Check Item Preference Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Item Preference Step": {
+      "main": [
+        [
+          {
+            "node": "Fetch Product Catalog with Sizes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Conversation Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Product Catalog with Sizes": {
+      "main": [
+        [
+          {
+            "node": "Prepare Product Data with Sizes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Product Data with Sizes": {
+      "main": [
+        [
+          {
+            "node": "Vector Store Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Vector Store Insert",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG: Product Selection + Size Calculation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Product Selection + Size Calculation": {
+      "main": [
+        [
+          {
+            "node": "Parse Size Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Size Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Format Conversation Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Conversation Complete": {
+      "main": [
+        [
+          {
+            "node": "Generate Quotation with Box Size",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Conversation Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Quotation with Box Size": {
+      "main": [
+        [
+          {
+            "node": "Generate Product Visualization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Product Visualization": {
+      "main": [
+        [
+          {
+            "node": "Save Order to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Order to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Format Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Final Response": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Conversation Response": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "a8a9a232-9b21-4b45-b12c-5c1ef4362a5a",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-10T10:55:20.469Z",
+      "updatedAt": "2025-10-10T10:55:20.469Z",
+      "role": "workflow:owner",
+      "workflowId": "oLihWCRq71jFfr4V",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
