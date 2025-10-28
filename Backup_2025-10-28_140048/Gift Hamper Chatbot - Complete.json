@@ -1,0 +1,433 @@
+{
+  "createdAt": "2025-10-11T11:20:37.141Z",
+  "updatedAt": "2025-10-17T13:28:21.000Z",
+  "id": "UJlA3e3fJ7UhAxQj",
+  "name": "Gift Hamper Chatbot - Complete",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gift-hamper-clean",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9d7f89cf-b97a-4b67-b81e-bfb271baad11",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -816,
+        96
+      ],
+      "typeVersion": 2,
+      "webhookId": "93af559c-789c-426b-9417-440001cc9929"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst userMessage = body.message || '';\nconst step = body.step !== undefined ? body.step : 0;\nconst session = body.sessionData || {};\n\n// ✅ UPDATED: Only 4 questions - removed packaging preference\nconst questions = [\n  { id: 0, field: 'budget', question: 'What is your Budget per piece? (e.g., 1000/-)', type: 'number' },\n  { id: 1, field: 'quantity', question: 'What is your quantity? (e.g., 100pcs). There is 40% off over buying 200 pieces and 35% below 200 pieces', type: 'number' },\n  { id: 2, field: 'deadline', question: 'When do you need it? (e.g., 10th Oct)', type: 'text' },\n  { id: 3, field: 'itemPreference', question: 'Do you have any item preference? (e.g., I need 4 dry fruits in the hamper plus diya and candle)', type: 'text' }\n];\n\nlet currentStep = step;\nlet aiTrigger = null;\n\nif (userMessage && currentStep < questions.length) {\n  session[questions[currentStep].field] = userMessage;\n  currentStep++;\n}\n\nconst currentQuestion = questions[currentStep];\nlet message = currentQuestion?.question || '';\n\n// Show discount message when asking for deadline (step 2)\nif (currentStep === 2 && session.quantity) {\n  const qty = parseInt(session.quantity.toString().replace(/[^0-9]/g, ''));\n  if (qty < 200) {\n    message = '💡 We have a special offer for 200+ pieces with extra 10% discount!\\n\\n' + message;\n  }\n}\n\n// ✅ UPDATED: Trigger AI after itemPreference (step 3 → step 4)\n// This will be the FINAL step with AI response\nif (currentStep === 4 && session.itemPreference) {\n  aiTrigger = 'final_recommendations';\n}\n\nreturn {\n  json: {\n    currentStep,\n    sessionData: session,\n    message,\n    aiTrigger,\n    isComplete: currentStep >= questions.length,\n    sessionId: body.sessionId || $execution.id\n  }\n};"
+      },
+      "id": "07a871d0-4502-468e-8357-586ebe4409a8",
+      "name": "Conversation Manager",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -608,
+        96
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "ai",
+              "leftValue": "={{ $json.aiTrigger }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ca5aca4f-097a-4984-9a80-0e891769614f",
+      "name": "Need AI Processing?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -416,
+        96
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst session = data.sessionData;\n\nlet query = '';\n\nif (data.aiTrigger === 'product_search') {\n  const items = session.itemPreference.toLowerCase();\n  \n  const searchTerms = [];\n  \n  if (items.includes('dry fruit') || items.includes('fruit') || items.includes('nuts')) {\n    searchTerms.push('dry fruits', 'almonds', 'cashew', 'pistachio', 'nuts', 'charkhi', 'anjeer', 'walnut');\n  }\n  if (items.includes('diya')) {\n    searchTerms.push('diya', 'swastic diya', 'lamp');\n  }\n  if (items.includes('candle')) {\n    searchTerms.push('candle', 'mithai candle');\n  }\n  if (items.includes('chocolate')) {\n    searchTerms.push('chocolate', 'ferrero');\n  }\n  if (items.includes('sweet') || items.includes('mithai')) {\n    searchTerms.push('sweet', 'mithai', 'ladoo');\n  }\n  \n  // ✅ UPDATED: Removed dimension-related keywords\n  searchTerms.push('box', 'packaging', 'premium box');\n  \n  // ✅ UPDATED: Removed dimension references from query\n  query = `gift hamper ${searchTerms.join(' ')} ${session.itemPreference} box packaging budget ${session.budget}`;\n\n} else if (data.aiTrigger === 'final_recommendations') {\n  query = `gift hamper ${session.itemPreference} ${session.packagingPreference} box packaging budget ${session.budget}`;\n}\n\nreturn { \n  json: { \n    query, \n    sessionData: session, \n    aiTrigger: data.aiTrigger, \n    currentStep: data.currentStep \n  } \n};"
+      },
+      "id": "eb62f03e-0c91-4992-9882-866e5b23994a",
+      "name": "Prepare AI Query",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -192,
+        -144
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemPromptTemplate": "// Replace your RAG Product Search node's systemPromptTemplate with this:\n\nYou are a gift hamper product consultant with access to a product catalog.\n\nCUSTOMER NEEDS:\n- Budget: {{ $('Prepare AI Query').first().json.sessionData.budget }}\n- Quantity: {{ $('Prepare AI Query').first().json.sessionData.quantity }}\n- Items: {{ $('Prepare AI Query').first().json.sessionData.itemPreference }}\n\nYOUR TASK:\n1. Review ALL retrieved products from the catalog context\n2. Select products matching customer's item preferences\n3. Find a suitable box from catalog\n4. Calculate total cost (products + box)\n5. Ensure total ≤ budget per piece\n\nRESPONSE FORMAT:\n\n📦 **Selected Products:**\n[List each product with name and exact price from catalog]\n\n📐 **Box:**\n[Box Name], Price: Rs [EXACT MRP]\n\n✅ Example: \nLeather + Wood Box (Rectangle), Price: Rs 1000.00\n\n💰 **Cost:**\n- Products: Rs [total]\n- Box: Rs [amount]\n- Total per piece: Rs [total]\n- Budget: Rs [budget]\n- Status: [Within/Exceeds budget]\n\n⚠️ CRITICAL RULES:\n- Use ONLY products from retrieved context\n- DO NOT include box dimensions, sizes, or measurements\n- List ONLY: Box Name and Price\n- List ALL relevant products you can see\n- If items are not available, mention them\n- don't add \"🤖 AI Product Suggestions:\" statement in the beginning just the main content should be present\n\n-------------------------------------\nContext: {context}"
+        }
+      },
+      "id": "df52794c-d694-47dc-a588-39f1a95fbd5f",
+      "name": "RAG Product Search",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "position": [
+        -32,
+        -144
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "jsCode": "// ✅ CORRECTED\nconst aiResp = $('RAG Product Search').first().json;\nconst conv = $('Prepare AI Query').first().json;\n\nlet text = '';\n\n// RAG chain output structure\nif (aiResp.output) {\n  text = aiResp.output;\n} else if (aiResp.text) {\n  text = aiResp.text;\n} else if (aiResp.response) {\n  text = typeof aiResp.response === 'string' ? aiResp.response : JSON.stringify(aiResp.response);\n} else {\n  text = JSON.stringify(aiResp);\n}\n\nreturn { \n  json: { \n    aiResponse: text, \n    sessionData: conv.sessionData, \n    currentStep: conv.currentStep, \n    aiTrigger: conv.aiTrigger \n  } \n};"
+      },
+      "id": "9bede525-dd52-490e-b7bd-3d01ee2370e4",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        256,
+        -144
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst conv = $('Conversation Manager').first().json;\n\nlet message = conv.message;\n\n// Clean up AI response\nlet aiText = data.aiResponse || '';\n\n// Remove JSON artifacts\nif (aiText.startsWith('{') || aiText.startsWith('[')) {\n  try {\n    const parsed = JSON.parse(aiText);\n    if (parsed.response && parsed.response.text) {\n      aiText = parsed.response.text;\n    } else if (parsed.text) {\n      aiText = parsed.text;\n    }\n  } catch (e) {\n    // Keep original\n  }\n}\n\n// ✅ UPDATED: Removed \"🤖 AI Product Suggestions:\" prefix\nif (aiText && data.currentStep === 4) {\n  // After itemPreference (step 3 → 4)\n  message = aiText + '\\n\\n' + conv.message;\n} else if (aiText && data.currentStep === 5) {\n  // After packagingPreference (step 4 → 5)\n  message = '📦 Final Recommendations:\\n\\n' + aiText + '\\n\\nProcessing your quotation...';\n}\n\nreturn { \n  json: { \n    success: true, \n    complete: false, \n    currentStep: conv.currentStep, \n    sessionData: conv.sessionData, \n    sessionId: conv.sessionId, \n    message \n  } \n};"
+      },
+      "id": "e15c2660-5dd4-469a-af02-e55271c04570",
+      "name": "Format Ongoing Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        432,
+        -144
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nreturn { json: { success: true, complete: false, currentStep: data.currentStep, sessionData: data.sessionData, sessionId: data.sessionId, message: data.message } };"
+      },
+      "id": "f16c8d48-2bfa-41c7-aa08-1191da09287d",
+      "name": "Format Simple Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        384,
+        112
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {},
+      "id": "bd4d127e-39f9-47f5-a5fd-5ae7c4eaf2ed",
+      "name": "Merge All Responses",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        800,
+        128
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "535aa77e-704d-45ca-b0b8-94f8380f1fab",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1008,
+        128
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "topK": 500
+      },
+      "id": "006f840a-46ec-42f9-bb17-7f0532bf0399",
+      "name": "Vector Retriever",
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "position": [
+        80,
+        48
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "cgragtest",
+          "mode": "list",
+          "cachedResultName": "cgragtest"
+        },
+        "options": {
+          "pineconeNamespace": "RAGkiwiAgent"
+        }
+      },
+      "id": "40ee2aa5-59cf-4ac6-b854-818c013fab14",
+      "name": "Pinecone Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        0,
+        272
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "pineconeApi": {
+          "id": "aWTuoJ6ldBZ2gPsm",
+          "name": "PineconeApi account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "26243ba5-1900-43b3-98ee-c9c3b32a2302",
+      "name": "Gemini Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "position": [
+        0,
+        432
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "3f2ee264-d965-4292-903d-e859306bd99d",
+      "name": "Gemini Chat",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        -64,
+        48
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Conversation Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Manager": {
+      "main": [
+        [
+          {
+            "node": "Need AI Processing?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need AI Processing?": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Simple Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Query": {
+      "main": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Product Search": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Format Ongoing Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Ongoing Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Simple Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Responses": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "4c475f10-760e-46a8-a015-e689d921ad2c",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-10-11T11:20:37.144Z",
+      "updatedAt": "2025-10-11T11:20:37.144Z",
+      "role": "workflow:owner",
+      "workflowId": "UJlA3e3fJ7UhAxQj",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
