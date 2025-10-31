@@ -1,0 +1,693 @@
+{
+  "createdAt": "2025-10-18T17:07:56.171Z",
+  "updatedAt": "2025-10-19T01:38:09.000Z",
+  "id": "8B0fkJ53UIWdJKKl",
+  "name": "KIWI Gift Hamper ChatBot v2.0 - RAG Enhanced",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Welcome to Kiwi Gift Hamper! 🎉\n\nI'll help you create the perfect custom gift hamper for your special occasion.\n\n✨ **Special Discounts Available:**\n• 35% off for orders below 200 pieces\n• 40% off for orders of 200+ pieces\n• 45% MEGA discount for 500+ pieces!\n\nTo get started, I'll need to know:\n1. Your budget per hamper\n2. Quantity needed\n3. Delivery date (Oct 10-30)\n4. Any specific preferences\n\nYou can type 'show items' to see our catalog anytime!\n\nWhat's your budget per piece? (e.g., ₹1000)",
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "id": "f5f3d5ba-c232-40e2-b9cc-1f5b6b7fc35e",
+      "name": "When Chat Message Received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -800,
+        1048
+      ],
+      "webhookId": "gift-hamper-chat-v2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are Kiwi's premium gift hamper assistant specializing in creating personalized gift hampers.\n\nYOUR PRIMARY GOAL: Collect 4 essential requirements while providing excellent customer service.\n\nREQUIREMENTS TO COLLECT:\n1. Budget per piece (in Rupees)\n2. Quantity (number of hampers)\n3. Delivery date (between October 10-30, 2025)\n4. Item preferences (specific items or 'no' for assorted)\n\nDISCOUNT STRUCTURE:\n- 35% discount: Orders below 200 pieces\n- 40% discount: Orders of 200-499 pieces  \n- 45% MEGA discount: Orders of 500+ pieces\n\nPRODUCT KNOWLEDGE BASE:\n📦 Packaging Options:\n- Ratan Jali Box (Small/Medium/Large): ₹150/₹200/₹250\n- Premium Wooden Box: ₹300-₹400\n- Customized Logo Box: ₹250\n\n🥜 Dry Fruits & Nuts:\n- Honey Till Almonds: ₹299\n- Rose Petal Almonds: ₹299\n- Salted Cashews: ₹399\n- Mixed Dry Fruits: ₹499\n- Premium Pistachios: ₹599\n\n🍫 Chocolates & Sweets:\n- Dark Chocolate Bites: ₹249\n- Dates Bite: ₹349\n- Ferrero Rocher (4 pcs): ₹299\n- Kaju Katli: ₹399\n\n🪔 Festive Items:\n- Decorative Diyas (Set of 4): ₹100\n- Brass Diya: ₹240\n- Scented Candles: ₹150\n- Floating Candles: ₹80\n\n🥤 Healthy Snacks:\n- Quinoa Chips: ₹199\n- Veggie Chips: ₹229\n- Trail Mix: ₹249\n- Granola Mix: ₹269\n\nCONVERSATION INTELLIGENCE:\n\n1. PARSING RULES:\n- Multiple values in one message: Extract ALL\n- \"1000 for 200 pieces on 16th oct\" → Budget: 1000, Qty: 200, Date: 16\n- \"1500 200\" → Budget: 1500, Quantity: 200\n- Single number first message → Budget\n- Single number second message → Quantity\n\n2. ITEM INQUIRY HANDLING:\nIf user asks about products/items/catalog:\n- First show 6-8 popular items with prices\n- Then ask for the next missing requirement\n- Never break the flow\n\n3. SMART RESPONSES:\n- Acknowledge ALL information provided\n- Only ask for MISSING information\n- Celebrate milestone discounts (200+ or 500+)\n- Be conversational and friendly\n\n4. DATE VALIDATION:\n- Accept: 10-30 (October 2025 only)\n- Format: \"16\", \"16 oct\", \"october 16\", \"16th\"\n- Invalid dates: Politely ask again\n\nWHEN ALL 4 REQUIREMENTS COLLECTED:\nOutput ONLY this JSON (no other text):\n{\n  \"status\": \"DATA_COMPLETE\",\n  \"budget\": \"[exact value]\",\n  \"quantity\": \"[exact value]\",\n  \"when\": \"[day] October 2025\",\n  \"itemPreference\": \"[preferences or 'no']\"\n}\n\nCRITICAL RULES:\n- Extract multiple values from single messages\n- Never ask for already provided information\n- If showing products, continue collecting requirements\n- Be enthusiastic about discounts\n- Keep responses concise and friendly"
+        }
+      },
+      "id": "b52a2677-2799-4c8b-9ffb-1db12256624c",
+      "name": "AI Data Collector",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -576,
+        1048
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enhanced Parse & Route with Multiple Decision Points\nconst aiOutput = $input.item.json;\nlet aiResponse = (aiOutput.output || aiOutput.text || '').trim();\n\nlet routeDecision = {\n  isComplete: false,\n  needsProductCatalog: false,\n  needsBoxCatalog: false,\n  continueCollection: true,\n  sessionData: null,\n  aiResponse: aiResponse,\n  originalInput: $json.chatInput || ''\n};\n\n// Check if user is asking about items/products\nconst userMessage = ($json.chatInput || '').toLowerCase();\nconst itemPatterns = [\n  'show items', 'what items', 'what products', 'available items',\n  'show catalog', 'list items', 'what do you have', 'show me products',\n  'what can you include', 'what are the options'\n];\n\nconst boxPatterns = [\n  'box', 'packaging', 'container', 'gift box', 'packing'\n];\n\n// Detect user intent\nrouteDecision.needsProductCatalog = itemPatterns.some(p => userMessage.includes(p));\nrouteDecision.needsBoxCatalog = boxPatterns.some(p => userMessage.includes(p));\n\n// Try to parse completion JSON\ntry {\n  const jsonMatch = aiResponse.match(/\\{[^}]+\\}/);\n  if (jsonMatch) {\n    const parsed = JSON.parse(jsonMatch[0]);\n    \n    if (parsed.status === 'DATA_COMPLETE') {\n      // Validate all required fields\n      if (parsed.budget && parsed.quantity && parsed.when && parsed.itemPreference !== undefined) {\n        routeDecision.isComplete = true;\n        routeDecision.continueCollection = false;\n        routeDecision.sessionData = {\n          budget: parsed.budget,\n          quantity: parsed.quantity,\n          when: parsed.when,\n          itemPreference: parsed.itemPreference || 'no'\n        };\n        \n        console.log('✅ Data collection complete:', routeDecision.sessionData);\n        aiResponse = 'DATA_COMPLETE'; // Hide JSON from user\n      } else {\n        console.warn('⚠️ Incomplete data in completion response');\n      }\n    }\n  }\n} catch (e) {\n  // Not JSON, continue normal flow\n  console.log('Continuing conversation...');\n}\n\n// Determine routing priority\nif (routeDecision.isComplete) {\n  routeDecision.route = 'complete';\n} else if (routeDecision.needsProductCatalog) {\n  routeDecision.route = 'catalog';\n} else if (routeDecision.needsBoxCatalog) {\n  routeDecision.route = 'boxes';\n} else {\n  routeDecision.route = 'continue';\n}\n\nreturn [{\n  json: routeDecision\n}];"
+      },
+      "id": "501d91fc-09f2-49d4-a91e-a1e4defdf0fd",
+      "name": "Parse & Route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        1048
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "complete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bcd071da-81a7-4426-a943-0e39693c9d5a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Complete"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "catalog",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "63edf46c-015b-473b-88a3-7c9a1cb303c7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ShowCatalog"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "boxes",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "d76d6d04-9efd-4a63-9c63-462319852b2e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ShowBoxes"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "continue",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a71cf57d-54b0-4f71-97c4-7365898eb08a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Continue"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "198157b6-483a-46b2-8b25-9835d0097cd9",
+      "name": "Route Decision",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        0,
+        1000
+      ]
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.aiResponse }}",
+        "options": {}
+      },
+      "id": "0700ba6f-82e7-4bcd-948f-55ea47bfe79b",
+      "name": "Respond - Continue",
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        288,
+        1336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Query for RAG Search\nconst sessionData = $json.sessionData;\n\nif (!sessionData || !sessionData.budget) {\n  throw new Error('Session data incomplete');\n}\n\n// Parse preferences and build search query\nconst prefs = (sessionData.itemPreference || 'no').toLowerCase();\nlet searchTerms = [];\n\n// Build comprehensive search terms\nif (prefs === 'no' || prefs === 'none') {\n  // Search for popular items\n  searchTerms = ['dry fruits', 'almonds', 'cashew', 'chocolate', 'diya', 'candle', 'gift', 'hamper', 'box', 'festive'];\n} else {\n  // Parse specific preferences\n  if (prefs.includes('dry fruit') || prefs.includes('nut')) {\n    searchTerms.push('almonds', 'cashew', 'pistachio', 'mixed dry fruits');\n  }\n  if (prefs.includes('diya')) {\n    searchTerms.push('diya', 'brass diya', 'decorative diya');\n  }\n  if (prefs.includes('candle')) {\n    searchTerms.push('candle', 'scented candle', 'floating candle');\n  }\n  if (prefs.includes('chocolate') || prefs.includes('sweet')) {\n    searchTerms.push('chocolate', 'ferrero', 'dates', 'kaju katli');\n  }\n  if (prefs.includes('box')) {\n    searchTerms.push('ratan jali', 'wooden box', 'packaging');\n  }\n}\n\n// Always add hamper-related terms\nsearchTerms.push('gift hamper', 'festive', 'premium');\n\n// Parse quantity for discount calculation\nconst quantity = parseInt(sessionData.quantity?.toString().replace(/[^0-9]/g, '')) || 0;\n\nlet discountPercent = 35;\nlet discountTier = 'Standard';\n\nif (quantity >= 500) {\n  discountPercent = 45;\n  discountTier = 'MEGA';\n} else if (quantity >= 200) {\n  discountPercent = 40;\n  discountTier = 'Premium';\n}\n\nconst query = `gift hamper ${searchTerms.join(' ')} budget ${sessionData.budget} rupees festive collection`;\n\nconsole.log('🔍 RAG Query:', query);\nconsole.log('💰 Discount:', discountPercent + '%', '(' + discountTier + ')');\n\nreturn [{\n  json: {\n    query: query,\n    sessionData: {\n      ...sessionData,\n      quantity: quantity,\n      discountPercent: discountPercent,\n      discountTier: discountTier\n    }\n  }\n}];"
+      },
+      "id": "8c453d9b-9aff-4ab3-96a1-ef171fb4dd90",
+      "name": "Prepare RAG Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemPromptTemplate": "=You are a Gift Hamper Product Consultant creating a personalized hamper recommendation.\n\nCUSTOMER REQUIREMENTS:\n- Budget: ₹{{ $('Prepare RAG Query').first().json.sessionData.budget }}\n- Quantity: {{ $('Prepare RAG Query').first().json.sessionData.quantity }} pieces\n- Delivery: {{ $('Prepare RAG Query').first().json.sessionData.when }}\n- Preferences: {{ $('Prepare RAG Query').first().json.sessionData.itemPreference }}\n- Discount Tier: {{ $('Prepare RAG Query').first().json.sessionData.discountTier }} ({{ $('Prepare RAG Query').first().json.sessionData.discountPercent }}% off)\n\nYOUR TASK:\n1. Select 3-5 UNIQUE products (no duplicates)\n2. Choose ONE appropriate gift box\n3. Ensure total is within budget\n4. Show ORIGINAL prices (system applies discount)\n\nRULES:\n- Each product appears ONLY ONCE\n- Mix categories for variety\n- Include festive items if requested\n- Use actual products from context\n- Stay within budget\n\nOUTPUT FORMAT:\n🎁 **Your Personalized Gift Hamper**\n\n📦 **Selected Products:**\n• [Product Name] - [Category] - [Weight] - ₹[Price]\n[3-5 unique products]\n\n📐 **Gift Box:**\n• [Box Name] - ₹[Price]\n\n💰 **Cost Breakdown (Before Discount):**\n• Products Total: ₹[sum]\n• Box: ₹[price]\n• **Total: ₹[total]**\n• Budget: ₹{{ $('Prepare RAG Query').first().json.sessionData.budget }}\n\n✨ **{{ $('Prepare RAG Query').first().json.sessionData.discountPercent }}% {{ $('Prepare RAG Query').first().json.sessionData.discountTier }} Discount will be applied!**\n\nContext:\n{context}"
+        }
+      },
+      "id": "678e80b9-b1a1-4a0b-8ab4-566180ca724b",
+      "name": "RAG Product Search",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Apply Discount and Format Final Response\nconst ragOutput = $json.output || $json.text || '';\nconst sessionData = $('Prepare RAG Query').first().json.sessionData;\n\nconst quantity = sessionData.quantity;\nconst discountPercent = sessionData.discountPercent;\nconst discountMultiplier = (100 - discountPercent) / 100;\n\n// Clean the response\nlet finalResponse = ragOutput\n  .replace(/\\\\n/g, '\\n')\n  .replace(/\\\\\\*/g, '*')\n  .trim();\n\n// Apply discount to all prices\nfinalResponse = finalResponse.replace(/₹\\s*(\\d+(?:,\\d+)*(?:\\.\\d+)?)/g, (match, price) => {\n  const original = parseFloat(price.replace(/,/g, ''));\n  const discounted = Math.round(original * discountMultiplier);\n  return `₹${original} → ₹${discounted}`;\n});\n\n// Add order summary\nconst orderSummary = `\\n\\n📋 **Order Summary:**\n• Quantity: ${quantity} identical hampers\n• Discount Applied: ${discountPercent}% ${sessionData.discountTier}\n• Delivery Date: ${sessionData.when}\n• Status: ✅ Ready to process\n\n🎊 **Thank you for choosing Kiwi Gift Hampers!**\n\nWould you like to:\n1. Confirm this order\n2. Modify the selection\n3. Start a new order`;\n\nfinalResponse += orderSummary;\n\nreturn [{\n  json: {\n    finalResponse: finalResponse,\n    orderComplete: true,\n    sessionData: sessionData\n  }\n}];"
+      },
+      "id": "e55884ed-e0ec-4fec-81c9-ec25e78c098b",
+      "name": "Apply Discount & Finalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.finalResponse }}",
+        "options": {}
+      },
+      "id": "4f22082d-158e-4c5e-a0dc-6b5c0bb31873",
+      "name": "Respond - Final Hamper",
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        664
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6c2f799d-ac36-44d4-800c-d9e51c712b36",
+      "name": "Google Gemini Chat",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -568,
+        1272
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "c8baa0ee-0cca-49b0-9349-a7cbcf9c9b0f",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -440,
+        1272
+      ]
+    },
+    {
+      "parameters": {
+        "topK": 30
+      },
+      "id": "cb546c58-71e2-4cdd-a03d-94d7b241e82c",
+      "name": "Vector Retriever",
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "typeVersion": 1,
+      "position": [
+        704,
+        984
+      ]
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "cgragtest",
+          "mode": "list"
+        },
+        "options": {
+          "pineconeNamespace": "RAGkiwiAgentFINAL"
+        }
+      },
+      "id": "7b0beca3-4cf2-46f6-ac4e-1805f38f8ee3",
+      "name": "Pinecone Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        1192
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "aWTuoJ6ldBZ2gPsm",
+          "name": "PineconeApi account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "ff8ce1fb-b252-46bc-864b-20d48f8ef1ac",
+      "name": "Gemini Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        784,
+        1400
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b1553d69-e06a-4422-8f25-ed21db0f91c0",
+      "name": "Gemini Chat for RAG",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        576,
+        984
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store Order in Database/Sheets for Analytics\nconst orderData = $json.sessionData;\n\nconst analyticsRecord = {\n  timestamp: new Date().toISOString(),\n  orderId: 'ORD-' + Date.now(),\n  budget: orderData.budget,\n  quantity: orderData.quantity,\n  deliveryDate: orderData.when,\n  preferences: orderData.itemPreference,\n  discountPercent: orderData.discountPercent,\n  discountTier: orderData.discountTier,\n  totalValue: parseFloat(orderData.budget) * parseInt(orderData.quantity),\n  status: 'completed'\n};\n\nconsole.log('📊 Order Analytics:', analyticsRecord);\n\n// In production, this would save to Google Sheets or database\nreturn [{\n  json: {\n    analytics: analyticsRecord,\n    success: true,\n    message: 'Order recorded successfully'\n  }\n}];"
+      },
+      "id": "ef7d2037-4500-44fc-b04d-7cea17a205d3",
+      "name": "Record Analytics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        856
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.catalogQuery }}",
+        "options": {
+          "systemPromptTemplate": "=You are a product catalog assistant. Display available products from the database in a well-organized format.\n\nTASK: Create a comprehensive product catalog from the retrieved items.\n\nORGANIZE BY CATEGORIES:\n- 🥜 Dry Fruits & Nuts\n- 🍫 Chocolates & Sweets  \n- 🪔 Festive Items (Diyas, Candles)\n- 🥤 Healthy Snacks\n- 📦 Gift Box Options\n\nFORMAT REQUIREMENTS:\n1. Group products by category\n2. Show product name, weight/size, and MRP price\n3. Include 8-12 popular items across categories\n4. Focus on variety and different price points\n5. Include at least 2-3 box options\n\nOUTPUT FORMAT:\n🎁 **Our Premium Gift Hamper Collection**\n\n[Category Name]\n• Product Name (Weight/Size) - ₹Price\n• Product Name (Weight/Size) - ₹Price\n\n[Repeat for each category]\n\n💡 **Special Offers:**\n• 35% off for orders below 200 pieces\n• 40% off for orders of 200+ pieces\n• 45% MEGA discount for 500+ pieces!\n\nWhat's your budget per piece? (e.g., ₹1000)\n\nContext from product database:\n{context}"
+        }
+      },
+      "id": "rag-catalog-search",
+      "name": "RAG Catalog Search",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        952
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.boxQuery }}",
+        "options": {
+          "systemPromptTemplate": "=You are a packaging specialist. Display all available gift box and packaging options from the database.\n\nTASK: Show all packaging/box options with details.\n\nFORMAT REQUIREMENTS:\n1. Group by box type (Ratan Jali, Wooden, Customized)\n2. Show all available sizes with dimensions\n3. Include price for each size\n4. Add brief description of features\n5. Mention minimum order quantities if applicable\n\nOUTPUT FORMAT:\n📦 **Premium Packaging Options**\n\n**1. [Box Type Name]**\n• Description and features\n• Size Name (Dimensions): ₹Price\n• Size Name (Dimensions): ₹Price\n\n[Repeat for each box type]\n\n💡 **Popular Choice:** [Mention most popular option]\n\nWhat's your budget per piece?\n\nContext from packaging database:\n{context}"
+        }
+      },
+      "id": "rag-box-search",
+      "name": "RAG Box Search",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        1144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare query to fetch catalog from RAG\nconst catalogQuery = \"show all available products dry fruits nuts chocolates sweets diyas candles boxes packaging gift hampers festive items snacks trail mix granola almonds cashew\";\n\nreturn [{\n  json: {\n    catalogQuery: catalogQuery,\n    requestType: \"catalog\",\n    needsCatalog: true\n  }\n}];"
+      },
+      "id": "prepare-catalog-query",
+      "name": "Prepare Catalog Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare query to fetch box options from RAG\nconst boxQuery = \"packaging box ratan jali wooden customized logo gift box container small medium large deluxe all sizes prices\";\n\nreturn [{\n  json: {\n    boxQuery: boxQuery,\n    requestType: \"boxes\",\n    needsBoxes: true\n  }\n}];"
+      },
+      "id": "prepare-box-query",
+      "name": "Prepare Box Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output || $json.text || $json.response }}",
+        "options": {}
+      },
+      "id": "respond-catalog",
+      "name": "Respond - Catalog",
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output || $json.text || $json.response }}",
+        "options": {}
+      },
+      "id": "respond-boxes",
+      "name": "Respond - Boxes",
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        1784
+      ]
+    }
+  ],
+  "connections": {
+    "When Chat Message Received": {
+      "main": [
+        [
+          {
+            "node": "AI Data Collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Data Collector": {
+      "main": [
+        [
+          {
+            "node": "Parse & Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Route": {
+      "main": [
+        [
+          {
+            "node": "Route Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Decision": {
+      "main": [
+        [
+          {
+            "node": "Prepare RAG Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show Product Catalog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RAG Catalog Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show Box Catalog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RAG Box Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Continue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Show Product Catalog": {
+      "main": [
+        [
+          {
+            "node": "Respond - Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Show Box Catalog": {
+      "main": [
+        [
+          {
+            "node": "Respond - Boxes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare RAG Query": {
+      "main": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Product Search": {
+      "main": [
+        [
+          {
+            "node": "Apply Discount & Finalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Discount & Finalize": {
+      "main": [
+        [
+          {
+            "node": "Respond - Final Hamper",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Record Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Data Collector",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Data Collector",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_retriever",
+            "index": 0
+          },
+          {
+            "node": "RAG Catalog Search",
+            "type": "ai_retriever",
+            "index": 0
+          },
+          {
+            "node": "RAG Box Search",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat for RAG": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "RAG Catalog Search",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "RAG Box Search",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "61da8846-d29d-42f0-ba0d-a63db7d2c101",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-18T17:07:56.174Z",
+      "updatedAt": "2025-10-18T17:07:56.174Z",
+      "role": "workflow:owner",
+      "workflowId": "8B0fkJ53UIWdJKKl",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
