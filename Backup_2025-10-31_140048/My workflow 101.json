@@ -1,0 +1,356 @@
+{
+  "createdAt": "2025-10-17T13:25:53.914Z",
+  "updatedAt": "2025-10-17T13:29:03.000Z",
+  "id": "j3uhcrBqm27uWbdj",
+  "name": "My workflow 101",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Influencer Ad Creative Generator",
+        "formDescription": "Select and upload an image of your product. ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Image",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "326e3e95-86ea-4f9f-acf5-2b4414e4ced2",
+      "name": "form_trigger",
+      "webhookId": "fe94ee22-4cc4-41f1-98ea-e69855b6b630"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "model",
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        368,
+        0
+      ],
+      "id": "270743a4-4d80-4b8a-ac35-f7cae3301f28",
+      "name": "list_influencer_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "Image",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        160,
+        0
+      ],
+      "id": "1785a028-0f17-4b19-a0e1-7d2f162c7654",
+      "name": "product_image_to_base64"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        400,
+        240
+      ],
+      "id": "2c466534-6c07-4107-8cab-347d1fc556b0",
+      "name": "influencer_image_to_base_64"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      { \"text\": \"Create a realistic lifestyle photo showcasing the hair product from image 1. Generate a scene where someone with beautiful, long, flowing hair similar in style and color to the hair extensions shown in image 1 is photographed in a casual, relatable setting like outdoors, at home, or in an everyday location. Use the person's appearance from image 2 as reference for facial features and style. They should look confident and happy, with the hair clearly visible and flowing naturally. Use angle variation {{ $runIndex % 5 }}: 0=front view facing camera with hair framing the face, 1=side profile showing hair length and volume, 2=back view showcasing the full length and texture, 3=three-quarter angle showing both face and hair flow, 4=dynamic pose with hair in motion or being touched naturally. The photo should feel authentic like a friend took it, not overly professional. The lighting should be natural and flattering, emphasizing the hair's texture, shine, and length. Only return the final generated image.\" },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/png\",\n          \"data\": \"{{ $node['product_image_to_base64'].json.data }}\"\n        }\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/jpeg\",\n          \"data\": \"{{ $node['influencer_image_to_base_64'].json.data }}\"\n        }\n      }\n    ]\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        592,
+        240
+      ],
+      "id": "52d65aff-d82a-4616-af7c-1cbc0140472c",
+      "name": "generate_image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        240
+      ],
+      "id": "bf4f2929-2f13-4dbb-bf30-51dc80863a6e",
+      "name": "get_image"
+    },
+    {
+      "parameters": {
+        "name": "=Influencer Image #{{ $runIndex + 1 }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "18pTUfAFibP6mHCZ81GjU9hJWaGlw2ArW",
+          "mode": "list",
+          "cachedResultName": "CREATIVES ",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/18pTUfAFibP6mHCZ81GjU9hJWaGlw2ArW"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1088,
+        240
+      ],
+      "id": "e70d18bd-4dca-41e6-9691-c68963e79e49",
+      "name": "upload_image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "524da01b-f8b9-4c2c-9e28-319455903e4d",
+              "name": "=image_result",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        240
+      ],
+      "id": "3bffabc2-7372-4d44-8d09-8def7a672f35",
+      "name": "set_result"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        224,
+        240
+      ],
+      "id": "fe6f5dd4-c6df-4c31-bd2d-1e694db3d13c",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        16,
+        224
+      ],
+      "id": "8c856286-8913-45d4-88c4-cf5ab7e040a7",
+      "name": "Loop Over Items"
+    }
+  ],
+  "connections": {
+    "form_trigger": {
+      "main": [
+        [
+          {
+            "node": "product_image_to_base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_influencer_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "product_image_to_base64": {
+      "main": [
+        [
+          {
+            "node": "list_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "influencer_image_to_base_64": {
+      "main": [
+        [
+          {
+            "node": "generate_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_image": {
+      "main": [
+        [
+          {
+            "node": "set_result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_image": {
+      "main": [
+        [
+          {
+            "node": "upload_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload_image": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_result": {
+      "main": [
+        [
+          {
+            "node": "get_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "influencer_image_to_base_64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "49f6b439-fd5a-4323-90af-244b5e4c7809",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-17T13:25:53.919Z",
+      "updatedAt": "2025-10-17T13:25:53.919Z",
+      "role": "workflow:owner",
+      "workflowId": "j3uhcrBqm27uWbdj",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
