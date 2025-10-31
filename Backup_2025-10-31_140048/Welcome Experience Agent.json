@@ -1,0 +1,1301 @@
+{
+  "createdAt": "2025-10-31T06:44:47.141Z",
+  "updatedAt": "2025-10-31T07:31:16.000Z",
+  "id": "HWrJERzsUpLbGQNe",
+  "name": "Welcome Experience Agent",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ghl-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "5c808505-77c2-4076-b512-b4785e3363b3",
+      "name": "GHL Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        96
+      ],
+      "webhookId": "ghl-lead-customer"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.tag }}",
+              "operation": "equals",
+              "value2": "Lead"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "efd3717d-c4b0-4dbc-b582-611a52c2d9e1",
+      "name": "Is Lead Tag?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "opportunity",
+        "pipelineId": "={{ $json.body.pipelineId }}",
+        "additionalFields": {
+          "monetaryValue": 0
+        },
+        "requestOptions": {}
+      },
+      "id": "fb057309-5181-4ad5-a7e5-21060f173606",
+      "name": "Create Opportunity in GHL",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 1,
+      "position": [
+        64,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.tag }}",
+              "operation": "equals",
+              "value2": "Customer"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7ad32ae8-f189-4791-af35-9faad5d44afe",
+      "name": "Is Customer Tag?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        64,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/tbl_users",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.body.email }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $json.body.phone }}"
+            },
+            {
+              "name": "full_name",
+              "value": "={{ $json.body.contactName }}"
+            },
+            {
+              "name": "ghl_contact_id",
+              "value": "={{ $json.body.contactId }}"
+            },
+            {
+              "name": "subscription_status",
+              "value": "trial"
+            },
+            {
+              "name": "subscription_type",
+              "value": "basic"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2cbeb09a-6afa-41be-9ba5-912faee04814",
+      "name": "Create User in Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        192
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TRIBE_FIT_API }}/auth/create-login",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "name": "sendWelcome",
+              "value": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6033a93f-0476-41f5-be4e-ea8622a7b3a2",
+      "name": "Create Tribe.fit Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        512,
+        192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/send-message",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "name": "template",
+              "value": "welcome_message"
+            },
+            {
+              "name": "variables",
+              "value": "={{ { name: $json.full_name, formLink: $env.ONBOARDING_FORM_URL } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "88687e5e-8673-43cd-ac5e-c63542d2ceda",
+      "name": "Send Welcome WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        736,
+        96
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EMAIL_SERVICE_URL }}/send-email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "name": "template",
+              "value": "welcome_email"
+            },
+            {
+              "name": "subject",
+              "value": "Welcome to FitWithPari! 🎉"
+            },
+            {
+              "name": "variables",
+              "value": "={{ { name: $json.full_name, formLink: $env.ONBOARDING_FORM_URL } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ecb10a65-2b3d-4896-9a28-09764a8dd0f7",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        736,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/tbl_audit_log",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "event_type",
+              "value": "welcome_communication_sent"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "actor",
+              "value": "system"
+            },
+            {
+              "name": "status",
+              "value": "success"
+            },
+            {
+              "name": "remarks",
+              "value": "WhatsApp and Email welcome messages sent"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "19082c2b-0afa-448c-b3ab-fb8d726d2c6b",
+      "name": "Log Welcome Communication",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        944,
+        192
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "opportunity",
+        "operation": "update",
+        "opportunityId": "={{ $('GHL Webhook Trigger').item.json.body.opportunityId }}",
+        "updateFields": {
+          "stageId": "customer_created"
+        },
+        "requestOptions": {}
+      },
+      "id": "70a7fc5a-4484-47fe-b9eb-203f90135fb9",
+      "name": "Update GHL Opportunity Stage",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 1,
+      "position": [
+        944,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "form-submission",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "aaf616fa-c9ac-4aea-b48c-a9cc9737b72f",
+      "name": "Form Submission Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        592
+      ],
+      "webhookId": "onboarding-form"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/tbl_onboarding_forms",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $json.body.userId }}"
+            },
+            {
+              "name": "fitness_level",
+              "value": "={{ $json.body.fitnessLevel }}"
+            },
+            {
+              "name": "goals",
+              "value": "={{ $json.body.goals }}"
+            },
+            {
+              "name": "preferred_time_slots",
+              "value": "={{ $json.body.preferredTimeSlots }}"
+            },
+            {
+              "name": "health_conditions",
+              "value": "={{ $json.body.healthConditions }}"
+            },
+            {
+              "name": "submitted_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9127f2a9-4e60-4dff-be4e-f874100015a5",
+      "name": "Store Form Data in Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -160,
+        592
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECOMMENDATION_SERVICE_URL }}/generate-recommendations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "name": "fitnessLevel",
+              "value": "={{ $json.fitness_level }}"
+            },
+            {
+              "name": "preferredTimeSlots",
+              "value": "={{ $json.preferred_time_slots }}"
+            },
+            {
+              "name": "goals",
+              "value": "={{ $json.goals }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ba5dba47-1e0a-4421-96a0-0fdf40acb6df",
+      "name": "Trigger Recommendation Service",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        64,
+        592
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/tbl_recommendations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $json.userId }}"
+            },
+            {
+              "name": "recommended_classes",
+              "value": "={{ $json.recommendations }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "40355cae-d64d-4441-bbb0-89b517597764",
+      "name": "Store Recommendations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        592
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.LLM_SERVICE_URL }}/generate-content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "template",
+              "value": "class_recommendation"
+            },
+            {
+              "name": "userName",
+              "value": "={{ $json.userName }}"
+            },
+            {
+              "name": "classes",
+              "value": "={{ $json.recommendations }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "308582bf-d1d2-4cd0-8586-d9d346147152",
+      "name": "Generate Recommendation Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        512,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/send-message",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.userPhone }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.whatsappContent }}"
+            },
+            {
+              "name": "cta",
+              "value": "Secure your slot"
+            },
+            {
+              "name": "ctaUrl",
+              "value": "={{ $env.CLASS_BOOKING_URL }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fc4e2482-c210-465b-a359-188ee0596316",
+      "name": "Send Recommendations WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        736,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EMAIL_SERVICE_URL }}/send-email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.userEmail }}"
+            },
+            {
+              "name": "subject",
+              "value": "Your Personalized Class Recommendations 🏋️"
+            },
+            {
+              "name": "html",
+              "value": "={{ $json.emailContent }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "facefcd2-a5fa-4322-9111-29d3ef31ade1",
+      "name": "Send Recommendations Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        736,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "3e190db0-5a42-4902-8b6f-8f877d6570f4",
+      "name": "Daily Schedule (9 AM)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/tbl_users?subscription_status=eq.active&select=*,tbl_recommendations(*)",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6fa0783c-1d89-4e96-88e9-37dd4b295600",
+      "name": "Get Active Users",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -160,
+        992
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECOMMENDATION_SERVICE_URL }}/refresh-recommendations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f28db4f7-0d06-4460-a2e7-830122281551",
+      "name": "Refresh Daily Recommendations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        64,
+        992
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * *"
+            }
+          ]
+        }
+      },
+      "id": "b1aa6533-ec82-4054-bf35-2445018f7118",
+      "name": "Inactivity Check (8 PM Daily)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/get_inactive_users",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "days_threshold",
+              "value": 3
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c7bff85d-024d-44c2-b4c2-0e16bc09ac41",
+      "name": "Get Inactive Users (3+ Days)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -160,
+        1296
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EMAIL_SERVICE_URL }}/send-email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $env.HEAD_COACH_EMAIL }}"
+            },
+            {
+              "name": "subject",
+              "value": "⚠️ Inactivity Alert - Users Need Attention"
+            },
+            {
+              "name": "template",
+              "value": "inactivity_alert"
+            },
+            {
+              "name": "variables",
+              "value": "={{ { inactiveUsers: $json } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ad049d55-6490-416b-ba77-ad9106ec68f4",
+      "name": "Alert Head Coach",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        64,
+        1296
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/tbl_audit_log",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "event_type",
+              "value": "inactivity_alert"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "actor",
+              "value": "system"
+            },
+            {
+              "name": "status",
+              "value": "flagged"
+            },
+            {
+              "name": "remarks",
+              "value": "User inactive for 3+ days - Head Coach notified"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "163bdecb-e6ec-423d-a2ed-b0a05f253ce5",
+      "name": "Log Inactivity Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        1296
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 23 * * *"
+            }
+          ]
+        }
+      },
+      "id": "10c379df-c268-4c10-8d75-ec8096432bdf",
+      "name": "Daily Summary (11 PM)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/get_daily_summary",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bff2f3ed-5390-4bf7-89c3-07004bbbdb93",
+      "name": "Compile Daily Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -160,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EMAIL_SERVICE_URL }}/send-email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $env.HEAD_COACH_EMAIL }}"
+            },
+            {
+              "name": "subject",
+              "value": "📊 Daily Summary - {{ $now.format('MMMM D, YYYY') }}"
+            },
+            {
+              "name": "template",
+              "value": "daily_summary"
+            },
+            {
+              "name": "variables",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "98dc687a-d836-4bd9-959c-43530cd96aa0",
+      "name": "Send Daily Summary to Head Coach",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        64,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Webhook received' } }}",
+        "options": {}
+      },
+      "id": "6b6961c8-17a8-43fd-b6c8-391fca251820",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1312,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Form submission processed' } }}",
+        "options": {}
+      },
+      "id": "eb519b17-d56a-4763-babd-da14d2df5dc8",
+      "name": "Form Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        592
+      ]
+    }
+  ],
+  "connections": {
+    "GHL Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is Lead Tag?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lead Tag?": {
+      "main": [
+        [
+          {
+            "node": "Create Opportunity in GHL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Customer Tag?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Opportunity in GHL": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Customer Tag?": {
+      "main": [
+        [
+          {
+            "node": "Create User in Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create User in Supabase": {
+      "main": [
+        [
+          {
+            "node": "Create Tribe.fit Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Tribe.fit Login": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome WhatsApp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Log Welcome Communication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Log Welcome Communication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Welcome Communication": {
+      "main": [
+        [
+          {
+            "node": "Update GHL Opportunity Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update GHL Opportunity Stage": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form Submission Webhook": {
+      "main": [
+        [
+          {
+            "node": "Store Form Data in Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Form Data in Supabase": {
+      "main": [
+        [
+          {
+            "node": "Trigger Recommendation Service",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Recommendation Service": {
+      "main": [
+        [
+          {
+            "node": "Store Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Generate Recommendation Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Recommendation Content": {
+      "main": [
+        [
+          {
+            "node": "Send Recommendations WhatsApp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Recommendations Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Recommendations WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Form Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Recommendations Email": {
+      "main": [
+        [
+          {
+            "node": "Form Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule (9 AM)": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Users": {
+      "main": [
+        [
+          {
+            "node": "Refresh Daily Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inactivity Check (8 PM Daily)": {
+      "main": [
+        [
+          {
+            "node": "Get Inactive Users (3+ Days)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Inactive Users (3+ Days)": {
+      "main": [
+        [
+          {
+            "node": "Alert Head Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Head Coach": {
+      "main": [
+        [
+          {
+            "node": "Log Inactivity Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Summary (11 PM)": {
+      "main": [
+        [
+          {
+            "node": "Compile Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Daily Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Daily Summary to Head Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "7ea77ec7-b2d1-4448-b574-a9a2756020e8",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-31T06:44:47.165Z",
+      "updatedAt": "2025-10-31T06:44:47.165Z",
+      "role": "workflow:owner",
+      "workflowId": "HWrJERzsUpLbGQNe",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
