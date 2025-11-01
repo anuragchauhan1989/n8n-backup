@@ -1,0 +1,473 @@
+{
+  "createdAt": "2025-10-30T05:41:18.866Z",
+  "updatedAt": "2025-10-30T06:33:43.000Z",
+  "id": "BoEZNF0ZvdpPADeI",
+  "name": "My workflow 115",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        4272
+      ],
+      "id": "9cba4fc7-0fea-4692-bd1b-36d3b7a17628",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze and intelligently chunk this document into semantic sections.\n\n**Document Length:** {{ $json.content.length }} characters\n\n**Full Text:**\n{{ $json.content }}\n\n**Task:** Create semantic chunks (800-2500 characters each) by:\n- Identifying natural topic boundaries\n- Maintaining context within each chunk\n- Extracting key information\n- Preserving logical flow\n\n**CRITICAL: Return ONLY valid JSON in this exact format (no markdown, no explanations):**\n\n{\n  \"documentSummary\": \"Brief 1-2 sentence overview of the entire document\",\n  \"totalChunks\": 5,\n  \"chunks\": [\n    {\n      \"chunkNumber\": 1,\n      \"title\": \"Descriptive title for this section\",\n      \"content\": \"The actual text content of the chunk\",\n      \"characterCount\": 1250,\n      \"topics\": [\"topic1\", \"topic2\", \"topic3\"],\n      \"keyPoints\": [\n        \"Important point 1\",\n        \"Important point 2\"\n      ]\n    }\n  ]\n}\n\n**Requirements:**\n- Output must be valid, parseable JSON only\n- No markdown code blocks (no ```)\n- No explanatory text before or after the JSON\n- Each chunk should be 800-2500 characters\n- Include all fields shown in the example\n- Ensure proper JSON escaping for special characters",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert document chunking AI. Analyze documents and create semantically meaningful chunks that preserve context for RAG systems. Identify topic boundaries, semantic relationships, and information density.",
+          "maxIterations": 15
+        }
+      },
+      "id": "0c5cef05-6b0b-4420-ad36-570b25b8e8be",
+      "name": "Document Chunking Agent1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        928,
+        1344
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse JSON and extract only chunks\nconst items = $input.all();\nconst aiResponse = items[0].json.output;\n\nlet parsedData;\n\ntry {\n  // Handle if already an object\n  if (typeof aiResponse === 'object' && aiResponse !== null) {\n    parsedData = aiResponse;\n  } else if (typeof aiResponse === 'string') {\n    // Direct parse - JSON.parse handles escaped characters correctly\n    parsedData = JSON.parse(aiResponse);\n  } else {\n    throw new Error(`Unexpected response type: ${typeof aiResponse}`);\n  }\n} catch (error) {\n  try {\n    // Second attempt: extract from markdown code block\n    const jsonMatch = aiResponse.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/);\n    if (jsonMatch) {\n      parsedData = JSON.parse(jsonMatch[1]);\n    } else {\n      // Third attempt: clean edges and try again\n      const cleaned = aiResponse.trim().replace(/^[^{[]*/, '').replace(/[^}\\]]*$/, '');\n      parsedData = JSON.parse(cleaned);\n    }\n  } catch (innerError) {\n    throw new Error(`Failed to parse response after sanitization: ${innerError.message}\\nResponse preview: ${aiResponse.substring(0, 300)}`);\n  }\n}\n\n// Validate chunks exist\nif (!parsedData.chunks || !Array.isArray(parsedData.chunks)) {\n  throw new Error(`Response does not contain a valid chunks array. Keys found: ${Object.keys(parsedData).join(', ')}`);\n}\n\n// Return chunks as separate items\nreturn parsedData.chunks.map(chunk => ({ json: chunk }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        1344
+      ],
+      "id": "e1440646-3386-4223-a270-9a635ef9427e",
+      "name": "Get Chunks1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format proposal data for Supabase Vector Store\nconst items = $input.all();\nconst outputItems = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  \n  try {\n    // STEP 1: Parse OpenAI response structure\n    // Response is an array: [{index: 0, message: {content: \"...\"}, ...}]\n    const responseArray = Array.isArray(item.json) ? item.json : [item.json];\n    const firstResponse = responseArray[0];\n    \n    if (!firstResponse || !firstResponse.message || !firstResponse.message.content) {\n      throw new Error('Invalid OpenAI response structure');\n    }\n    \n    let aiContent = firstResponse.message.content;\n    \n    // STEP 2: Extract JSON from markdown code blocks\n    // Content format: ```json\\n{...}\\n```\n    const jsonMatch = aiContent.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/);\n    if (jsonMatch) {\n      aiContent = jsonMatch[1].trim();\n    }\n    \n    // Parse the JSON\n    const proposalData = JSON.parse(aiContent);\n    \n    // STEP 3: Get original chunk content from Limit node\n    const limitNodeData = $('Loop Over Items').all();\n    \n    if (!limitNodeData || !limitNodeData[i]) {\n      throw new Error(`Cannot find chunk ${i} from Limit node`);\n    }\n    \n    const originalChunk = limitNodeData[i].json;\n    const chunkContent = originalChunk.content || '';\n    \n    if (!chunkContent) {\n      throw new Error('Chunk content is empty');\n    }\n    \n    // STEP 4: Build metadata object\n    const metadata = {\n      // From AI proposal\n      proposal: proposalData.proposal || '',\n      rationale: proposalData.rationale || '',\n      priority: proposalData.priority || 'medium',\n      follow_up: proposalData.follow_up || false,\n      \n      // From original chunk\n      chunkNumber: originalChunk.chunkNumber || i + 1,\n      chunkTitle: originalChunk.title || '',\n      topics: Array.isArray(originalChunk.topics) ? originalChunk.topics.join(', ') : '',\n      keyPoints: Array.isArray(originalChunk.keyPoints) ? originalChunk.keyPoints.join(' | ') : '',\n      characterCount: originalChunk.characterCount || chunkContent.length,\n      \n      // System metadata\n      timestamp: new Date().toISOString(),\n      source: 'rag-doc-to-db-workflow'\n    };\n    \n    // STEP 5: Create Supabase-ready output\n    outputItems.push({\n      json: {\n        pageContent: chunkContent,\n        metadata: JSON.stringify(metadata)\n      }\n    });\n    \n    console.log(`✅ Successfully formatted chunk ${i + 1}`);\n    \n  } catch (error) {\n    console.error(`❌ Error processing item ${i}:`, error.message);\n    \n    // Fallback: try to get original content\n    let fallbackContent = 'Error: Could not process chunk';\n    try {\n      const limitNodeData = $('Limit1').all();\n      if (limitNodeData && limitNodeData[i]) {\n        fallbackContent = limitNodeData[i].json.content || fallbackContent;\n      }\n    } catch (e) {\n      console.error('Fallback also failed:', e.message);\n    }\n    \n    // Output with error metadata\n    outputItems.push({\n      json: {\n        pageContent: fallbackContent,\n        metadata: JSON.stringify({\n          error: error.message,\n          errorStack: error.stack,\n          timestamp: new Date().toISOString(),\n          source: 'rag-doc-to-db-workflow-error'\n        })\n      }\n    });\n  }\n}\n\nconsole.log(`Processed ${outputItems.length} items total`);\nreturn outputItems;"
+      },
+      "id": "0e0af1e9-7296-4a75-91ca-76befa0bb053",
+      "name": "Format for Supabase1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1568,
+        1344
+      ],
+      "id": "f3fc5007-e83d-47c2-b358-4176550d5308",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        1568
+      ],
+      "id": "789eb6eb-0a27-4e2d-8d9e-22f7ea4236cc",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        2768,
+        1600
+      ],
+      "id": "b815b8d8-4b1f-4b6c-b412-7d2e67142cf9",
+      "name": "Default Data Loader2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2624,
+        1600
+      ],
+      "id": "e675c70f-d580-451c-812f-c45ef1f9b50e",
+      "name": "Embeddings OpenAI2",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9da93e58-9739-44f1-aaa5-070171e7d908",
+              "name": "content",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        1344
+      ],
+      "id": "115eb37c-fe25-43f5-8a1f-5735f51048da",
+      "name": "Set Content1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=System: You are an agent that reads a chunk of a document and returns a JSON object with:\n- proposal: one-sentence action or recommendation\n- rationale: 1-2 sentences why\n- priority: high|medium|low\n- follow_up: boolean (should we run a sub-workflow?)\nRespond ONLY with JSON.\n\nUser: Here is the chunk:\n\"\"\"{{ $json.content}}\"\"\"\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1856,
+        1360
+      ],
+      "id": "526bf9d4-f314-4bb7-b7c4-5ff5b95f0ad5",
+      "name": "Create a proposal1",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "id": "358aa6e2-4ebc-4730-80cb-9b32f9104255",
+      "name": "Schedule Trigger for long profile",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        304,
+        1344
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "student_profiles_long_embeddings",
+          "mode": "list",
+          "cachedResultName": "student_profiles_long_embeddings"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        2576,
+        1360
+      ],
+      "id": "4e9148d7-8c6e-4c8f-b845-f8d7bec1b619",
+      "name": "Insert Long Profile data",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "1jfaG-QTZWwZJrJwpydX4hqii1GV0ilaT1jwledhEexE"
+      },
+      "id": "67d37c2f-42f8-4b39-8ab5-01be1bd400d3",
+      "name": "Get Long Profile Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "position": [
+        512,
+        1344
+      ],
+      "typeVersion": 2,
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "8qhis65GMrcNAKf9",
+          "name": "Google Docs account -cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Agentic Chunking and insert Long Profile to vector db",
+        "height": 640,
+        "width": 2688,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        224,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "f5a29efc-06ad-4dfb-9593-ff80b45d07b2",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Add this Code node before \"Insert Short/Long Profile data\"\nconst documentId = \"short_profile_knowledge_base\"; // or use dynamic ID\n\n// Delete all existing chunks for this document\nreturn {\n  json: {\n    operation: \"delete\",\n    table: \"student_profiles_short_embeddings\",\n    filter: {\n      metadata: {\n        source: documentId\n      }\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2368,
+        1360
+      ],
+      "id": "9feaca7c-bb6b-4de3-accb-ca575cd69071",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "connections": {
+    "Document Chunking Agent1": {
+      "main": [
+        [
+          {
+            "node": "Get Chunks1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Chunks1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format for Supabase1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Create a proposal1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Document Chunking Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader2": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert Long Profile data",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert Long Profile data",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Content1": {
+      "main": [
+        [
+          {
+            "node": "Document Chunking Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a proposal1": {
+      "main": [
+        [
+          {
+            "node": "Format for Supabase1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger for long profile": {
+      "main": [
+        [
+          {
+            "node": "Get Long Profile Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Long Profile data": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Long Profile Doc": {
+      "main": [
+        [
+          {
+            "node": "Set Content1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Insert Long Profile data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Document Chunking Agent1": [
+      {
+        "json": {
+          "output": "{\n  \"documentSummary\": \"This document serves as a comprehensive guide for AI to create detailed member long profiles and derive concise, relevant micro-insights for live fitness classes, integrating personal context, medical profiles, motivation, engagement, and persona-based coaching.\",\n  \"totalChunks\": 5,\n  \"chunks\": [\n    {\n      \"chunkNumber\": 1,\n      \"title\": \"Introduction and Personal Context & Identity\",\n      \"content\": \"📚 FitwithPari — Member Long Profile Reference (RAG Document) This document guides AI in crafting rich long profiles, and then selecting the right micro-insights for live class needs. 🎀 1. Personal Context & Identity Include: Age range (35–55) Occupation + schedule constraints Family responsibilities Home workout space + equipment Communication style Emotional relationship to fitness (confidence, anxiety, joy, escape, community)\",\n      \"characterCount\": 466,\n      \"topics\": [\n        \"Introduction\",\n        \"Personal context\",\n        \"Member identity\"\n      ],\n      \"keyPoints\": [\n        \"Document purpose: guide AI in creating detailed member profiles and micro-insights.\",\n        \"Personal context covers demographics, lifestyle factors, workout environment, and emotional connection to fitness.\"\n      ]\n    },\n    {\n      \"chunkNumber\": 2,\n      \"title\": \"Fitness Level, Physical Profile, and Medical Context\",\n      \"content\": \"💪 2. Fitness Level & Physical Profile Fitness Level: L1 Beginner L2 Moderately Experienced L3 Intermediate Movement health: Knee, hip, ankle issues Lower-back sensitivity Shoulder/wrist discomfort Balance confidence Core concerns (diastasis / pelvic floor) Bone density caution Medical + Injury Profile (Moved from optional → primary persona-defining element) Track: High BP Osteopenia/osteoporosis Arthritis Past injuries (ACL, shoulder impingement, etc.) Any doctor-guided restrictions Persona impact A member with chronic knee pain or hypertension may align more with: Pain Protector Comeback Queen Stress-Buster Narrative example: “Knee discomfort still shapes her class choices. She avoids twisting and impact.”\",\n      \"characterCount\": 853,\n      \"topics\": [\n        \"Fitness levels\",\n        \"Movement health\",\n        \"Medical and injury profile\",\n        \"Persona impact of health\"\n      ],\n      \"keyPoints\": [\n        \"Fitness levels categorized into three tiers from beginner to intermediate.\",\n        \"Movement health issues cover joint discomfort, balance, and core concerns.\",\n        \"Medical/injury status is now a primary factor in defining member personas.\",\n        \"Specific health challenges guide alignment to persona archetypes such as Pain Protector.\"\n      ]\n    },\n    {\n      \"chunkNumber\": 3,\n      \"title\": \"Member Goals, Engagement, Satisfaction, and Emotional Journey\",\n      \"content\": \"🎯 3. Goals & Motivation Style Include: Primary goal (tone/weight confidence/strength/pain relief) Motivation drivers (progress, routine, social connection) Pain or injury resolution goals Emotional aspirations (confidence in sarees/jeans, stamina for kids) 🤝 4. Engagement & Participation Behavior Track: Avg classes/week Slot preference Camera On/Off Coach preference (chemistry insight) Class-type comfort zones Community interaction (chat, friends invited, challenges) 😍 5. Satisfaction & Friction Signals Include: What she loves What makes her skip Common reasons for dissatisfaction: Too fast class pace Soreness too long Not seeing progress Timing mismatch Feeling invisible 🦋 6. Emotional Journey Indicators Capture: Confidence levels Mood before vs after class Fear of injury Self-identity shifts (“I am an active person now”)\",\n      \"characterCount\": 1110,\n      \"topics\": [\n        \"Goals and motivations\",\n        \"Participation and engagement\",\n        \"Satisfaction and friction\",\n        \"Emotional journey\"\n      ],\n      \"keyPoints\": [\n        \"Goals include physical targets and emotional aspirations.\",\n        \"Engagement metrics cover frequency, preferences, and social interaction.\",\n        \"Satisfaction drivers and common friction points are identified.\",\n        \"Emotional states linked to fitness progress and self-identity shifts are tracked.\"\n      ]\n    },\n    {\n      \"chunkNumber\": 4,\n      \"title\": \"Progress Tracking, Persona Assignment, and Class Insight Generation\",\n      \"content\": \"🌱 7. Progress & Wins Include: Movement breakthroughs Pain-free success days Visible improvements Streak consistency First push-up, better balance, win stories 🧩 8. Persona Assignment (With Medical/Condition Integration) Primary personas include health-driven set: ✅ Medical/injury context must influence persona E.g. High BP + avoids jumps → Pain Protector primary Persistent wrist pain + silent attendance → Silent Styler + Pain Protector 🔥 CONNECTION TO SHORT CLASS PROFILES This RAG document informs: 🎯 The long profile = the full human story 🎯 The short profile = class-specific insight snippet How AI transforms long → short: 1️⃣ Identify the class type (strength, yoga, HIIT etc.) 2️⃣ Pull only relevant sections from the long profile: Injuries/medical → safety Movement limitations → technique Fitness level → progression appropriateness Engagement style/persona → confidence approach 3️⃣ Output 2–3 micro insights Example short profile (during Lower Body Strength): “Right knee valgus — cue knees out. Low-back strain in deadlifts — shorten hinge. She’s L2 so small progression ok if alignment holds.” Example short profile (during Zumba): “Knee pain → smaller pivots. Balance caution → hands on hips in turns.” Always concise + live-useful.\",\n      \"characterCount\": 1594,\n      \"topics\": [\n        \"Progress and achievements\",\n        \"Persona assignment integrating medical conditions\",\n        \"Transformation from long profiles to short actionable insights\",\n        \"Example short profiles\"\n      ],\n      \"keyPoints\": [\n        \"Progress includes movement milestones and streak consistency.\",\n        \"Medical context is critical in assigning primary personas.\",\n        \"Short profiles are class-specific, concise micro insights extracted from relevant long profile sections.\",\n        \"Examples demonstrate how long profile details translate to live coaching cues.\"\n      ]\n    },\n    {\n      \"chunkNumber\": 5,\n      \"title\": \"Full Example Long Profile and Document Purpose\",\n      \"content\": \"✨ FULL EXAMPLE LONG PROFILE (PERSONA + MEDICAL) Member: Anjali S Age Range: 35–45 Fitness Level: L2 Moderately Experienced Primary Persona: Technique Seeker Secondary Persona: Pain Protector Context: Anjali balances a demanding job and family commitments. She attends early morning sessions to own her day. Her workout setup at home is simple but functional. Fitness & Movement: Right knee pain influences alignment during squats and lunges. Slight low-back discomfort shows up in deeper hinge movements. She avoids jumps due to concern about knee stability. Wrist loading is improving. High BP is well managed, but she prefers lower-impact intervals. Goals & Motivation: She aims to tone her lower body and build a strong core while reducing knee discomfort. Tracking small improvements keeps her motivated. Engagement: She attends 4–5 classes weekly, loves Strength Lower Body and Pilates. Coaches Pari and Swati energize her. Camera on most days. Actively responds to cues and chat. Satisfaction: She feels empowered post-workout and appreciates when coaches notice progress. Occasionally struggles with Monday motivation. Emotional Journey: Every session boosts her self-belief. Fitness helps her manage work stress and reclaim personal time. Progress: She recently hit 10 pain-free squats with better knee tracking. Strong attendance streak last month. Forward Path: Continue glute activation and knee-stability drills. Gentle push in strength will build even more confidence and joy. Example short class output generated from this long profile (for HIIT): “High BP → low-impact bursts. Knee stability → no jumps.” ✅ Purpose of this Document This reference ensures the AI consistently generates: ✓ Emotionally intelligent long profiles ✓ Safety-smart short workout insights ✓ Persona-aware motivation ✓ Injury-informed coaching support It enables true personalization + injury-aware care at scale.\",\n      \"characterCount\": 1488,\n      \"topics\": [\n        \"Complete example member profile\",\n        \"Detailed persona and medical integration\",\n        \"Illustration of short profile output\",\n        \"Overall purpose and goals of the document\"\n      ],\n      \"keyPoints\": [\n        \"Anjali's profile illustrates the integration of personal, medical, and motivational factors.\",\n        \"Example short class output shows how insights are tailored from the long profile.\",\n        \"Document aims to enable emotionally intelligent, safety-conscious, and persona-aware coaching at scale.\"\n      ]\n    }\n  ]\n}"
+        }
+      }
+    ],
+    "Create a proposal1": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "```json\n{\n  \"proposal\": \"Incorporate detailed personal context and identity factors into member profiles to enable tailored micro-insights for live classes.\",\n  \"rationale\": \"Including specifics such as age range, occupation, family responsibilities, workout space, communication style, and emotional relationship to fitness allows for more personalized and effective class experiences.\",\n  \"priority\": \"high\",\n  \"follow_up\": true\n}\n```",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      }
+    ]
+  },
+  "versionId": "cb253597-619a-476f-8c8d-261e10941195",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-30T05:41:18.871Z",
+      "updatedAt": "2025-10-30T05:41:18.871Z",
+      "role": "workflow:owner",
+      "workflowId": "BoEZNF0ZvdpPADeI",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
