@@ -1,0 +1,335 @@
+{
+  "createdAt": "2025-10-27T05:56:37.485Z",
+  "updatedAt": "2025-10-30T06:57:49.000Z",
+  "id": "GHvix8Sa4Ryafk9m",
+  "name": "FitwithPari - AI Coach Guidance System",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "coach-insights",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -432,
+        48
+      ],
+      "id": "6b2d2246-db47-4c0d-b4ee-4a1309b77a38",
+      "name": "Webhook",
+      "webhookId": "a2445d20-f07b-467f-bde3-6fe7d050029e"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "student_profiles_short",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "student_id",
+              "keyValue": "={{ $json.body.studentId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -48
+      ],
+      "id": "c996511e-e7d8-467a-8215-ec0f6e7ffdf7",
+      "name": "Get Short Profile",
+      "credentials": {
+        "supabaseApi": {
+          "id": "VKoabbJQnegsVFoB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "student_profiles_full",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "student_id",
+              "keyValue": "={{ $json.body.studentId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        144
+      ],
+      "id": "885e25db-0336-4a5b-9ede-dcbd62c586bd",
+      "name": "Get long profile",
+      "credentials": {
+        "supabaseApi": {
+          "id": "VKoabbJQnegsVFoB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get webhook data from the original Webhook node\nconst webhookData = $('Webhook').first().json.body || {};\n\n// After merge, items contain the merged Supabase data\nconst items = $input.all();\n\n// Find short and long profiles in merged data\nconst shortProfile = items.find(item => item.json?.context_key)?.json || {};\nconst longProfile = items.find(item => item.json?.profile_json)?.json || {};\n\n// Extract student ID\nconst studentId = webhookData.studentId || \n                  webhookData.student_id || \n                  shortProfile.student_id || \n                  longProfile.student_id ||\n                  'unknown';\n\n// Build comprehensive profile\nconst profile = {\n  // Basic Information\n  studentId: studentId,\n  studentName: webhookData.studentName || \n               shortProfile.student_name || \n               'Student',\n  \n  // Class Information (from webhook - real-time) ← NOW THIS WILL WORK!\n  classType: webhookData.classType || \n             webhookData.class_type || \n             'General Fitness',\n  currentExercises: webhookData.currentExercises || \n                   webhookData.exercises || \n                   [],\n  \n  // Fitness Level\n  fitnessLevel: webhookData.fitnessLevel ||\n                shortProfile.fitness_level || \n                'L2 Moderately Experienced',\n  \n  // Health Concerns (from webhook OR short profile)\n  healthConcerns: webhookData.healthConcerns || {\n    kneeIssues: shortProfile.knee_issues || false,\n    backPain: shortProfile.back_pain || false,\n    shoulderIssues: shortProfile.shoulder_issues || false,\n    wristPain: shortProfile.wrist_pain || false,\n    hipDiscomfort: shortProfile.hip_discomfort || false,\n    ankleRestriction: shortProfile.ankle_restriction || false,\n    balanceLimitations: shortProfile.balance_limitations || false,\n    coreIssues: shortProfile.core_issues || false,\n    diastasisRecti: shortProfile.diastasis_recti || false,\n    pelvicFloor: shortProfile.pelvic_floor_concerns || false,\n    highBloodPressure: shortProfile.high_blood_pressure || false,\n    osteoporosis: shortProfile.osteoporosis || false,\n    osteopenia: shortProfile.osteopenia || false\n  },\n  \n  // Additional Context (from long profile)\n  movementPatterns: longProfile.movement_patterns || [],\n  exerciseHistory: longProfile.exercise_history || [],\n  strengthDifferences: longProfile.strength_differences || '',\n  flexibilityRestrictions: longProfile.flexibility_restrictions || '',\n  previousLoads: longProfile.previous_loads || {},\n  \n  // Metadata\n  profileSource: 'supabase',\n  hasShortProfile: !!shortProfile.student_id,\n  hasLongProfile: !!longProfile.student_id,\n  queryTimestamp: new Date().toISOString(),\n  \n  // Debug data\n  _raw: {\n    webhook: webhookData,\n    shortProfile: shortProfile,\n    longProfile: longProfile\n  }\n};\n\nconsole.log('Merged Profile:', JSON.stringify(profile, null, 2));\n\nreturn { json: profile };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        16
+      ],
+      "id": "7aa3b03f-c823-46b2-b3c8-03d173a8cba7",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build comprehensive system prompt based on student profile from Supabase\nconst data = $input.item.json;\n\n// Build detailed health concerns section\nlet healthConcernsText = '';\nconst concerns = data.healthConcerns || {};\nconst activeConcerns = [];\n\n// Map all health concerns to human-readable text\nif (concerns.kneeIssues) activeConcerns.push('Knee issues/osteoarthritis');\nif (concerns.backPain) activeConcerns.push('Low back pain');\nif (concerns.shoulderIssues) activeConcerns.push('Shoulder mobility restrictions');\nif (concerns.wristPain) activeConcerns.push('Wrist pain');\nif (concerns.hipDiscomfort) activeConcerns.push('Hip discomfort/tight hip flexors');\nif (concerns.ankleRestriction) activeConcerns.push('Ankle mobility restrictions');\nif (concerns.balanceLimitations) activeConcerns.push('Balance limitations');\nif (concerns.coreIssues) activeConcerns.push('Core stability issues');\nif (concerns.diastasisRecti) activeConcerns.push('Diastasis recti');\nif (concerns.pelvicFloor) activeConcerns.push('Pelvic floor concerns');\nif (concerns.highBloodPressure) activeConcerns.push('High blood pressure');\nif (concerns.osteoporosis) activeConcerns.push('Osteoporosis');\nif (concerns.osteopenia) activeConcerns.push('Osteopenia');\n\nhealthConcernsText = activeConcerns.length > 0 ? \n  activeConcerns.join(', ') : 'No significant health concerns reported';\n\n// Add movement patterns and history from long profile\nlet additionalContext = '';\nif (data.movementPatterns && data.movementPatterns.length > 0) {\n  additionalContext += `\\n- Movement patterns they struggle with: ${data.movementPatterns.join(', ')}`;\n}\nif (data.strengthDifferences) {\n  additionalContext += `\\n- Strength differences: ${data.strengthDifferences}`;\n}\nif (data.flexibilityRestrictions) {\n  additionalContext += `\\n- Flexibility/mobility restrictions: ${data.flexibilityRestrictions}`;\n}\nif (data.previousLoads && Object.keys(data.previousLoads).length > 0) {\n  additionalContext += `\\n- Previous exercise loads: ${JSON.stringify(data.previousLoads)}`;\n}\n\n// Helper function for class-specific guidance\nfunction getClassSpecificGuidance(classType) {\n  const lowerClass = (classType || '').toLowerCase();\n  \n  if (lowerClass.includes('lower body')) {\n    return `FOCUS AREAS: Knee tracking, hip mobility, low-back strain in hinging, ankle mobility, side imbalances\nCOMMON MOVEMENTS: Squats, lunges, deadlifts, glute bridges, step-ups\nPRIORITY: Safety (knee valgus, hip discomfort) → Technique (form) → Progression (load/range)`;\n  } else if (lowerClass.includes('upper body')) {\n    return `FOCUS AREAS: Wrist pain, shoulder mobility, neck tension during presses\nCOMMON MOVEMENTS: Pushups, rows, chest/shoulder presses, dips, curls\nPRIORITY: Safety (wrist/shoulder) → Technique (scapular control) → Progression (weight increase)`;\n  } else if (lowerClass.includes('core') || lowerClass.includes('abs')) {\n    return `FOCUS AREAS: Low-back strain, diastasis recti (avoid heavy flexion), pelvic floor (avoid high-impact)\nCOMMON MOVEMENTS: Planks, dead bugs, bird dogs, leg raises, crunches\nPRIORITY: Safety (back/core issues) → Technique (breathing/engagement) → Modification`;\n  } else if (lowerClass.includes('pilates')) {\n    return `FOCUS AREAS: Osteoporosis (avoid strong spinal flexion), hip flexor dominance, balance\nCOMMON MOVEMENTS: Hundred, roll-ups, spine articulation, leg circles\nPRIORITY: Safety (spine protection) → Technique (control) → Modification for bone health`;\n  } else if (lowerClass.includes('yoga')) {\n    return `FOCUS AREAS: Wrist load sensitivity, balance concerns, hip/knee range limits\nCOMMON MOVEMENTS: Down dog, warriors, hip openers, balance poses\nPRIORITY: Safety (wrist/balance) → Technique (alignment) → Modification (props/supports)`;\n  } else if (lowerClass.includes('hiit')) {\n    return `FOCUS AREAS: High BP (avoid intense HR spikes), knee/back pain (avoid impact), pelvic floor\nCOMMON MOVEMENTS: Burpees, jumping jacks, squat jumps, high knees\nPRIORITY: Safety (BP/impact) → Modification (low-impact) → Intensity management`;\n  } else if (lowerClass.includes('zumba')) {\n    return `FOCUS AREAS: Knee issues (especially pivots), low-back sensitivity in twisting, balance\nCOMMON MOVEMENTS: Pivots, hip rotation, lateral steps, fast travel\nPRIORITY: Safety (knee protection) → Modification (smaller ranges) → Balance support`;\n  } else if (lowerClass.includes('mobility') || lowerClass.includes('stretch')) {\n    return `FOCUS AREAS: Hypermobility (avoid overstretch), low-back pinch, tight areas\nCOMMON MOVEMENTS: Hip openers, thoracic twists, hamstring stretches\nPRIORITY: Safety (joint protection) → Technique (micro-bends) → Range awareness`;\n  } else if (lowerClass.includes('animal flow')) {\n    return `FOCUS AREAS: Wrist/shoulder load tolerance, core stability in quadruped, coordination\nCOMMON MOVEMENTS: Beast holds, crawling, crab reach, transitions\nPRIORITY: Safety (wrist/shoulder) → Modification (forearms) → Shorter holds`;\n  }\n  \n  return `FOCUS: General safety, technique appropriate to fitness level, and progressive challenge when safe`;\n}\n\nconst systemPrompt = `You are an AI fitness coach assistant for FitwithPari live classes.\n\nCORE PHILOSOPHY:\n1. Protect first (safety is paramount)\n2. Guide technique second (proper form prevents injury)\n3. Progress only when valuable (appropriate to level)\n4. Build confidence always (supportive, empowering tone)\n\nYOUR ROLE:\nProvide EXACTLY 2-3 specific, actionable insights for the coach during class.\n\nCRITICAL RULES:\n1. Surface ONLY insights relevant to TODAY'S movements and class type\n2. Keep tone supportive and empowering - NEVER negative or medical\n3. Provide simple action cues, not diagnoses\n4. Focus priority: Safety risks → Technique cues → Performance progression\n5. Maximum 2-3 insights - quality over quantity\n\nSTUDENT PROFILE:\n- Name: ${data.studentName}\n- Fitness Level: ${data.fitnessLevel}\n- Class Type: ${data.classType}\n- Health Concerns: ${healthConcernsText}${additionalContext}\n\nFITNESS LEVEL GUIDANCE:\n${data.fitnessLevel === 'L1 Beginner' ? \n  `L1 BEGINNER:\n- Focus: Safety + stability + clarity\n- Provide simpler options\n- Avoid aggressive progression\n- Build confidence with support\nExamples: \"Wider stance for better balance\" | \"Hold onto support in lunges\"` :\ndata.fitnessLevel === 'L2 Moderately Experienced' ? \n  `L2 MODERATELY EXPERIENCED:\n- Focus: Technique refinement + gentle progress\n- Try mild load or range improvements if form is stable\n- Encourage quality over intensity\nExamples: \"Add a bit more depth if knees stay aligned\" | \"Try slightly heavier dumbbell if comfortable\"` :\n  `L3 INTERMEDIATE:\n- Focus: Performance progression while maintaining quality\n- Safely challenge strength, technique, or endurance\n- Push boundaries with proper form\nExamples: \"Increase weight 1-2 kg if form holds\" | \"Add a pause for more glute activation\"`\n}\n\nCLASS-SPECIFIC CONTEXT:\n${getClassSpecificGuidance(data.classType)}\n\nOUTPUT FORMAT (STRICT):\nProvide EXACTLY 2-3 insights as a JSON array:\n[\n  {\"insight\": \"specific actionable cue\", \"category\": \"safety|technique|progression|confidence\"},\n  {\"insight\": \"specific actionable cue\", \"category\": \"safety|technique|progression|confidence\"}\n]\n\nGOOD INSIGHT EXAMPLES:\n✓ \"Wider stance helps your knees track better\"\n✓ \"Shorter hinge range if low-back feels pressure\"\n✓ \"Forearms instead of hands for wrist relief\"\n✓ \"Keep neck relaxed; shoulders away from ears\"\n✓ \"Exhale on exertion to support deep core\"\n✓ \"Low-impact today — step instead of jump\"\n\nBAD INSIGHT EXAMPLES:\n✗ Generic advice not related to current movements\n✗ Medical diagnoses or health judgments\n✗ More than 3 insights\n✗ Insights not relevant to the specific class type\n✗ Negative or discouraging language`;\n\nconst userPrompt = `Analyze this student profile and generate coaching insights for today's ${data.classType} class.\n\nCURRENT EXERCISES IN CLASS: ${JSON.stringify(data.currentExercises)}\n\nGenerate 2-3 specific insights that are:\n1. Specific to TODAY'S movements\n2. Directly relevant to the student's health concerns\n3. Appropriate for their fitness level (${data.fitnessLevel})\n4. Supportive and empowering in tone\n\nProvide response in JSON format as specified.`;\n\nreturn {\n  json: {\n    systemPrompt,\n    userPrompt,\n    studentData: data\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        16
+      ],
+      "id": "32278376-5325-4aff-9bc3-67d613291175",
+      "name": "Build AI Chat Prompt"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=text: \"={{ $json.userPrompt }}\"",
+        "options": {
+          "systemMessage": "=systemMessage: \"={{ $json.systemPrompt }}\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        16
+      ],
+      "id": "0471e5a8-71f1-455d-8a46-dc3bb2a0bedb",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        544,
+        224
+      ],
+      "id": "fd57fc49-aee4-4e7c-9100-cd783b0cbe55",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiOutput = $input.item.json.output || $input.item.json.text || '';\nconst studentData = $input.first().json.studentData || {};\n\nlet insights = [];\n\ntry {\n  const jsonMatch = aiOutput.match(/\\[\\s*\\{[\\s\\S]*\\}\\s*\\]/);\n  if (jsonMatch) {\n    insights = JSON.parse(jsonMatch[0]);\n  } else {\n    const lines = aiOutput.split('\\n').filter(l => \n      l.trim().startsWith('-') || l.trim().startsWith('•') ||\n      l.trim().startsWith('1.') || l.trim().startsWith('2.') ||\n      l.trim().startsWith('3.')\n    );\n    insights = lines.slice(0, 3).map((line, i) => ({\n      insight: line.replace(/^[-•\\d.]\\s*/, '').replace(/^\\[.*?\\]\\s*/, '').trim(),\n      category: i === 0 ? 'safety' : i === 1 ? 'technique' : 'progression'\n    }));\n  }\n  \n  if (insights.length === 0) {\n    insights = [\n      { insight: \"Focus on form and controlled movements\", category: \"technique\" },\n      { insight: \"Listen to your body and modify as needed\", category: \"safety\" }\n    ];\n  } else if (insights.length > 3) {\n    insights = insights.slice(0, 3);\n  } else if (insights.length === 1) {\n    insights.push({\n      insight: \"Maintain consistent breathing throughout exercises\",\n      category: \"technique\"\n    });\n  }\n} catch (error) {\n  insights = [\n    { insight: \"Monitor form closely\", category: \"safety\" },\n    { insight: \"Encourage proper breathing\", category: \"technique\" }\n  ];\n}\n\nreturn {\n  json: {\n    studentId: studentData.studentId,\n    studentName: studentData.studentName,\n    classType: studentData.classType,\n    fitnessLevel: studentData.fitnessLevel,\n    insights: insights,\n    insightCount: insights.length,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        16
+      ],
+      "id": "b6a9a043-36d2-4b11-9786-060fadff13b2",
+      "name": "Parse & Format Insights"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\n\nconst formattedInsights = data.insights.map((insight, idx) => {\n  const categoryLabel = insight.category.toUpperCase();\n  const categoryEmoji = \n    insight.category === 'safety' ? '🛡️' :\n    insight.category === 'technique' ? '🎯' :\n    insight.category === 'progression' ? '📈' : '💡';\n  \n  return `${idx + 1}. ${categoryEmoji} [${categoryLabel}] ${insight.insight}`;\n}).join('\\n');\n\nreturn {\n  json: {\n    success: true,\n    student: {\n      id: data.studentId,\n      name: data.studentName,\n      level: data.fitnessLevel,\n      classType: data.classType\n    },\n    coachInsights: formattedInsights,\n    rawInsights: data.insights,\n    metadata: {\n      insightCount: data.insightCount,\n      timestamp: data.timestamp,\n      profileSource: 'supabase'\n    },\n    message: `Generated ${data.insightCount} insights for ${data.studentName}`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        16
+      ],
+      "id": "f45048b3-8182-43ad-b1c2-8d2868518514",
+      "name": "Format Coach Display"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1440,
+        16
+      ],
+      "id": "99bf74fb-de2c-4995-8f30-659cced2917d",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        96,
+        32
+      ],
+      "id": "f14ddabd-34e3-47da-8e10-d12692bc3a0b",
+      "name": "Merge"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Short Profile",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get long profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Short Profile": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get long profile": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Build AI Chat Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build AI Chat Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse & Format Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Format Insights": {
+      "main": [
+        [
+          {
+            "node": "Format Coach Display",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Coach Display": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "19b8433d-567d-4e27-8c60-7897e9c3018a",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-27T05:56:37.488Z",
+      "updatedAt": "2025-10-27T05:56:37.488Z",
+      "role": "workflow:owner",
+      "workflowId": "GHvix8Sa4Ryafk9m",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
