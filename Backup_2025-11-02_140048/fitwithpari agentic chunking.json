@@ -1,0 +1,430 @@
+{
+  "createdAt": "2025-10-28T14:22:42.298Z",
+  "updatedAt": "2025-10-30T04:59:42.000Z",
+  "id": "7J2xcwflT9cQenjZ",
+  "name": "fitwithpari agentic chunking",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "id": "193a2377-aec3-4afb-afb0-4bcc4fb8961c",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        -1008,
+        304
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "https://docs.google.com/document/d/1aO0dNf8GUFRaNLzFjDV4Blnp2bn7Aq61j64RIwHfEi8/"
+      },
+      "id": "6648ad1a-fcca-4668-b6ea-178b252bea55",
+      "name": "Get Document",
+      "type": "n8n-nodes-base.googleDocs",
+      "position": [
+        -784,
+        304
+      ],
+      "typeVersion": 2,
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "8qhis65GMrcNAKf9",
+          "name": "Google Docs account -cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract full text from Google Doc\nconst items = $input.all();\nconst outputItems = [];\n\nfor (const item of items) {\n  const text = item.json.text || item.json.content || '';\n  \n  // Clean and prepare text\n  const cleanText = text.trim();\n  \n  outputItems.push({\n    json: {\n      fullText: cleanText,\n      documentId: item.json.documentId,\n      title: item.json.title || 'Untitled Document',\n      textLength: cleanText.length,\n      wordCount: cleanText.split(/\\s+/).length\n    }\n  });\n}\n\nreturn outputItems;"
+      },
+      "id": "extract-prepare-node",
+      "name": "Extract and Prepare Text",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -560,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create initial chunks for AI analysis\nconst items = $input.all();\nconst outputItems = [];\n\nfor (const item of items) {\n  const fullText = item.json.fullText;\n  const chunkSize = 1500; // Larger initial chunks for AI to analyze\n  const overlap = 300;\n  \n  const chunks = [];\n  \n  for (let i = 0; i < fullText.length; i += (chunkSize - overlap)) {\n    const start = i;\n    const end = Math.min(i + chunkSize, fullText.length);\n    const chunkText = fullText.substring(start, end);\n    \n    chunks.push({\n      text: chunkText,\n      start: start,\n      end: end,\n      chunkNumber: chunks.length + 1\n    });\n    \n    // Stop if we've reached the end\n    if (end >= fullText.length) break;\n  }\n  \n  outputItems.push({\n    json: {\n      fullText: fullText,\n      documentId: item.json.documentId,\n      documentTitle: item.json.title,\n      totalChunks: chunks.length,\n      chunks: chunks\n    }\n  });\n}\n\nreturn outputItems;"
+      },
+      "id": "initial-chunks-node",
+      "name": "Break Into Initial Chunks",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -336,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response and create final chunks\nconst items = $input.all();\nconst outputItems = [];\n\nfor (const item of items) {\n  let aiResponse;\n  \n  try {\n    console.log('=== DEBUG: Analyzing Response Structure ===');\n    console.log('item.json type:', typeof item.json);\n    console.log('item.json is Array:', Array.isArray(item.json));\n    \n    // Log the full structure (first 500 chars)\n    console.log('Full structure preview:', JSON.stringify(item.json, null, 2).substring(0, 500));\n    \n    // Try multiple extraction paths\n    let extracted = false;\n    \n    // PATH 1: Array -> [0] -> message -> content (your documented format)\n    if (!extracted && Array.isArray(item.json) && item.json.length > 0) {\n      const firstItem = item.json[0];\n      if (firstItem?.message?.content) {\n        console.log('✓ PATH 1: Array[0].message.content');\n        aiResponse = firstItem.message.content;\n        extracted = true;\n      }\n    }\n    \n    // PATH 2: Direct object with message.content\n    if (!extracted && item.json?.message?.content) {\n      console.log('✓ PATH 2: Direct message.content');\n      aiResponse = item.json.message.content;\n      extracted = true;\n    }\n    \n    // PATH 3: Direct refinedChunks (already parsed)\n    if (!extracted && item.json?.refinedChunks) {\n      console.log('✓ PATH 3: Direct refinedChunks');\n      aiResponse = item.json;\n      extracted = true;\n    }\n    \n    // PATH 4: Nested in content property\n    if (!extracted && item.json?.content) {\n      if (typeof item.json.content === 'object' && item.json.content?.refinedChunks) {\n        console.log('✓ PATH 4: content.refinedChunks');\n        aiResponse = item.json.content;\n        extracted = true;\n      } else if (typeof item.json.content === 'string') {\n        console.log('✓ PATH 4: content as string, parsing...');\n        try {\n          const parsed = JSON.parse(item.json.content);\n          if (parsed?.refinedChunks) {\n            aiResponse = parsed;\n            extracted = true;\n          }\n        } catch (e) {\n          console.log('Failed to parse content string:', e.message);\n        }\n      }\n    }\n    \n    // PATH 5: It's the raw output object from OpenAI node\n    if (!extracted && item.json?.output) {\n      console.log('✓ PATH 5: Checking output property');\n      if (typeof item.json.output === 'string') {\n        try {\n          const parsed = JSON.parse(item.json.output);\n          if (parsed?.refinedChunks) {\n            aiResponse = parsed;\n            extracted = true;\n          }\n        } catch (e) {\n          console.log('Failed to parse output string');\n        }\n      } else if (item.json.output?.refinedChunks) {\n        aiResponse = item.json.output;\n        extracted = true;\n      }\n    }\n    \n    // PATH 6: Check all top-level keys for refinedChunks\n    if (!extracted && typeof item.json === 'object' && !Array.isArray(item.json)) {\n      console.log('✓ PATH 6: Searching all keys...');\n      for (const key in item.json) {\n        const value = item.json[key];\n        if (value && typeof value === 'object' && value.refinedChunks) {\n          console.log(`Found refinedChunks in key: ${key}`);\n          aiResponse = value;\n          extracted = true;\n          break;\n        }\n      }\n    }\n    \n    if (!extracted) {\n      console.log('❌ FAILED: Could not find refinedChunks in any known path');\n      console.log('Available keys:', Object.keys(item.json || {}));\n      throw new Error(`Could not find message.content or refinedChunks in response. Available keys: ${Object.keys(item.json || {}).join(', ')}`);\n    }\n    \n    // Validate aiResponse structure\n    console.log('aiResponse keys:', Object.keys(aiResponse));\n    \n    if (!aiResponse.refinedChunks || !Array.isArray(aiResponse.refinedChunks)) {\n      throw new Error(`Invalid aiResponse structure. Has refinedChunks: ${!!aiResponse.refinedChunks}, Is Array: ${Array.isArray(aiResponse.refinedChunks)}`);\n    }\n    \n    if (aiResponse.refinedChunks.length === 0) {\n      throw new Error('refinedChunks array is empty');\n    }\n    \n    console.log(`✅ Found ${aiResponse.refinedChunks.length} refined chunks`);\n    console.log(`Document summary: ${aiResponse.documentSummary?.substring(0, 60)}...`);\n    \n    // Get document metadata from previous node\n    const docData = $('Break Into Initial Chunks').first()?.json;\n    \n    if (!docData) {\n      throw new Error('Cannot find \"Break Into Initial Chunks\" node data');\n    }\n    \n    // Process each refined chunk\n    let processedCount = 0;\n    for (const chunk of aiResponse.refinedChunks) {\n      // Validate chunk\n      if (!chunk.text || typeof chunk.text !== 'string' || chunk.text.trim().length === 0) {\n        console.log(`⚠ Skipping chunk ${chunk.chunkId}: invalid text`);\n        continue;\n      }\n      \n      processedCount++;\n      \n      // Create properly formatted output\n      outputItems.push({\n        json: {\n          pageContent: chunk.text,\n          metadata: {\n            chunkId: chunk.chunkId,\n            totalChunks: aiResponse.totalChunks,\n            topic: chunk.topic || 'Untitled',\n            importance: chunk.importance || 5,\n            keywords: Array.isArray(chunk.keywords) ? chunk.keywords : [],\n            documentId: docData.documentId,\n            documentTitle: docData.documentTitle,\n            documentSummary: aiResponse.documentSummary || '',\n            chunkingMethod: 'agentic-ai-refined',\n            timestamp: new Date().toISOString()\n          }\n        }\n      });\n    }\n    \n    console.log(`✅ SUCCESS: Processed ${processedCount} chunks successfully`);\n    \n  } catch (e) {\n    // Error handling with fallback\n    console.log(`❌ ERROR: ${e.message}`);\n    console.log('Full error:', e.stack);\n    console.log('Raw response (first 1000 chars):', JSON.stringify(item.json, null, 2).substring(0, 1000));\n    \n    // Use fallback chunks\n    const docData = $('Break Into Initial Chunks').first()?.json;\n    \n    if (docData?.chunks && Array.isArray(docData.chunks)) {\n      console.log(`⚠ FALLBACK: Creating ${docData.chunks.length} chunks from initial data`);\n      \n      for (let i = 0; i < docData.chunks.length; i++) {\n        const chunk = docData.chunks[i];\n        outputItems.push({\n          json: {\n            pageContent: chunk.text || '',\n            metadata: {\n              chunkId: i + 1,\n              totalChunks: docData.chunks.length,\n              topic: `Fallback Chunk ${i + 1}`,\n              importance: 5,\n              keywords: [],\n              documentId: docData.documentId || 'unknown',\n              documentTitle: docData.documentTitle || 'Unknown',\n              documentSummary: '',\n              chunkingMethod: 'fallback-initial',\n              error: e.message,\n              timestamp: new Date().toISOString()\n            }\n          }\n        });\n      }\n    } else {\n      // Create error item\n      outputItems.push({\n        json: {\n          pageContent: 'Error processing document',\n          metadata: {\n            chunkId: 1,\n            totalChunks: 1,\n            topic: 'Error',\n            importance: 0,\n            keywords: ['error'],\n            documentId: 'error',\n            documentTitle: 'Processing Error',\n            documentSummary: '',\n            chunkingMethod: 'error',\n            error: e.message,\n            timestamp: new Date().toISOString()\n          }\n        }\n      });\n    }\n  }\n}  \n\nif (outputItems.length === 0) {\n  throw new Error('No output items created');\n}\n\nconsole.log(`\\n📦 FINAL: ${outputItems.length} items ready`);\nreturn outputItems;"
+      },
+      "id": "parse-json-node",
+      "name": "Parse JSON Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        240,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "insert"
+      },
+      "id": "548044f4-3b67-48fb-9a6b-96fd3e1c4f1f",
+      "name": "Supabase Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "position": [
+        672,
+        304
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "supabaseApi": {
+          "id": "VKoabbJQnegsVFoB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d005f638-a908-487c-b94f-ba012f9bcda5",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        688,
+        528
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6a4dcfee-ba08-4baf-b285-a5fbc84f098d",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "position": [
+        848,
+        528
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "id"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert document chunking AI. Your task is to analyze text chunks and refine their boundaries based on semantic meaning and topic changes. Always return ONLY valid JSON with no additional text or explanation.",
+              "role": "system"
+            },
+            {
+              "content": "=Analyze the following document chunks and create semantically coherent chunks with clear topic boundaries.\n\n**Document Title:** {{ $json.documentTitle }}\n**Total Initial Chunks:** {{ $json.totalChunks }}\n\n**Preliminary Chunks:**\n{{ JSON.stringify($json.chunks, null, 2) }}\n\n**Your Task:**\n1. Identify natural semantic boundaries (topic changes, section breaks, context shifts)\n2. Merge or split chunks as needed for semantic coherence\n3. Assign a descriptive topic to each chunk\n4. Rate importance (1-10) based on information density\n5. Extract 3-7 key terms/keywords per chunk\n\n**Required JSON Response Format:**\n```json\n{\n  \"refinedChunks\": [\n    {\n      \"chunkId\": 1,\n      \"text\": \"The actual refined chunk text\",\n      \"topic\": \"Brief descriptive topic\",\n      \"importance\": 8,\n      \"keywords\": [\"keyword1\", \"keyword2\", \"keyword3\"]\n    }\n  ],\n  \"totalChunks\": 5,\n  \"documentSummary\": \"A brief 1-2 sentence summary of the entire document\"\n}\n```\n\n**Important Rules:**\n- Return ONLY the JSON object, no markdown formatting, no explanatory text\n- Each chunk should be 500-2000 characters\n- Maintain all original content - don't lose any text\n- Ensure chunks don't overlap\n- Topic should be 3-8 words maximum\n- Keywords should be single words or short phrases"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -112,
+        304
+      ],
+      "id": "31ecb631-42a6-4f4a-9fb6-40fbd48d861c",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Smart Optimization for Supabase\nconst items = $input.all();\nconst outputItems = [];\n\nconsole.log(`📊 Optimizing ${items.length} chunks`);\n\n// ⚙️ CONFIGURATION - Adjust these settings\nconst CONFIG = {\n  minImportance: 7,         // Only chunks with importance >= 7\n  minLength: 200,           // Minimum 200 characters\n  maxLength: 2500,          // Maximum 2500 characters  \n  skipFallback: true,       // Skip fallback chunks\n  skipError: true,          // Skip error chunks\n  requireKeywords: true,    // Need at least 1 keyword\n  deduplicate: true         // Remove duplicates\n};\n\nconst stats = {\n  total: items.length, accepted: 0,\n  skippedError: 0, skippedFallback: 0, \n  skippedImportance: 0, skippedLength: 0,\n  skippedKeywords: 0, skippedDupe: 0\n};\n\nconst seen = new Set();\n\nfor (const item of items) {\n  const {pageContent, metadata = {}} = item.json;\n  \n  // Filter 1: Skip errors\n  if (CONFIG.skipError && metadata.chunkingMethod === 'error') {\n    stats.skippedError++;\n    continue;\n  }\n  \n  // Filter 2: Skip fallback (keep only AI-refined)\n  if (CONFIG.skipFallback && metadata.chunkingMethod === 'fallback-initial') {\n    stats.skippedFallback++;\n    continue;\n  }\n  \n  // Filter 3: Importance threshold\n  if (metadata.importance < CONFIG.minImportance) {\n    stats.skippedImportance++;\n    continue;\n  }\n  \n  // Filter 4: Content length\n  const len = (pageContent || '').trim().length;\n  if (len < CONFIG.minLength || len > CONFIG.maxLength) {\n    stats.skippedLength++;\n    continue;\n  }\n  \n  // Filter 5: Require keywords\n  if (CONFIG.requireKeywords && (!metadata.keywords || metadata.keywords.length === 0)) {\n    stats.skippedKeywords++;\n    continue;\n  }\n  \n  // Filter 6: Deduplicate\n  if (CONFIG.deduplicate) {\n    const hash = pageContent.trim().substring(0, 150).toLowerCase();\n    if (seen.has(hash)) {\n      stats.skippedDupe++;\n      continue;\n    }\n    seen.add(hash);\n  }\n  \n  // ✅ PASSED ALL FILTERS!\n  stats.accepted++;\n  outputItems.push({\n    json: {\n      pageContent: pageContent.trim(),\n      metadata: {\n        id: `${metadata.documentId}_${metadata.chunkId}`,\n        chunkId: metadata.chunkId,\n        documentId: metadata.documentId,\n        topic: metadata.topic,\n        importance: metadata.importance,\n        keywords: metadata.keywords || [],\n        documentTitle: metadata.documentTitle,\n        documentSummary: metadata.documentSummary || ''\n      }\n    }\n  });\n}\n\n// Print summary\nconsole.log(`\\n${'='.repeat(45)}`);\nconsole.log(`📊 OPTIMIZATION RESULTS`);\nconsole.log(`${'='.repeat(45)}`);\nconsole.log(`Total input:       ${stats.total}`);\nconsole.log(`✅ Accepted:        ${stats.accepted} (${Math.round(stats.accepted/stats.total*100)}%)`);\nconsole.log(`\\n❌ FILTERED:`);\nconsole.log(`   Errors:         ${stats.skippedError}`);\nconsole.log(`   Fallback:       ${stats.skippedFallback}`);\nconsole.log(`   Low import:     ${stats.skippedImportance}`);\nconsole.log(`   Length:         ${stats.skippedLength}`);\nconsole.log(`   No keywords:    ${stats.skippedKeywords}`);\nconsole.log(`   Duplicates:     ${stats.skippedDupe}`);\nconsole.log(`${'='.repeat(45)}\\n`);\n\nif (outputItems.length === 0) {\n  throw new Error('No chunks passed filters. Adjust CONFIG.');\n}\n\nconsole.log(`🚀 Sending ${outputItems.length} quality chunks to Supabase`);\nreturn outputItems;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        304
+      ],
+      "id": "3604ba2b-bf2d-483a-bc18-049a11bd13f7",
+      "name": "optimization for supabase"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Document": {
+      "main": [
+        [
+          {
+            "node": "Extract and Prepare Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract and Prepare Text": {
+      "main": [
+        [
+          {
+            "node": "Break Into Initial Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Break Into Initial Chunks": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON Response": {
+      "main": [
+        [
+          {
+            "node": "optimization for supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "main": [],
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "main": [],
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "optimization for supabase": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Parse JSON Response": [
+      {
+        "json": {
+          "pageContent": "🧠 FitwithPari · Live Class AI Coach Guidance \nExercise-Specific, Level-Aware, Safety-First \nThe AI knows a LOT about each student. \u000bDuring the class, the job is simple: \nPick only the insights that the coach needs for this specific workout. \nSurface a max of 2–3: \n1️⃣ Safety risks \u000b2️⃣ Technique cues relevant to movements happening now \u000b3️⃣ Performance progression — only if appropriate for the level \u000b4️⃣ Confidence adjustments when balance/coordination matter \nTone must always be supportive and empowering. \n \n✅ What Information the AI Can Use (existing in your database) \nKnee/back/shoulder/wrist issues \nHip discomfort, ankle mobility limits \nBalance limitations \nCore concerns (diastasis, pelvic floor) \nHigh blood pressure \nOsteopenia / osteoporosis \nLeft–right strength differences \nExercise load history (progression cues) \nFlexibility/mobility restrictions \nMovement patterns they struggle with \nFitness Level: \nL1 Beginner \nL2 Moderately Experienced \nL3 Intermediate",
+          "metadata": {
+            "chunkId": 1,
+            "totalChunks": 5,
+            "topic": "AI Coach Guidance Overview",
+            "importance": 9,
+            "keywords": [
+              "AI",
+              "guidance",
+              "safety",
+              "technique",
+              "fitness"
+            ],
+            "documentId": "1aO0dNf8GUFRaNLzFjDV4Blnp2bn7Aq61j64RIwHfEi8",
+            "documentTitle": "Untitled Document",
+            "documentSummary": "This document outlines guidance for an AI fitness coach, detailing insights for various exercise types, fitness levels, and a supportive coaching philosophy.",
+            "chunkingMethod": "agentic-ai-refined",
+            "timestamp": "2025-10-28T16:28:18.815Z"
+          }
+        }
+      },
+      {
+        "json": {
+          "pageContent": "🧩 Class-by-Class Insight Filtering \n✅ Strength Training — Lower Body \nLikely movements: \u000b• Squats, lunges, deadlifts, glute bridges, step-ups \nSurface only: \u000b• Knee valgus / osteoarthritis \u000b• Hip discomfort or tight hip flexors \u000b• Low-back strain in hinging \u000b• Ankle mobility restriction \u000b• Side imbalance (e.g., weaker right glute) \nExample insights: \n“Wider stance helps your knees track better.” \n“Shorter hinge range if low-back feels pressure.” \n“Extra reps on right side for balance.” \n \n✅ Strength Training — Upper Body \nLikely movements: \u000b• Pushups, rows, chest/shoulder presses, dips, curls \nSurface only: \u000b• Wrist pain \u000b• Shoulder mobility restrictions \u000b• Neck tension during presses \u000b• Prior dumbbell loads for safe progression \nExample insights: \n“Keep neck relaxed; shoulders away from ears.” \n“Incline or fists to reduce wrist pressure.” \n \n✅ Core & Abs \nLikely movements: \u000b• Planks, dead bugs, bird dogs, leg raises, crunch variations \nSurface only: \u000b• Low-back strain during core work \u000b• Diastasis recti — avoid heavy flexion \u000b• Pelvic floor concerns — avoid high-impact core \u000b• Neck strain — modify hand support \nExample insights: \n“Exhale on exertion to support deep core.” \n“Dead bug instead of full leg raise.”",
+          "metadata": {
+            "chunkId": 2,
+            "totalChunks": 5,
+            "topic": "Strength Training Insights",
+            "importance": 8,
+            "keywords": [
+              "strength",
+              "lower body",
+              "upper body",
+              "core",
+              "abs"
+            ],
+            "documentId": "1aO0dNf8GUFRaNLzFjDV4Blnp2bn7Aq61j64RIwHfEi8",
+            "documentTitle": "Untitled Document",
+            "documentSummary": "This document outlines guidance for an AI fitness coach, detailing insights for various exercise types, fitness levels, and a supportive coaching philosophy.",
+            "chunkingMethod": "agentic-ai-refined",
+            "timestamp": "2025-10-28T16:28:18.815Z"
+          }
+        }
+      },
+      {
+        "json": {
+          "pageContent": "✅ Pilates \nLikely movements: \u000b• Hundred, roll up progressions, spine articulation, leg circles \nSurface only: \u000b• Osteoporosis — avoid strong spinal flexion \u000b• Hip flexor dominance over core \u000b• Balance confidence \nExample insights: \n“Neutral spine option if curl-up strains back.” \n \n✅ Yoga \nLikely patterns: \u000b• Down dog, warriors, hip openers, balance poses \nSurface only: \u000b• Wrist load sensitivity \u000b• Balance concerns \u000b• Hip/knee range limits \u000b• Low-back pinch in deep twists \nExample insights: \n“Shorter stance for knee comfort.” \n“Forearms instead of hands for wrist relief.” \n \n⚠ HIIT \nLikely movements: \u000b• Burpees, jumping jacks, squat jumps, high knees, skaters \nSurface only: \u000b• High blood pressure → avoid intense HR spikes \u000b• Knee/back pain → avoid impact \u000b• Pelvic floor concerns → avoid jumps \u000b• Fatigue response → modify work/rest \nExample insights: \n“Low-impact versions — step instead of jump.” \n“Keep head above heart to support BP.”",
+          "metadata": {
+            "chunkId": 3,
+            "totalChunks": 5,
+            "topic": "Pilates, Yoga, and HIIT Insights",
+            "importance": 8,
+            "keywords": [
+              "Pilates",
+              "yoga",
+              "HIIT",
+              "movements",
+              "safety"
+            ],
+            "documentId": "1aO0dNf8GUFRaNLzFjDV4Blnp2bn7Aq61j64RIwHfEi8",
+            "documentTitle": "Untitled Document",
+            "documentSummary": "This document outlines guidance for an AI fitness coach, detailing insights for various exercise types, fitness levels, and a supportive coaching philosophy.",
+            "chunkingMethod": "agentic-ai-refined",
+            "timestamp": "2025-10-28T16:28:18.815Z"
+          }
+        }
+      },
+      {
+        "json": {
+          "pageContent": "⚠ Zumba \nLikely patterns: \u000b• Pivots, hip rotation, lateral steps, fast travel \nSurface only: \u000b• Knee issues (especially pivots) \u000b• Low-back sensitivity in twisting \u000b• Balance confidence \u000b• Breathlessness early → reduce intensity \nExample insights: \n“Smaller pivot range protects knees.” \n“Hands on hips during quick turns.” \n \n✅ Mobility & Deep Stretching \nLikely movements: \u000b• Hip openers, thoracic twists, hamstring stretches \nSurface only: \u000b• Hypermobility → avoid overstretch \u000b• Low-back pinch in deep flexion \u000b• Tight areas (hamstrings, hips) \nExample insights: \n“Micro-bend knees to protect joints.” \n \n✅ Animal Flow \nLikely movements: \u000b• Beast holds, crawling, crab reach, transitions \nSurface only: \u000b• Wrist/shoulder load tolerance \u000b• Core stability in quadruped \u000b• Coordination overwhelm \u000b• Fatigue in transitions \nExample insights: \n“Forearms for wrist relief; shorter holds.”",
+          "metadata": {
+            "chunkId": 4,
+            "totalChunks": 5,
+            "topic": "Zumba, Mobility, and Animal Flow Insights",
+            "importance": 7,
+            "keywords": [
+              "Zumba",
+              "mobility",
+              "deep stretching",
+              "Animal Flow",
+              "movements"
+            ],
+            "documentId": "1aO0dNf8GUFRaNLzFjDV4Blnp2bn7Aq61j64RIwHfEi8",
+            "documentTitle": "Untitled Document",
+            "documentSummary": "This document outlines guidance for an AI fitness coach, detailing insights for various exercise types, fitness levels, and a supportive coaching philosophy.",
+            "chunkingMethod": "agentic-ai-refined",
+            "timestamp": "2025-10-28T16:28:18.815Z"
+          }
+        }
+      },
+      {
+        "json": {
+          "pageContent": "🎯 Fitness Level Rules \nL1 Beginner \nFocus: Safety + stability + clarity \nProvide simpler options \nAvoid aggressive progression \nExample outputs: \n“Wider stance for better balance.” \n“Hold onto support in lunges.” \n \nL2 Moderately Experienced \nFocus: Technique refinement + gentle progress \nTry mild load or range improvements if form is stable \nExample outputs: \n“Add a bit more depth if knees stay aligned.” \n“Try a slightly heavier dumbbell if comfortable.” \n \nL3 Intermediate \nFocus: Performance progression while maintaining quality \nSafely challenge strength, technique, or endurance \nExample outputs: \n“Increase weight 1–2 kg if form holds.” \n“Add a pause for more glute activation.” \n \n🗣️ Output Format (strict rule) \n✅ 2–3 insights only \u000b✅ Specific to TODAY’S movements \u000b✅ Simple action cue \u000b✅ Positive + supportive tone \nFormat: \nSafety/technique cue \nOptional: small progression suggestion \nNever medical judgment or negative feedback \nExamples: \n“Right knee tracks inward; try a wider stance.” \n“Low impact today — step instead of jump.” \n“Forearms for wrist comfort in plank.” \n \n✅ Final AI Coach Philosophy \nProtect first \nGuide technique second \nProgress only when valuable \nBuild confidence always \nThe coach gets just what they need, exactly when they need it.",
+          "metadata": {
+            "chunkId": 5,
+            "totalChunks": 5,
+            "topic": "Fitness Level Guidelines and Philosophy",
+            "importance": 9,
+            "keywords": [
+              "fitness",
+              "level",
+              "guidelines",
+              "philosophy",
+              "safety"
+            ],
+            "documentId": "1aO0dNf8GUFRaNLzFjDV4Blnp2bn7Aq61j64RIwHfEi8",
+            "documentTitle": "Untitled Document",
+            "documentSummary": "This document outlines guidance for an AI fitness coach, detailing insights for various exercise types, fitness levels, and a supportive coaching philosophy.",
+            "chunkingMethod": "agentic-ai-refined",
+            "timestamp": "2025-10-28T16:28:18.815Z"
+          }
+        }
+      }
+    ]
+  },
+  "versionId": "58087079-ec08-4de1-b3b5-6b51f82eb60c",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-28T14:22:42.307Z",
+      "updatedAt": "2025-10-28T14:22:42.307Z",
+      "role": "workflow:owner",
+      "workflowId": "7J2xcwflT9cQenjZ",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
