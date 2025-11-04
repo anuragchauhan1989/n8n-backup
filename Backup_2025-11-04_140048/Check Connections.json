@@ -1,0 +1,2753 @@
+{
+  "createdAt": "2025-10-15T06:08:09.762Z",
+  "updatedAt": "2025-10-16T15:05:30.000Z",
+  "id": "70Lbxv0GqdTGCQzB",
+  "name": "Check Connections",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## References:\n\nPhantom 5 - https://phantombuster.com/3359678871743394/phantoms/1799863188753171/setup",
+        "height": 240,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3024,
+        480
+      ],
+      "id": "734e0896-2088-48bf-a85a-9004243477a0",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "url": "https://api.phantombuster.com/api/v2/containers/fetch-result-object",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ $('Launch Phantom - RG created dynamic date').item.json.containerId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Phantombuster-Key-1",
+              "value": "x4jNsyxYKGl0B4U0KZJ7kjt4F6Xku17xm6f3mWk4QzY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1472,
+        1008
+      ],
+      "id": "ecfd8129-f3da-4730-af14-17f4ba901cfa",
+      "name": "Get output of Phantom 1",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1616,
+        1120
+      ],
+      "id": "0fee67c5-1029-4945-89bd-e4ffdd24831b",
+      "name": "Wait",
+      "webhookId": "dbd97215-5cc3-41c4-8df6-93f89d084871"
+    },
+    {
+      "parameters": {
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2368,
+        1024
+      ],
+      "id": "f49323a1-65bf-4a32-a0ae-3dd7a8100f83",
+      "name": "Wait4",
+      "webhookId": "73c98d26-c48e-4b8e-a4bc-26466d7c895a"
+    },
+    {
+      "parameters": {
+        "url": "https://api.phantombuster.com/api/v2/containers/fetch",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ $('Launch Phantom - RG created dynamic date').item.json.containerId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Phantombuster-Key-1",
+              "value": "x4jNsyxYKGl0B4U0KZJ7kjt4F6Xku17xm6f3mWk4QzY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2112,
+        1024
+      ],
+      "id": "b948ba1b-4c03-417f-adb7-0407e59452fa",
+      "name": "Check status of Phantom "
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -3488,
+        1024
+      ],
+      "id": "194e06b8-6fcf-4ff4-9be2-23a02ca518a0",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "finished",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9a595aef-d1ec-461c-a46b-8960665824c2"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1fefaebe-daaa-45db-b680-bcc402adbde7",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "running",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1856,
+        1024
+      ],
+      "id": "11c91902-bc55-41b9-9e2a-d4448dce4240",
+      "name": "Check status of Phantom 5 results1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "67a1de68-3892-4ec8-9da3-2e26b53bb20c",
+              "name": "parsedResult",
+              "value": "={{ JSON.parse($json[\"resultObject\"]) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1232,
+        1008
+      ],
+      "id": "6db4d4dd-39d4-42d0-b682-8fbefd9d48f9",
+      "name": "Parse by Receiver"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "parsedResult",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        1008
+      ],
+      "id": "b8348ccf-0979-44c8-8b8d-21b6340f769f",
+      "name": "Split Out by Receiver"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.error }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    },
+                    "id": "52d7569b-9832-4512-a7ae-0567ad3cd06b"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5fa82be6-cec1-4de9-9e59-e77a910ac7cc",
+                    "leftValue": "={{ $json.error }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -592,
+        1008
+      ],
+      "id": "2389d43d-332d-4b90-9a10-10fa1dc0a4b5",
+      "name": "Check status of 1st DM1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.phantombuster.com/api/v2/agents/launch",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Phantombuster-Key-1",
+              "value": "x4jNsyxYKGl0B4U0KZJ7kjt4F6Xku17xm6f3mWk4QzY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": \"1799863188753171\",\n  \"argument\": {\n    \"sortBy\": \"Recently added\",\n    \"sessionCookie\": \"{{ $json.sessionCookie }}\",\n    \"userAgent\": \"{{ $json.userAgent }}\",\n    \"numberOfProfiles\": 300,\n    \"onlyRetrieveProfilesAfterDate\": true,\n    \"dateAfter\": \"{{$now.minus({ days: 2 }).toFormat('MM-dd-yyyy')}}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2608,
+        1024
+      ],
+      "id": "1a77eeb0-f6d4-4407-aeeb-53ec58f9d20e",
+      "name": "Launch Phantom - RG created dynamic date",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "content": "## Change Log (Melbourne time)\n\n1. 10 Sep 2025 - 8am - Bjorn - Fixed [execution error #2585](https://lendly.app.n8n.cloud/workflow/dFRfuMNTr0fCLsgv/executions/2585) Sep 8 12 midnight who were not updated on Prospects Airtable - \n\n2. 19SEP25 1154am - added new Airtable search & post-Phantombuster conditional logic for checking Prospects and adding them to Airtable. Changes made to Code node (\"fullName\" instead of \"Employee Full Name\") and \"Search Records by URL\" - \"profileUrl\" instead of \"LinkedIn connection ...from input\")",
+        "height": 432,
+        "width": 528
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        1744
+      ],
+      "id": "468b7899-3090-4cce-bec6-c74d87e36a15",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Connection_Request_Accepted_Flag": true,
+            "Connection Status": "Accepted Request",
+            "Connection_LinkedIn_Account_URL": "={{ $('Split Out by Receiver').item.json.connectedProfileUrl }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Employee_Full_Name",
+              "displayName": "Employee_Full_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Pipeline_Stage",
+              "displayName": "Pipeline_Stage",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Employee_First_Name",
+              "displayName": "Employee_First_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Last_Name",
+              "displayName": "Employee_Last_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_Name",
+              "displayName": "Company_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Email",
+              "displayName": "Employee_Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_LinkedIn_URL",
+              "displayName": "Employee_LinkedIn_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "profileUrl_n8n",
+              "displayName": "profileUrl_n8n",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Employee_Job_Title",
+              "displayName": "Employee_Job_Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Role_Seniority",
+              "displayName": "Employee_Role_Seniority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Country_Apollo",
+              "displayName": "Employee_Country_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Connection_Request_Sent_Flag",
+              "displayName": "Connection_Request_Sent_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Connection Status",
+              "displayName": "Connection Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection_Request_Sent_Date",
+              "displayName": "Connection_Request_Sent_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Connection_Request_Note_Content",
+              "displayName": "Connection_Request_Note_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Connection_LinkedIn_Account",
+              "displayName": "Connection_LinkedIn_Account",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Connection_LinkedIn_Account_URL",
+              "displayName": "Connection_LinkedIn_Account_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection_Request_Accepted_Flag",
+              "displayName": "Connection_Request_Accepted_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection_Request_Accepted_Date",
+              "displayName": "Connection_Request_Accepted_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Acceptance_Rate_Calc",
+              "displayName": "Acceptance_Rate_Calc",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg1_Sent",
+              "displayName": "Msg1_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg1_Date",
+              "displayName": "Msg1_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg1_Content",
+              "displayName": "Msg1_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg2_Sent",
+              "displayName": "Msg2_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg2_Date",
+              "displayName": "Msg2_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg2_Content",
+              "displayName": "Msg2_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg3_Sent",
+              "displayName": "Msg3_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg3_Date",
+              "displayName": "Msg3_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg3_Content",
+              "displayName": "Msg3_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Message_Replied_Flag",
+              "displayName": "Message_Replied_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Message_Replied_Date",
+              "displayName": "Message_Replied_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Message_Reply_Sentiment",
+              "displayName": "Message_Reply_Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Negative",
+                  "value": "Negative"
+                },
+                {
+                  "name": "Neutral",
+                  "value": "Neutral"
+                },
+                {
+                  "name": "Positive",
+                  "value": "Positive"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "LinkedIn_Message_Thread_URL",
+              "displayName": "LinkedIn_Message_Thread_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Reply_Rate_Calc",
+              "displayName": "Reply_Rate_Calc",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Salesforce_Add_Flag",
+              "displayName": "Salesforce_Add_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Salesforce_Added_Date",
+              "displayName": "Salesforce_Added_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Salesforce_Account_ID",
+              "displayName": "Salesforce_Account_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Date_Created",
+              "displayName": "Date_Created",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_ID_Apollo",
+              "displayName": "Company_ID_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_ID_Apollo",
+              "displayName": "Employee_ID_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_Sync_Status",
+              "displayName": "Company_Sync_Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_Last_Synced_Date",
+              "displayName": "Company_Last_Synced_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Last_Synced_Date",
+              "displayName": "Employee_Last_Synced_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Sync_Status",
+              "displayName": "Employee_Sync_Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        640
+      ],
+      "id": "fbf464a1-f17e-443a-b915-542449990352",
+      "name": "Update Connection Request details in Prospects DB1",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "filterByFormula": "=LOWER(TRIM({Employee_Full_Name})) = LOWER(TRIM(\"{{ $json.fullName }}\"))",
+        "returnAll": false,
+        "limit": 2,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -272,
+        640
+      ],
+      "id": "ed741291-f0d4-4772-a3e1-9d5bfa71c163",
+      "name": "Search records",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 496,
+        "width": 1792
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "18dc0a74-b45e-4736-8586-d43cc284c877",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        240,
+        224
+      ],
+      "id": "5201f4ce-622b-4728-89d8-14a5e25eefb8",
+      "name": "Loop Over Items1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "filterByFormula": "=OR(\n  AND(\n    {profileUrl_n8n} != \"https://www.linkedin.com/in//\",\n    LOWER(TRIM({profileUrl_n8n})) = LOWER(TRIM(\"{{ $json.profileUrl_n8n }}\"))\n  ),\n  AND(\n    {Employee_LinkedIn_URL} != \"https://www.linkedin.com/in//\",\n    LOWER(TRIM({Employee_LinkedIn_URL})) = LOWER(TRIM(\"{{ $json.profileUrl_n8n }}\"))\n  )\n)\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1232,
+        80
+      ],
+      "id": "b23213aa-50c6-4824-aa4d-523e89e7630f",
+      "name": "Search records by URL1",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.matchCount }}",
+                    "rightValue": "0",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "831cde9c-d5a8-4afa-a5d8-53f04aa4cfa3"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dbdc37fb-15ff-4f4c-b463-bd4aee73b691",
+                    "leftValue": "={{ $json.matchCount }}",
+                    "rightValue": "1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        960,
+        192
+      ],
+      "id": "f4b33703-9846-4aa8-b0f0-39d25051511d",
+      "name": "Switch1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Connection_Request_Accepted_Flag": true,
+            "Connection Status": "Accepted Request",
+            "Connection_LinkedIn_Account_URL": "={{ $('Split Out by Receiver').item.json.connectedProfileUrl }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Employee_Full_Name",
+              "displayName": "Employee_Full_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Pipeline_Stage",
+              "displayName": "Pipeline_Stage",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Employee_First_Name",
+              "displayName": "Employee_First_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Last_Name",
+              "displayName": "Employee_Last_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_Name",
+              "displayName": "Company_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Email",
+              "displayName": "Employee_Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_LinkedIn_URL",
+              "displayName": "Employee_LinkedIn_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "profileUrl_n8n",
+              "displayName": "profileUrl_n8n",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Employee_Job_Title",
+              "displayName": "Employee_Job_Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Role_Seniority",
+              "displayName": "Employee_Role_Seniority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Country_Apollo",
+              "displayName": "Employee_Country_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Connection_Request_Sent_Flag",
+              "displayName": "Connection_Request_Sent_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Connection Status",
+              "displayName": "Connection Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection_Request_Sent_Date",
+              "displayName": "Connection_Request_Sent_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Connection_Request_Note_Content",
+              "displayName": "Connection_Request_Note_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Connection_LinkedIn_Account",
+              "displayName": "Connection_LinkedIn_Account",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Connection_LinkedIn_Account_URL",
+              "displayName": "Connection_LinkedIn_Account_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection_Request_Accepted_Flag",
+              "displayName": "Connection_Request_Accepted_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection_Request_Accepted_Date",
+              "displayName": "Connection_Request_Accepted_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Acceptance_Rate_Calc",
+              "displayName": "Acceptance_Rate_Calc",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg1_Sent",
+              "displayName": "Msg1_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg1_Date",
+              "displayName": "Msg1_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg1_Content",
+              "displayName": "Msg1_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg2_Sent",
+              "displayName": "Msg2_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg2_Date",
+              "displayName": "Msg2_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg2_Content",
+              "displayName": "Msg2_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg3_Sent",
+              "displayName": "Msg3_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg3_Date",
+              "displayName": "Msg3_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg3_Content",
+              "displayName": "Msg3_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Message_Replied_Flag",
+              "displayName": "Message_Replied_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Message_Replied_Date",
+              "displayName": "Message_Replied_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Message_Reply_Sentiment",
+              "displayName": "Message_Reply_Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Negative",
+                  "value": "Negative"
+                },
+                {
+                  "name": "Neutral",
+                  "value": "Neutral"
+                },
+                {
+                  "name": "Positive",
+                  "value": "Positive"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "LinkedIn_Message_Thread_URL",
+              "displayName": "LinkedIn_Message_Thread_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Reply_Rate_Calc",
+              "displayName": "Reply_Rate_Calc",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Salesforce_Add_Flag",
+              "displayName": "Salesforce_Add_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Salesforce_Added_Date",
+              "displayName": "Salesforce_Added_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Salesforce_Account_ID",
+              "displayName": "Salesforce_Account_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Date_Created",
+              "displayName": "Date_Created",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_ID_Apollo",
+              "displayName": "Company_ID_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_ID_Apollo",
+              "displayName": "Employee_ID_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_Sync_Status",
+              "displayName": "Company_Sync_Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_Last_Synced_Date",
+              "displayName": "Company_Last_Synced_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Last_Synced_Date",
+              "displayName": "Employee_Last_Synced_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Sync_Status",
+              "displayName": "Employee_Sync_Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1488,
+        224
+      ],
+      "id": "349d6dc9-ccab-4c48-921b-ea270995d2cf",
+      "name": "Update Connection Request details in Prospects DB",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "filterByFormula": "=LOWER(TRIM({Employee_Full_Name})) = LOWER(TRIM(\"{{ $json.fullName }}\"))",
+        "returnAll": false,
+        "limit": 2,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        544,
+        224
+      ],
+      "id": "71c642b8-db33-42a0-8b23-23afe2075586",
+      "name": "Search records1",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  // If Airtable returned nothing, the item.json will be empty\n  if (!item.json.id) {\n    item.json.matchCount = 0;\n  } else {\n    // If there's data, treat as 1 (or more if you expect duplicates here)\n    item.json.matchCount = 1;\n  }\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        224
+      ],
+      "id": "c741ddf2-52e6-4996-8a9c-9de36f8b517a",
+      "name": "Code1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f86ca1bb-51ad-45b3-b173-c9d97aeaf4a2",
+              "leftValue": "={{ $json.matchCount }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        992
+      ],
+      "id": "73711601-2278-471e-83f1-74277bc5dc3a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Report on Search Results\n * - 1 output item per unique \"Employee Full Name\" from the Merge node\n * - matchCount = number of hits returned by \"Search records1\"\n * - If matches: use first Search record's fields + matchCount\n * - If no matches: use original Merge fields + matchCount = 0\n */\n\nconst norm = (s) => String(s || \"\").trim().replace(/\\s+/g, \" \").toLowerCase();\n\n// --- Grab MERGE items by node name (robust even if not wired directly) ---\nconst CANDIDATE_MERGE_NODE_NAMES = [\"Merge\", \"Merge1\", \"Merge node\", \"Check status of Connection Request\"];\nlet mergeItems = [];\nfor (const name of CANDIDATE_MERGE_NODE_NAMES) {\n  try {\n    const arr = $items(name) || [];\n    if (arr.length) { mergeItems = arr; break; }\n  } catch (_) {}\n}\n\n// If still nothing, last resort: try to infer from current inputs\nif (mergeItems.length === 0) {\n  try {\n    const maybe = $input.all().map(i => i.json || {});\n    mergeItems = maybe\n      .filter(j => (\"fullName\" in j) && !(\"id\" in j))\n      .map(j => ({ json: j }));\n  } catch (_) {}\n}\n\n// --- Grab SEARCH items from \"Search records1\" by node name ---\nlet searchItems = [];\ntry {\n  searchItems = ($items(\"Search records2\") || []);\n} catch (_) {}\n\n// Fallback: if not accessible by name, try current input stream\nif (searchItems.length === 0) {\n  try {\n    const maybe = $input.all().map(i => i.json || {});\n    const looksLikeSearch = (j) => (\"id\" in j) || (\"fullName\" in j);\n    searchItems = maybe.filter(looksLikeSearch).map(j => ({ json: j }));\n  } catch (_) {}\n}\n\n// --- Build unique queries (from Merge) ---\nconst queriesByNormName = new Map(); // normName -> original merge json\nfor (const it of mergeItems) {\n  const j = it.json || {};\n  const n = norm(j[\"fullName\"]);\n  if (!n) continue;\n  if (!queriesByNormName.has(n)) queriesByNormName.set(n, j);\n}\n\n// If we still have zero queries, return empty to avoid misleading results\nif (queriesByNormName.size === 0) {\n  // But ensure node returns *something* only if search data exists\n  const outs = [];\n  const seen = new Set();\n  for (const it of searchItems) {\n    const r = it.json || {};\n    const raw = r.Employee_Full_Name ?? r[\"Employee Full Name\"] ?? r.fullName ?? r.name ?? \"\";\n    const n = norm(raw);\n    if (!n || seen.has(n)) continue;\n    seen.add(n);\n    outs.push({ json: { ...r, matchCount: 1 } });\n  }\n  return outs;\n}\n\n// --- Count matches by norm name (from Search) ---\nconst matchCountByName = new Map();\nconst firstResultByName = new Map();\n\nfor (const it of searchItems) {\n  const r = it.json || {};\n  const rawName =\n    r.Employee_Full_Name ??\n    r[\"Employee Full Name\"] ??\n    r.fullName ??\n    r.name ??\n    \"\";\n  const n = norm(rawName);\n  if (!n) continue;\n  matchCountByName.set(n, (matchCountByName.get(n) || 0) + 1);\n  if (!firstResultByName.has(n)) firstResultByName.set(n, r);\n}\n\n// --- Build outputs: ALWAYS one per unique query from Merge ---\nconst outputs = [];\nfor (const [nName, qJson] of queriesByNormName.entries()) {\n  const count = matchCountByName.get(nName) || 0;\n  const first = firstResultByName.get(nName);\n\n  if (count > 0 && first) {\n    outputs.push({\n      json: {\n        ...first,\n        // align convenient name fields\n        Employee_Full_Name: (first.Employee_Full_Name ?? qJson[\"Employee Full Name\"] ?? \"\").trim(),\n        \"Employee Full Name\": (qJson[\"Employee Full Name\"] ?? first.Employee_Full_Name ?? \"\").trim(),\n        // preserve original input URL for traceability\n        Employee_LinkedIn_URL_from_input: qJson[\"Employee LinkedIn URL_from_input\"],\n        matchCount: count,\n      },\n    });\n  } else {\n    // 0 matches: include the person with matchCount = 0 (e.g., Hugh Jackman)\n    outputs.push({\n      json: {\n        ...qJson,\n        Employee_Full_Name: (qJson[\"Employee Full Name\"] || \"\").trim(),\n        matchCount: 0,\n      },\n    });\n  }\n}\n\nreturn outputs;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        992
+      ],
+      "id": "0af51b17-1072-4fb5-866b-447a24e21b3a",
+      "name": "Report on Search Results"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "filterByFormula": "=LOWER(TRIM({Employee_Full_Name})) = LOWER(TRIM(\"{{ $json.fullName }}\"))",
+        "returnAll": false,
+        "limit": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -288,
+        992
+      ],
+      "id": "87048bc1-d6d3-4476-bb54-483807c6fac3",
+      "name": "Search records2",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "filterByFormula": "=LOWER(TRIM({profileUrl_n8n})) = LOWER(TRIM(\"{{ $json.profileUrl }}\"))\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        496,
+        1312
+      ],
+      "id": "d2733a59-4c1c-44b8-a4e4-fc0fbd5db423",
+      "name": "Search records by URL",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Old workflow of 19SEP25",
+        "height": 320,
+        "width": 672
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        512
+      ],
+      "id": "98bc732c-f8e5-4952-aaef-67efabd9bc7f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblRsnPoRc4ZflcfU"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "Connection_Request_Accepted_Flag": true,
+            "Connection Status": "Accepted Request",
+            "Connection_LinkedIn_Account_URL": "={{ $('Split Out by Receiver').item.json.connectedProfileUrl }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Employee_Full_Name",
+              "displayName": "Employee_Full_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Pipeline_Stage",
+              "displayName": "Pipeline_Stage",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Employee_First_Name",
+              "displayName": "Employee_First_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Last_Name",
+              "displayName": "Employee_Last_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_Name",
+              "displayName": "Company_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Email",
+              "displayName": "Employee_Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_LinkedIn_URL",
+              "displayName": "Employee_LinkedIn_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "profileUrl_n8n",
+              "displayName": "profileUrl_n8n",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Employee_Job_Title",
+              "displayName": "Employee_Job_Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Role_Seniority",
+              "displayName": "Employee_Role_Seniority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Country_Apollo",
+              "displayName": "Employee_Country_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Connection_Request_Sent_Flag",
+              "displayName": "Connection_Request_Sent_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Connection Status",
+              "displayName": "Connection Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection_Request_Sent_Date",
+              "displayName": "Connection_Request_Sent_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Connection_Request_Note_Content",
+              "displayName": "Connection_Request_Note_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Connection_LinkedIn_Account",
+              "displayName": "Connection_LinkedIn_Account",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Connection_LinkedIn_Account_URL",
+              "displayName": "Connection_LinkedIn_Account_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection_Request_Accepted_Flag",
+              "displayName": "Connection_Request_Accepted_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection_Request_Accepted_Date",
+              "displayName": "Connection_Request_Accepted_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Acceptance_Rate_Calc",
+              "displayName": "Acceptance_Rate_Calc",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg1_Sent",
+              "displayName": "Msg1_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg1_Date",
+              "displayName": "Msg1_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg1_Content",
+              "displayName": "Msg1_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg2_Sent",
+              "displayName": "Msg2_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg2_Date",
+              "displayName": "Msg2_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg2_Content",
+              "displayName": "Msg2_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg3_Sent",
+              "displayName": "Msg3_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Msg3_Date",
+              "displayName": "Msg3_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Msg3_Content",
+              "displayName": "Msg3_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Message_Replied_Flag",
+              "displayName": "Message_Replied_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Message_Replied_Date",
+              "displayName": "Message_Replied_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Message_Reply_Sentiment",
+              "displayName": "Message_Reply_Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Negative",
+                  "value": "Negative"
+                },
+                {
+                  "name": "Neutral",
+                  "value": "Neutral"
+                },
+                {
+                  "name": "Positive",
+                  "value": "Positive"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "LinkedIn_Message_Thread_URL",
+              "displayName": "LinkedIn_Message_Thread_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Reply_Rate_Calc",
+              "displayName": "Reply_Rate_Calc",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Salesforce_Add_Flag",
+              "displayName": "Salesforce_Add_Flag",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Salesforce_Added_Date",
+              "displayName": "Salesforce_Added_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Salesforce_Account_ID",
+              "displayName": "Salesforce_Account_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Date_Created",
+              "displayName": "Date_Created",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_ID_Apollo",
+              "displayName": "Company_ID_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_ID_Apollo",
+              "displayName": "Employee_ID_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_Sync_Status",
+              "displayName": "Company_Sync_Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company_Last_Synced_Date",
+              "displayName": "Company_Last_Synced_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Last_Synced_Date",
+              "displayName": "Employee_Last_Synced_Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Employee_Sync_Status",
+              "displayName": "Employee_Sync_Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        768,
+        976
+      ],
+      "id": "551eeac6-55fd-43de-b030-815d96d5d819",
+      "name": "Update Connection Request details in Prospects DB3",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        1296
+      ],
+      "id": "bf50add1-fcad-4373-a722-7c7bb1d99eb1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7a819830-0578-4716-b759-7daaa9752df4",
+              "name": "sessionCookie",
+              "value": "={{ $json['Session Cookie'] }}",
+              "type": "string"
+            },
+            {
+              "id": "0e35f37e-0aed-4187-a742-f9c74f94d8bf",
+              "name": "userAgent",
+              "value": "={{ $json['User Agent'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2928,
+        1024
+      ],
+      "id": "c11ce609-54f3-416b-8d3c-b46374cf6d5a",
+      "name": "Set LinkedIn Account"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "appSyRFfQAU9hVeAP",
+          "mode": "list",
+          "cachedResultName": "LinkedIn",
+          "cachedResultUrl": "https://airtable.com/appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblHka3dAzfcJHXiX",
+          "mode": "list",
+          "cachedResultName": "Accounts",
+          "cachedResultUrl": "https://airtable.com/appSyRFfQAU9hVeAP/tblHka3dAzfcJHXiX"
+        },
+        "id": "rec61Ba4vOz199sEr",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -3168,
+        1024
+      ],
+      "id": "8421ccc3-6fab-4bea-b407-80ec7dcb02f0",
+      "name": "Get a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Get output of Phantom 1": {
+      "main": [
+        [
+          {
+            "node": "Parse by Receiver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Check status of Phantom ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4": {
+      "main": [
+        [
+          {
+            "node": "Check status of Phantom ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check status of Phantom ": {
+      "main": [
+        [
+          {
+            "node": "Check status of Phantom 5 results1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check status of Phantom 5 results1": {
+      "main": [
+        [
+          {
+            "node": "Get output of Phantom 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse by Receiver": {
+      "main": [
+        [
+          {
+            "node": "Split Out by Receiver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out by Receiver": {
+      "main": [
+        [
+          {
+            "node": "Check status of 1st DM1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check status of 1st DM1": {
+      "main": [
+        [
+          {
+            "node": "Search records2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Phantom - RG created dynamic date": {
+      "main": [
+        [
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Update Connection Request details in Prospects DB1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Search records1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records by URL1": {
+      "main": [
+        [
+          {
+            "node": "Update Connection Request details in Prospects DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Search records by URL1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Connection Request details in Prospects DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search records by URL1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Connection Request details in Prospects DB": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records1": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update Connection Request details in Prospects DB3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search records by URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report on Search Results": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records2": {
+      "main": [
+        [
+          {
+            "node": "Report on Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records by URL": {
+      "main": [
+        [
+          {
+            "node": "Update Connection Request details in Prospects DB3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a record": {
+      "main": [
+        [
+          {
+            "node": "Set LinkedIn Account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set LinkedIn Account": {
+      "main": [
+        [
+          {
+            "node": "Launch Phantom - RG created dynamic date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {
+    "Schedule Trigger1": [
+      {
+        "json": {
+          "timestamp": "2025-10-05T00:00:23.005+10:00",
+          "Readable date": "October 5th 2025, 12:00:23 am",
+          "Readable time": "12:00:23 am",
+          "Day of week": "Sunday",
+          "Year": "2025",
+          "Month": "October",
+          "Day of month": "05",
+          "Hour": "00",
+          "Minute": "00",
+          "Second": "23",
+          "Timezone": "Australia/Sydney (UTC+10:00)"
+        }
+      }
+    ]
+  },
+  "versionId": "7ff79fd9-e055-4f3c-8aad-d38b38cd4966",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-15T06:08:09.772Z",
+      "updatedAt": "2025-10-15T06:08:09.772Z",
+      "role": "workflow:owner",
+      "workflowId": "70Lbxv0GqdTGCQzB",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-10-15T06:08:04.737Z",
+      "updatedAt": "2025-10-15T06:08:04.737Z",
+      "id": "VvUGsEvtU8eC3Jpv",
+      "name": "linkedin (ben)"
+    },
+    {
+      "createdAt": "2025-10-14T06:14:45.369Z",
+      "updatedAt": "2025-10-14T06:14:45.369Z",
+      "id": "XAy8G8Xz9fes7e4g",
+      "name": "production"
+    }
+  ]
+}
