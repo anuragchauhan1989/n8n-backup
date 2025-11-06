@@ -1,0 +1,288 @@
+{
+  "createdAt": "2025-09-24T04:17:50.456Z",
+  "updatedAt": "2025-09-30T07:36:52.000Z",
+  "id": "fnfWilvxJWKycNxF",
+  "name": "Ansh worfkflow_article generator",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1EyqhQ9WEeuq0shMHDUZdpWMx32Ns7ioLkSqT2ecYf60",
+          "mode": "list",
+          "cachedResultName": "Keyword  Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EyqhQ9WEeuq0shMHDUZdpWMx32Ns7ioLkSqT2ecYf60/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EyqhQ9WEeuq0shMHDUZdpWMx32Ns7ioLkSqT2ecYf60/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Content Designed ",
+              "lookupValue": "No"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        560,
+        -240
+      ],
+      "id": "4cd9c2fc-9a3b-4fc8-a38e-dd7825e7c32b",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert Dutch content writer who specializes in creating SEO-optimized, human-like long-form articles for professional websites.\n\nYour task:\n\nWrite a full article in Dutch language only.\n\nThe input will be a keyword. Do deep research on this keyword and create a comprehensive article around it.\n\nArticle length: 1,500–2,000 words.\n\nMake sure the article sounds human-written, natural, and professional, not robotic.\n\nYour writing style must be clear, authoritative, and engaging.\n\nEnsure the article is SEO optimized:\n\nInclude the keyword naturally in the title, headings, and throughout the text (but avoid keyword stuffing).\n\nUse synonyms, related terms, and semantic variations.\n\nAdd clear headings (H1, H2, H3) for structure.\n\nUse bullet points or numbered lists where helpful.\n\nEnsure zero plagiarism. Content must be 100% original.\n\nFix all grammar mistakes, sentence flow, and readability issues.\n\nCheck quality and human-likeness: The text should feel like it was written by a native Dutch professional writer.\n\nTone: informative, engaging, and trustworthy.\n\nAudience: Dutch-speaking professionals, readers, and search engines.\n\nOutput Formatting Instructions (CRITICAL):\nProvide the final article ready to be published on a website, formatted as a single block of Markdown text. Do not add any extra conversational text, introductions, or conclusions outside of the article content itself. The output should be ready for direct insertion into a file or database.\n\nThe output must follow this precise structure and formatting:\n\nMarkdown\n\n[**Title**]\n# Title: [Your SEO-optimized title with the keyword]\n\n[**Meta Description**]\n**Meta Description:** [A short, compelling meta description (150-160 characters) with the keyword]\n\n[**Introduction**]\n[A compelling introduction that hooks the reader]\n\n[**Body**]\n## [H2 Heading 1]\n[Content for H2 Heading 1]\n### [H3 Subheading 1]\n[Content for H3 Subheading 1]\n[... More H3 subheadings and content as needed]\n\n## [H2 Heading 2]\n[Content for H2 Heading 2]\n[... More H2 headings and content as needed]\n\n[**Conclusion**]\n## Conclusie: [Your conclusion heading]\n[A clear and concise conclusion with a strong takeaway]\n\nInput Keyword: {{ $json.Keyword }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        -240
+      ],
+      "id": "960d7ee2-17da-4010-b418-34ebcdd4737a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -32
+      ],
+      "id": "94783765-d909-4440-94df-218e7b0f7a9b",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": " https://md2doc.n8n.aemalsayer.com",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "output",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        -240
+      ],
+      "id": "15f20e2e-4118-43c9-b8df-afdfe765588b",
+      "name": "HTTP Request",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1EyqhQ9WEeuq0shMHDUZdpWMx32Ns7ioLkSqT2ecYf60",
+          "mode": "list",
+          "cachedResultName": "Keyword  Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EyqhQ9WEeuq0shMHDUZdpWMx32Ns7ioLkSqT2ecYf60/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EyqhQ9WEeuq0shMHDUZdpWMx32Ns7ioLkSqT2ecYf60/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Get row(s) in sheet').item.json.row_number }}",
+            "Content Designed ": "Yes",
+            "Content Link": "={{ $json.url }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Keyword",
+              "displayName": "Keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Content Designed ",
+              "displayName": "Content Designed ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Content Link",
+              "displayName": "Content Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1360,
+        -240
+      ],
+      "id": "8c82409b-d6db-4edf-b541-ab45fb5233fd",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -240
+      ],
+      "id": "b0313656-c592-4fff-a891-1078b13d173f",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "connections": {
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "ad2944f0-baa7-4f59-9489-3535b6800ded",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-24T04:17:50.462Z",
+      "updatedAt": "2025-09-24T04:17:50.462Z",
+      "role": "workflow:owner",
+      "workflowId": "fnfWilvxJWKycNxF",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
