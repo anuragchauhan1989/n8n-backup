@@ -1,0 +1,716 @@
+{
+  "createdAt": "2025-09-19T16:43:31.212Z",
+  "updatedAt": "2025-10-04T03:28:06.000Z",
+  "id": "fpL9eMFsmIoiMQqf",
+  "name": "Generate SEO Dutch Articles and Save to Notion",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "een artikel schrijven",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Keyword",
+              "placeholder": "Keyword for article research",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Article's Title"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b25624fb-0f62-4843-a895-186dcde46e98",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        448,
+        352
+      ],
+      "webhookId": "8480eaab-9d4e-47dc-bfaa-40f988f011a3",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "message.content.queries",
+        "options": {}
+      },
+      "id": "ecb65485-28b8-46db-94ee-d5b55ff3f101",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        1200,
+        352
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "message.content"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b72ea761-08c3-4c07-a149-434affefd068",
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        1808,
+        352
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert content researcher.\n\nBased on the provided **keyword**, your task is to generate **three detailed research prompts**, each covering a **different informational angle** of the topic.\n\nEach prompt must be a **comprehensive, natural-language query** designed to help an AI search engine (e.g., Perplexity AI) retrieve valuable, insightful, and high-quality information for article writing.\n\nThe three prompts should be written in **clear English**, and each one should focus on a **different research angle.**\n\nAll three prompts should be written in a **logical funnel structure,** progressing from general understanding to deeper insights.\n\nReturn only the following JSON structure:\n\n```json\n{\n  \"keyword\": \"[insert keyword here]\",\n  \"queries\": [\n    \"Prompt 1\",\n    \"Prompt 2\",\n    \"Prompt 3\"\n  ]\n}\n\n```",
+              "role": "system"
+            },
+            {
+              "content": "=Keyword:\n\n{{ $('On form submission').item.json.Keyword }}\n\nArticle's Title:\n\n{{ $('On form submission').item.json['Article\\'s Title'] }}\n\nPlease Respond only in English."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "id": "bd027eb0-7179-4615-a7a0-ef93020b3bbb",
+      "name": "Prmopts For Search",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        864,
+        352
+      ],
+      "typeVersion": 1.8,
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "perplexity/sonar-pro"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json['message.content.queries'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ae7b855-715b-4298-a2dc-a29d24f372ca",
+      "name": "Sonar - Search",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        1440,
+        352
+      ],
+      "typeVersion": 1.8,
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Research\n",
+        "height": 380,
+        "width": 1640
+      },
+      "id": "8b9a40a8-bbe0-42be-b46a-14a8d5686cf9",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        240
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Outline\n",
+        "height": 380,
+        "width": 860,
+        "color": 6
+      },
+      "id": "582ce887-713a-47e3-bbe0-d0b27eb84553",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        896,
+        1104
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Writing The Article\n",
+        "height": 320,
+        "width": 820,
+        "color": 3
+      },
+      "id": "86b33453-3f7a-42ce-ba8c-f5e7b1b3733c",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        912,
+        1584
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert SEO content strategist.\n\nYour task is to generate a structured, SEO-optimized outline for an article that fully addresses the search intent behind the provided keyword.\n\nThe outline should help a writer produce high-quality content based on the structure and essential information you provide.\n\nMake the outline as detailed and comprehensive as possible. It should be suitable for writing a long-form, in-depth article, not a short or surface-level piece.\n\n---\n\n### **Methodology**\n\n### 1. Start with the Reader’s Journey\n\n- Think of the article as a **funnel** — guide the reader step by step, from awareness to understanding, to depth, and finally to action or resolution.\n- Ensure each H2 section is **logically connected** to the one before it, forming a clear, natural narrative progression.\n- The **second H2 section** after the introduction must **directly answer the primary search intent** of the keyword.\n- Each H2 section must connect narratively to the previous one. The outline should flow as a continuous reader journey — like a funnel — starting with awareness, then understanding, followed by challenges/solutions, and ending in resolution.\n\n---\n\n### **H2 Structure Guidelines**\n\n- Break the outline into **main sections (H2s)** written in **question format** (3–5 words max).\n- The first H2 must always be \"المقدمة\" and must clearly follow one of the following content strategies: PAS, AIDA, BAB, or RAD. The strategy used must be explicitly labeled inside the H2 heading (e.g., \"المقدمة (AIDA - 2 paragraphs)\").\n- Include at least one dedicated **FAQ section** and a final **Conclusion** section.\n- After each H2 heading, specify the **expected format** in parentheses (e.g., intro, 2–3 paragraphs, list + explanation, etc.).\n- Only assign a format to an H2 if it contains no H3s. If the H2 includes H3s, leave its format blank to avoid conflict.\n- Use the main keyword or its variations inside H2s for SEO performance.\n\n---\n\n### **H3 Structure Guidelines**\n\n- Add **supporting H3s** under each H2 — also in **short question format** (3–5 words max).\n- After each H3, specify the **expected format** (e.g., single paragraph, paragraph + bullet points).\n- Each H3 must focus on a unique sub-topic that directly supports the H2.\n- Ensure that each H3 is **a natural and functional sub-question** of its H2 — it must **directly break down, clarify, or expand the parent H2 topic** without shifting focus or introducing unrelated sub-themes.\n- Prioritize questions that reflect **real user queries**.\n- Avoid repeating ideas across sections.\n\n---\n\n### **Information Requirement**\n\n- Under each **H2**, include an `\"info\"` field that lists **all detailed information points** required for writing — avoid summaries or generalizations. Include **every factual detail** necessary to fully cover the section, as if you’re feeding a writer everything they need without assuming prior knowledge.\n- Each point should be **detailed, complete, and directly usable** for content generation — no summaries or simplifications.\n- These points are meant to **guide the writer** — they must be accurate, specific, and actionable, without invented or vague content.\n\n---\n\n### **General Rules**\n\n- Ensure the structure is **SEO-friendly**, clear, and skimmable.\n- Keep headings short, natural, and phrased like real search queries.\n- The full outline must read like a **guided narrative** — funneling the reader through a structured journey from intro to resolution.\n- Match the outline to the **article type**: product-based, how-to, comparison, informational, or thought leadership.\n- Avoid generic or duplicate sections.\n- WRITE your outline in Arabic and the **format in English** (like the example below).\n\n---\n\n### Final Output Format\n\n- Do not include any explanation or headers — just return the JSON.\n- The final output must be in **JSON** format with this structure (just the structure, not its content ideas):\n\n```json\n{\n  \"title\": \"عنوان المقال\",\n  \"outline\": [\n    {\n      \"h2\": \"المقدمة (2 paragraphs)\",\n      \"h3\": [],\n      \"info\": [\n        \"يُعد [الموضوع] من أبرز الأدوات الحديثة التي تلبي احتياجات مختلفة في مجالات الأعمال والتقنية.\",\n        \"أصبح هذا النظام شائعًا بفضل مرونته وسهولة استخدامه، وقد تم اعتماده في شركات عالمية مثل Google وAmazon لتحقيق نتائج تشغيلية ملموسة.\",\n        \"المقال موجه للمحترفين، مديري المشاريع، والمبتدئين الذين يبحثون عن وسيلة فعالة لتحسين أدائهم أو أتمتة أعمالهم.\",\n        \"سيتعرف القارئ على آلية عمل [الموضوع]، فوائده، تحدياته، وكيفية مقارنته بالبدائل المطروحة في السوق.\"\n      ]\n    },\n    {\n      \"h2\": \"ما هو [الموضوع]؟\",\n      \"h3\": [\n        \"كيف يعمل؟ (2 paragraphs)\",\n        \"مم يتكون؟ (bullet points + details)\"\n      ],\n      \"info\": [\n        \"[الموضوع] هو نظام أو أداة تُستخدم لأتمتة أو تسريع عمليات معينة باستخدام تقنيات الذكاء الاصطناعي أو الخوارزميات الذكية.\",\n        \"يعتمد على جمع البيانات، تحليلها، ثم تنفيذ إجراءات تلقائية مبنية على نتائج التحليل.\",\n        \"يتكون من واجهة استخدام رسومية، قاعدة بيانات، وحدة تحليل، ونظام تكامل API.\",\n        \"يدمج [الموضوع] بين تقنيات مثل تعلم الآلة والحوسبة السحابية لتحقيق أداء عالي الكفاءة.\"\n      ]\n    },\n    {\n      \"h2\": \"ما فوائد استخدام [الموضوع]؟\",\n      \"h3\": [\n        \"تحسين الإنتاجية (paragraph + data)\",\n        \"تقليل الأخطاء البشرية (1 paragraph)\",\n        \"دعم اتخاذ القرار (paragraph + example)\"\n      ],\n      \"info\": [\n        \"تشير دراسة من McKinsey إلى أن اعتماد هذا النوع من الأدوات يؤدي إلى تحسين الإنتاجية بنسبة تصل إلى 40% في فرق العمل التقنية.\",\n        \"يُقلل من تدخل الإنسان في العمليات التكرارية، ما يقلل من معدل الأخطاء بنسبة تصل إلى 60%.\",\n        \"يُمكن دمجه مع أدوات تحليل بيانات لتقديم توصيات فورية تدعم القرارات الاستراتيجية، كما تم تطبيقه بنجاح في شركة X لتحسين قرارات المبيعات.\",\n        \"يوفر الوقت ويقلل التكلفة التشغيلية بمعدل ثابت عند دمجه في العمليات اليومية.\"\n      ]\n    },\n    {\n      \"h2\": \"من يستخدم [الموضوع]؟\",\n      \"h3\": [\n        \"الشركات الناشئة (paragraph)\",\n        \"الفرق التقنية (paragraph)\",\n        \"المؤسسات التعليمية (1 paragraph)\"\n      ],\n      \"info\": [\n        \"الشركات الناشئة تعتمد عليه لأتمتة المهام المتكررة وتوفير الموارد.\",\n        \"الفرق التقنية تستخدمه لتحسين سير العمل، وتقليل الزمن اللازم لتسليم المشاريع.\",\n        \"المؤسسات التعليمية بدأت بدمج [الموضوع] في برامجها التدريبية لتأهيل الطلاب لسوق العمل الحديث.\"\n      ]\n    },\n    {\n      \"h2\": \"مقارنة بين [الموضوع] و[بديله]؟ (bullet points + details)\",\n      \"h3\": [],\n      \"info\": [\n        \"تشمل المقارنة: الميزات، التكلفة، الدعم الفني، سهولة الاستخدام، التوافق مع الأدوات الأخرى.\",\n        \"[الموضوع] يتميز بسهولة التخصيص وواجهة مرنة، بينما [البديل] أقوى في التحليلات المتقدمة.\",\n        \"من حيث التكلفة، يوفر [الموضوع] خيارًا اقتصاديًا أكثر على المدى الطويل\",\n        \"في استطلاع حديث، اختار 68% من المستخدمين [الموضوع] بسبب تجربة المستخدم الأفضل.\"\n      ]\n    },\n    {\n      \"h2\": \"ما التحديات المرتبطة باستخدام [الموضوع]؟\",\n      \"h3\": [\n        \"صعوبات التهيئة الأولية (paragraph)\",\n        \"الحاجة للتدريب (1 paragraph)\",\n        \"مشكلات التوافق التقني (paragraph + example)\"\n      ],\n      \"info\": [\n        \"يحتاج إلى إعداد تقني دقيق قبل التشغيل لضمان عدم حدوث خلل وظيفي.\",\n        \"يتطلب من الفرق التقنية أو المستخدمين النهائيين فهمًا كافيًا لطريقة عمله، ما قد يستدعي تدريب داخلي أو دورات خارجية.\",\n        \"في بعض الحالات، لا يتكامل بسهولة مع أنظمة إدارة المشاريع التقليدية، كما في مثال شركة Y التي واجهت تأخيرًا في الدمج.\"\n      ]\n    },\n    {\n      \"h2\": \"الأسئلة الشائعة حول [الموضوع] (FAQ)\",\n      \"h3\": [\n        \"هل يناسب المبتدئين؟ (1 paragraph)\",\n        \"هل هو آمن للاستخدام؟ (paragraph + data)\",\n        \"هل يحتاج لتحديث مستمر؟ (single paragraph)\"\n      ],\n      \"info\": [\n        \"[الموضوع] صُمم ليكون سهل الاستخدام حتى للمستخدمين غير التقنيين، بفضل واجهته البديهية والدعم المتكامل.\",\n        \"نسبة أمان عالية تم توثيقها في عدة اختبارات أمان رقمية أجرتها جهة مستقلة.\",\n        \"يفضل تحديثه دوريًا لضمان عمله بكفاءة وتوافقه مع أي تغييرات في بيئة العمل أو البيانات.\"\n      ]\n    },\n    {\n      \"h2\": \"الخلاصة (2 short paragraphs)\",\n      \"h3\": [],\n      \"info\": [\n        \"[الموضوع] يُعد أداة محورية في تحسين الأداء المؤسسي وتسهيل العمليات، مع نتائج ملموسة موثقة في العديد من القطاعات.\",\n        \"ينصح بدمجه بشكل تدريجي في المنظومة التشغيلية مع توفير التدريب المناسب لضمان أقصى استفادة.\"\n      ]\n    }\n  ]\n}\n\n```\n\nImportant:\n\n- The example JSON is meant to demonstrate the required structure and formatting only. The actual headings (h2, h3) and info content must be uniquely generated based on the keyword, not copied from the example.\n- All h2 and h3 items must be plain strings that include the format inside parentheses (e.g., \"ما هي الفوائد؟ (2 paragraphs)\").\n- Do not use nested objects or additional keys like \"text\" or \"format\" — only use a single string for each heading.\n- The outline must follow this structure exactly:\"h2\": string (with format in parentheses)\n- All h3 items must be written as plain strings that include the format in parentheses, like\n- Do not return h3 as objects or use keys like \"format\" — it must be a single string only.\n- Do not return keys like \"format\", \"text\", or \"content\" — just follow the format shown above.",
+              "role": "system"
+            },
+            {
+              "content": "=Title\n{{ $('On form submission').item.json[\"Article's Title\"] }}\n\nKeyword Of The Topic:\n{{ $('On form submission').item.json.KW }}\n\nSome info To use:\n\n{{ $('Aggregate').item.json.content }}\n\nSome Q&A to use in FAQs (use the question title as written):\n{{ $json.FAQ }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "id": "3f3896ad-0734-4343-918a-a444e6565415",
+      "name": "Make An Outline",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        1072,
+        1232
+      ],
+      "typeVersion": 1.8,
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "message.content.outline",
+        "options": {}
+      },
+      "id": "f42f70d2-a3e9-4af1-8d95-8ac7650f1816",
+      "name": "Split Out1",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        1488,
+        1232
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a professional Arabic content writer.\n\nYour task is to write a complete article section based on:\n\n- The provided H2 heading\n- Its related H3 subpoints\n- The given information about the section\n\nFollow the instructions below carefully.\n\n### **Writing Methodology**\n\n1. **Structure & Flow**\n    - Start by writing the H2 title (do not change or rephrase it) (Do not mention the format), then the content, and follow the H3 subpoints one by one..\n    - Do not invent or introduce any ideas beyond what is provided.\n    - Do not create a separate introduction or conclusion for the H2 — just continue the article smoothly, your role now just to write the section needed.\n2. **Skimmability**\n    - The paragraphs should be short (2–4 lines max).\n    - The bullet points, when needed, should be used without a heading. Each bullet should be a complete sentence, not just a fragment.\n3. **SEO Optimization**\n    - Use the main keyword and related terms naturally in the text.\n    - Use semantic variations and rich vocabulary.\n    - Structure content so that it can rank for featured snippets.\n\n---\n\n### Tone & Style Guidelines\n\n- Use the plural form of \"you\" to maintain a gender-neutral and inclusive tone.\n- Keep the tone natural, human.\n- You are allowed to express the information using rich, natural language, but only using the facts and details provided. Do not create new ideas or reframe the intent.\n- Avoid overly technical, dry, or formal language.\n- Use diverse vocabulary and expressive sentence structure.\n- DO NOT use clichés or generic phrases such as:\n    - \"من الجدير بالذكر\", \"لا شك أن\", \"علاوة على ذلك\", \"الخيار الأمثل\",\n    \"في هذا الصدد\", \"في الختام\", \"نرجو أن نكون قد وُفقنا\", \"مما لا شك فيه\",\n    \"الأفضل على الإطلاق\", \"ثوري\", \"رائع للغاية\"\n    - Or any phrase that sounds like generic AI content.\n- Avoid wordiness or unnecessary repetition — every sentence must deliver clear, meaningful content.\n- Do not use filler language or vague expressions that add no real value.\n- Do not oversimplify in a way that reduces the accuracy or depth of the information — maintain a balance between clarity and substance.\n- Write In Arabic.\n\n---\n\n### **Hard Restrictions**\n\n- Do **not** add any information that isn't included in the provided data.\n- Do **not** create fake references, data, or quotes.\n- Do **not** mention sources or references in the output.\n- Do **not** change the flow of the article — respect the sequence in the outline.\n\n---\n\nFormat the output using a clean Markdown structure. Use clean Markdown:\n\n`#` for H1, `##` for H2,..etc, `-` for bullets, `1.` for numbered lists, `**bold**` for emphasis, and line breaks between items.",
+              "role": "system"
+            },
+            {
+              "content": "=Main Keyword of The Topic:\n\n{{ $('On form submission').item.json.KW }}\n\nHere is The Section You will write and its info (just write this section):\n\nH2:\n\n{{ $json.h2 }}\nH3s:\n{{ $json.h3 }}\n\nInfo:\n{{ $json.info }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8cdef061-bae0-4bb8-b191-8b28718a901d",
+      "name": "Writing The Article",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        1232,
+        1696
+      ],
+      "typeVersion": 1.8,
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/blocks/{{ $('Make Notion Page').item.json.id }}/children",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json}}",
+        "options": {}
+      },
+      "id": "787cea83-903f-430d-ab50-d678ba2da189",
+      "name": "notion",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1408,
+        2272
+      ],
+      "retryOnFail": false,
+      "typeVersion": 4.2,
+      "credentials": {
+        "notionApi": {
+          "id": "dWZkR9tfcWiHJlAF",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "273f7bd9-eb3a-8014-9f82-fc567e759d76",
+          "mode": "list",
+          "cachedResultName": "Articles_Test",
+          "cachedResultUrl": "https://www.notion.so/273f7bd9eb3a80149f82fc567e759d76"
+        },
+        "title": "={{ $('On form submission').item.json.Keyword }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Name|title"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f74fd145-7d53-4770-ac82-3466840a5eac",
+      "name": "Make Notion Page",
+      "type": "n8n-nodes-base.notion",
+      "position": [
+        672,
+        352
+      ],
+      "typeVersion": 2.2,
+      "credentials": {
+        "notionApi": {
+          "id": "dWZkR9tfcWiHJlAF",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f993ab57-326e-4a4c-a8ef-a6324bab994d",
+              "name": "content",
+              "type": "string",
+              "value": "={{ $json.message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "073990ce-477c-4fc4-bbe8-aad4737678a4",
+      "name": "Edit Fields1",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        768,
+        2240
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get raw text from chatInput\nconst rawText = $input.first().json.content;\nconst lines = rawText.split(\"\\n\");\n\n// Function to parse bold and links\nconst createRichText = (text) => {\n  const linkRegex = /\\[([^\\]]+)\\]\\(([^)]+)\\)/g;\n  const boldRegex = /\\*\\*(.*?)\\*\\*/g;\n  let result = [];\n  let lastIndex = 0;\n  let match;\n\n  // أولا: روابط\n  while ((match = linkRegex.exec(text)) !== null) {\n    // أي نص قبل الرابط\n    if (match.index > lastIndex) {\n      result.push(...parseBold(text.substring(lastIndex, match.index)));\n    }\n    // إضافة الرابط كـ Anchor\n    result.push({\n      type: \"text\",\n      text: { content: match[1], link: { url: match[2] } },\n      annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" },\n      plain_text: match[1],\n      href: match[2]\n    });\n    lastIndex = match.index + match[0].length;\n  }\n  // الباقي بعد آخر رابط\n  if (lastIndex < text.length) {\n    result.push(...parseBold(text.substring(lastIndex)));\n  }\n  return result.length ? result : [{ type: \"text\", text: { content: text }, annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" }, plain_text: text, href: null }];\n};\n\n// دالة bold فقط (تُستخدم داخل الدالة أعلاه)\nfunction parseBold(text) {\n  const boldRegex = /\\*\\*(.*?)\\*\\*/g;\n  let parts = [];\n  let lastIndex = 0;\n  let match;\n  while ((match = boldRegex.exec(text)) !== null) {\n    if (match.index > lastIndex) {\n      parts.push({\n        type: \"text\",\n        text: { content: text.substring(lastIndex, match.index) },\n        annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" },\n        plain_text: text.substring(lastIndex, match.index),\n        href: null\n      });\n    }\n    parts.push({\n      type: \"text\",\n      text: { content: match[1] },\n      annotations: { bold: true, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" },\n      plain_text: match[1],\n      href: null\n    });\n    lastIndex = match.index + match[0].length;\n  }\n  if (lastIndex < text.length) {\n    parts.push({\n      type: \"text\",\n      text: { content: text.substring(lastIndex) },\n      annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" },\n      plain_text: text.substring(lastIndex),\n      href: null\n    });\n  }\n  return parts.length ? parts : [{ type: \"text\", text: { content: text }, annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" }, plain_text: text, href: null }];\n}\n\n// Block constructors\nconst createHeading = (text, level = 1) => ({\n  object: \"block\",\n  type: `heading_${level}`,\n  [`heading_${level}`]: { rich_text: createRichText(text) }\n});\n\nconst createParagraph = (text) => ({\n  object: \"block\",\n  type: \"paragraph\",\n  paragraph: { rich_text: createRichText(text) }\n});\n\nconst createBulletListItem = (text) => ({\n  object: \"block\",\n  type: \"bulleted_list_item\",\n  bulleted_list_item: { rich_text: createRichText(text) }\n});\n\nconst createNumberedListItem = (text) => {\n  let cleanedText = text.replace(/^\\d+\\.\\s*/, \"\").trim();\n  return {\n    object: \"block\",\n    type: \"numbered_list_item\",\n    numbered_list_item: { rich_text: createRichText(cleanedText) }\n  };\n};\n\n// Main parsing\nlet blocks = [];\nlet paragraphContent = [];\n\nfor (let line of lines) {\n  line = line.trim();\n\n  if (line.startsWith(\"# \")) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createHeading(line.replace(\"# \", \"\"), 1));\n  }\n  else if (line.startsWith(\"## \")) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createHeading(line.replace(\"## \", \"\"), 2));\n  }\n  else if (line.startsWith(\"### \")) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createHeading(line.replace(\"### \", \"\"), 3));\n  }\n  else if (line.match(/^\\d+\\./)) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createNumberedListItem(line));\n  }\n  else if (line.startsWith(\"- \")) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createBulletListItem(line.replace(\"- \", \"\").trim()));\n  }\n  else if (line.length > 0) {\n    paragraphContent.push(line);\n  }\n  else if (line.length === 0 && paragraphContent.length > 0) {\n    blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n    paragraphContent = [];\n  }\n}\n\n// في نهاية الملف: إذا فيه محتوى متراكم لم يُدفع بعد\nif (paragraphContent.length > 0) {\n  blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n}\n\n// **النقطة المهمة:**\n// في n8n يجب أن يكون الخرج مصفوفة من الكائنات، كل كائن يُمثل بند (block)\n// مثال: [{json: {...}}, {json: {...}}, ...]\nreturn [{ json: { children: blocks } }];"
+      },
+      "id": "9db38150-7bee-4066-9bdb-017775815c23",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1232,
+        2240
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "redirect",
+        "redirectUrl": "={{ $('Make Notion Page').item.json.url }}",
+        "limitWaitTime": true,
+        "resumeAmount": 2,
+        "resumeUnit": "minutes",
+        "options": {}
+      },
+      "id": "c48f41d3-e3f6-4c17-9056-89669032fdb5",
+      "name": "Form",
+      "type": "n8n-nodes-base.form",
+      "position": [
+        1552,
+        2064
+      ],
+      "webhookId": "e0df8b70-97d9-46c0-8975-339ccd473e2a",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Saving The Article\n\n",
+        "height": 460,
+        "width": 1400,
+        "color": 4
+      },
+      "id": "bb916a02-687f-4e8f-bad8-92e342f5c40d",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        528,
+        2032
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f2179207-c5d1-457d-bbf5-54d636fe3715",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        992,
+        2192
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/serp/google/organic/live/advanced",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=[\n  {\n    \"language_code\": \"ar\",\n    \"location_code\": 2682,\n    \"keyword\": \"{{ $('On form submission').item.json.KW }}\"\n  }\n] ",
+        "options": {}
+      },
+      "id": "f37f4950-eda7-42cf-a788-eb2903ad303a",
+      "name": "People_Also_Ask",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        992,
+        832
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "NmNezsIBtq2LgIPb",
+          "name": "data for seo api credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $json.tasks[0].result[0].items;\nconst paa = items.find(item => item.type === 'people_also_ask');\n\n// تأكد من وجود البيانات\nif (!paa || !paa.items) {\n  return [];\n}\n\n// ضُم السؤال والإجابة في String واحد\nreturn paa.items.map(el => {\n  const question = el.title || \"\";\n  const answer = (el.expanded_element && el.expanded_element[0]) ? el.expanded_element[0].description : \"\";\n  return { \n    FAQ: `سؤال: ${question} | إجابة: ${answer}` \n  };\n});\n"
+      },
+      "id": "543eeb8a-d160-4865-a057-6495db437cf3",
+      "name": "Filter_Q&A",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1216,
+        832
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "FAQ"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "18d9ce34-71e8-469a-b2df-40953477b38a",
+      "name": "Gather_Q&A",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        1440,
+        832
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## FAQs From People_Also_Ask",
+        "height": 280,
+        "width": 880
+      },
+      "id": "27064bd4-e37b-48e2-b005-c9b1221882cb",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        848,
+        720
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### 🔸 On form submission (Form Trigger)\n\n- **Purpose:** Starts the workflow when a user submits the article-writing form.\n\n• **Details:**\n\n- Collects \"KW\" (keyword) and optionally \"Article's Title\".\n- Triggered by a webhook; initiates the rest of the automation.\n    \n    • **Tip:** Edit form fields here if you want to collect additional info from users.\n    \n\n---\n\n### 🔸 Make Notion Page (Notion)\n\n- **Purpose:** Creates a new page in your Notion database to store the article.\n\n• **Details:**\n\n- Uses the keyword as the page title.\n- Adds the current date/time as a property.\n- Requires Notion API credentials and a database ID.\n    \n    • **Tip:** Ensure Notion database properties match what's used in this node.\n    \n\n---\n\n### 🔸 Prmopts For Search (OpenAI GPT4.1)\n\n- **Purpose:** Generates three deep research prompts about the keyword to guide AI-powered research.\n\n• **Details:**\n\n- Uses a structured system message to get prompts from GPT, each from a different angle.\n- Prompts are written in English for Perplexity/Sonar AI research.\n    \n    • **Tip:** The quality of these prompts directly impacts the article depth; edit the system message to customize research angles.\n    \n\n---\n\n### 🔸 Split Out (Split Out Node)\n\n- **Purpose:** Splits out each individual research prompt from the list for processing.\n\n• **Details:**\n\n- Ensures each prompt can be handled by subsequent nodes one at a time.\n\n---\n\n### 🔸 Sonar - Search (Perplexity/Sonar)\n\n- **Purpose:** Conducts AI-powered research for each generated prompt.\n\n• **Details:**\n\n- Sends the prompt to Perplexity/Sonar (via OpenRouter) and gets back detailed answers.\n- Requires OpenRouter API key.\n    \n    • **Tip:** Change model or provider here for different research results.\n    \n\n---\n\n### 🔸 Aggregate (Aggregate Node)\n\n- **Purpose:** Collects all research responses into a single structured object for use in outlining.\n\n• **Details:**\n\n- Aggregates content from all Sonar research responses.\n\n---\n\n### 🔸 People_Also_Ask (HTTP Request - DataForSEO)\n\n- **Purpose:** Gathers related questions (People Also Ask) from Google for the keyword.\n\n• **Details:**\n\n- Sends keyword to DataForSEO API (Dutch, Netherland location) and retrieves related FAQ.\n- Requires DataForSEO account and API credentials.\n    \n    • **Tip:** You can modify location/language codes to target different audiences.\n    \n\n---\n\n### 🔸 Filter_Q&A (Code Node)\n\n- **Purpose:** Extracts questions and answers from the People Also Ask API response.\n\n• **Details:**\n\n- Parses API JSON and creates a neat array of Q&A pairs for the article’s FAQ section.\n\n---\n\n### 🔸 Gather_Q&A (Aggregate Node)\n\n- **Purpose:** Combines all Q&A pairs into one structure for easier use in the outline and article.\n\n• **Details:**\n\n- Makes sure all extracted FAQs are grouped for easy reference.\n\n---\n\n### 🔸 Make An Outline (OpenAI GPT4.1)\n\n- **Purpose:** Uses all research and FAQ data to generate a complete SEO-optimized article outline in Arabic.\n\n• **Details:**\n\n- Provides a JSON outline: H2/H3 structure, detailed info for each section, and FAQ integration.\n- Strongly guided by system prompt for consistent structure.\n    \n    • **Tip:** Editing the prompt here lets you control article structure or depth.\n    \n\n---\n\n### 🔸 Split Out1 (Split Out Node)\n\n- **Purpose:** Splits the JSON outline so each section (H2/H3/info) can be handled individually.\n\n• **Details:**\n\n- Enables article writing to proceed section-by-section.\n\n---\n\n### 🔸 Writing The Article (OpenAI GPT4.1)\n\n- **Purpose:** Writes each article section in Arabic using the H2/H3/info for that section only.\n\n• **Details:**\n\n- Enforces structure and SEO, strictly using only provided facts (no invented info).\n- Tone and style rules included in the system prompt.\n    \n    • **Tip:** Modify the system prompt to adjust tone, voice, or writing guidelines.\n    \n\n---\n\n### 🔸 Edit Fields1 (Set Node)\n\n- **Purpose:** Prepares the AI-written content for formatting and saving.\n\n• **Details:**\n\n- Maps the content into a new field (\"content\") for further processing.\n\n---\n\n### 🔸 Loop Over Items (Split In Batches)\n\n- **Purpose:** Loops through each article section for batch processing and saving.\n\n• **Details:**\n\n- Ensures every section is sent in order and can be processed reliably.\n\n---\n\n### 🔸 Code (Rich Text → Notion Blocks)\n\n- **Purpose:** Converts AI-generated Markdown into Notion’s structured block format (headings, bullets, paragraphs).\n\n• **Details:**\n\n- Parses Markdown and creates rich Notion block objects, supporting bold text and links.\n- Handles special formatting for lists and headings.\n\n---\n\n### 🔸 notion (HTTP Request - Notion API PATCH)\n\n- **Purpose:** Appends the formatted article blocks to the existing Notion page.\n\n• **Details:**\n\n- Sends all blocks as children to the page created earlier.\n- Requires Notion API credentials.\n\n---\n\n### 🔸 Form (End/Redirect)\n\n- **Purpose:** Ends the workflow and redirects the user back to their Notion page to view the final article.\n\n• **Details:**\n\n- Waits for saving to complete, then sends the user to the Notion page URL.\n    \n    • **Tip:** You can change this to redirect elsewhere or display a success message if needed.\n    \n\n---\n\n### **General Assumptions and Warnings:**\n\n- **Credentials:** All external API nodes (OpenAI, Notion, DataForSEO, OpenRouter) require valid credentials set up in n8n.\n- **Language:** The core workflow is for Arabic content but is customizable for other languages with prompt and setting tweaks.",
+        "height": 2240,
+        "width": 820,
+        "color": 5
+      },
+      "id": "397bedb5-665b-4ef6-b997-6e95c045cb1f",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -608,
+        272
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "notion": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "People_Also_Ask",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Sonar - Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter_Q&A": {
+      "main": [
+        [
+          {
+            "node": "Gather_Q&A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gather_Q&A": {
+      "main": [
+        [
+          {
+            "node": "Make An Outline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Writing The Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sonar - Search": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make An Outline": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "People_Also_Ask": {
+      "main": [
+        [
+          {
+            "node": "Filter_Q&A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Notion Page": {
+      "main": [
+        [
+          {
+            "node": "Prmopts For Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Make Notion Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prmopts For Search": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writing The Article": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateId": "4828",
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c311047f-0494-4c8c-aea9-8a7432de8126",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-19T16:43:31.220Z",
+      "updatedAt": "2025-09-19T16:43:31.220Z",
+      "role": "workflow:owner",
+      "workflowId": "fpL9eMFsmIoiMQqf",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
