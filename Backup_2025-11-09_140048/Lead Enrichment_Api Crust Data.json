@@ -1,0 +1,4368 @@
+{
+  "createdAt": "2025-09-30T15:25:14.699Z",
+  "updatedAt": "2025-10-10T11:32:36.000Z",
+  "id": "ylDAWQSjiaXvx1GG",
+  "name": "Lead Enrichment_Api Crust Data",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0f0bd695-dcad-457f-ae6c-f0f3cb31d2e3",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.crustdata.com/screener/identify/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Token 9e49d4d3e6d614b14d838e566795388231127fcd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"query_company_website\": \"wwww.vectorshift.ai\", \"count\": 1}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "08ef94ba-c312-4c44-9df3-1ed6fa8f9fc6",
+      "name": "Identify Company"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.crustdata.com/data_lab/decision_makers/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Token 9e49d4d3e6d614b14d838e566795388231127fcd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"filters\": {\n    \"op\": \"or\",\n    \"conditions\": [\n      {\n        \"column\": \"company_id\",\n        \"type\": \"in\",\n        \"value\": [{{ $json.company_id }}\n          ]\n      }\n    ]\n  }\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        224
+      ],
+      "id": "9c4776e5-95b2-4bce-bba8-3662a792e6bc",
+      "name": "Decision Makers"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.crustdata.com/data_lab/headcount_timeseries/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Token 9e49d4d3e6d614b14d838e566795388231127fcd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"filters\": {\n    \"op\": \"or\",\n    \"conditions\": [\n      {\n        \"column\": \"company_id\",\n        \"type\": \"in\",\n        \"value\": [{{ $('Identify Company').item.json.company_id }}\n          ]\n      }\n    ]\n  }\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        224
+      ],
+      "id": "b25b5235-5f6a-4f0c-b550-708776742eae",
+      "name": "Company headcount"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.crustdata.com/screener/company?company_id={{ $('Identify Company').item.json.company_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Token 9e49d4d3e6d614b14d838e566795388231127fcd"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "bfe5afa1-21f3-4de9-ac23-d9bd42eaec7b",
+      "name": "Enriching Company"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a friendly and direct icebreaker for a personalized event invitation email. The message should:\n1. Be written in an engaging, professional tone\n2. Reference specific details from the person's LinkedIn profile and company\n3. End with \"Figured I'd reach out.\"\n4. Invite them to speak at our upcoming industry event\n5. Within 150 words.\n6. Never include this line: I hope this message finds you well! \n\nHere's information about the recipient:\nFirst name: {{ $('Specific Decision Maker').item.json.profiles[0].name }}\nCompany description: {{ $('Specific Decision Maker').item.json.profiles[0].employer[0].description }}\nCompany name: {{ $('Specific Decision Maker').item.json.profiles[0].employer[0].company_name }}\nJob Title: {{ $('Specific Decision Maker').item.json.profiles[0].default_position_title }}\nLast linkedin post reference for relevancy: {{ $json.posts[0].text }}\n\nOur event is an exclusive conference focused on AI and automation innovations in business processes. We're bringing together thought leaders and practitioners to share cutting-edge approaches and successful implementation strategies.\n\nYou have access to a LinkedIn Profile tool. Use this tool to gather additional information about the recipient before writing your message. To use the tool, simply indicate that you want to call the LinkedIn profile tool, then incorporate relevant information from their profile into your message.\n\nFormatting instruction:\nReturn ONLY a JSON object with a single \"icebreaker\" key containing the personalized message."
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        128,
+        640
+      ],
+      "id": "4c681fc5-0f29-4ef7-be68-a594ad437b54",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        144,
+        832
+      ],
+      "id": "790faa2e-a224-40f0-9d17-94078d733b41",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "url": "https://api.crustdata.com/screener/linkedin_posts?person_linkedin_url=https://www.linkedin.com/in/albert-mao/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Token 9e49d4d3e6d614b14d838e566795388231127fcd"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        432
+      ],
+      "id": "d80e4286-b7de-4162-94df-a4e6f37ab540",
+      "name": "Linkedin Post"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.crustdata.com/screener/person/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token 9e49d4d3e6d614b14d838e566795388231127fcd"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"filters\": [\n    {\n      \"filter_type\": \"CURRENT_COMPANY\",\n      \"type\": \"in\",\n      \"value\": [\"vectorshift\"]\n    },\n    {\n      \"filter_type\": \"CURRENT_TITLE\",\n      \"type\": \"in\",\n      \"value\": [\"COO\"]\n    }\n  ],\n  \"page\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        432
+      ],
+      "id": "75ec53fc-76b4-4e8f-a922-3fa9fae4f4e7",
+      "name": "Specific Decision Maker"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Identify Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify Company": {
+      "main": [
+        [
+          {
+            "node": "Enriching Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decision Makers": {
+      "main": [
+        [
+          {
+            "node": "Specific Decision Maker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company headcount": {
+      "main": [
+        [
+          {
+            "node": "Decision Makers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enriching Company": {
+      "main": [
+        [
+          {
+            "node": "Company headcount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin Post": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Specific Decision Maker": {
+      "main": [
+        [
+          {
+            "node": "Linkedin Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {
+    "Decision Makers": [
+      {
+        "json": {
+          "fields": [
+            {
+              "type": "foreign_key",
+              "api_name": "company_id",
+              "hidden": false,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            },
+            {
+              "type": "string",
+              "api_name": "linkedin_id",
+              "hidden": false,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            },
+            {
+              "type": "string",
+              "api_name": "company_website_domain",
+              "hidden": false,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            },
+            {
+              "type": "array",
+              "api_name": "decision_makers",
+              "hidden": false,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            },
+            {
+              "type": "number",
+              "api_name": "total_rows",
+              "hidden": true,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            }
+          ],
+          "rows": [
+            [
+              880829,
+              "98020569",
+              "vectorshift.ai",
+              [
+                {
+                  "linkedin_profile_url": "https://www.linkedin.com/in/ACwAACLeSnMBIGP2aFEWZwOe1w4hhWa50Eg2_Qw",
+                  "linkedin_flagship_url": "https://www.linkedin.com/in/alexanderleonardi",
+                  "name": "Alex Leonardi",
+                  "location": "New York, New York, United States",
+                  "email": "",
+                  "title": "Co-Founder, CEO",
+                  "last_updated": "2025-04-08T02:11:03.591575+00:00",
+                  "headline": "Co-Founder & CEO at VectorShift (YC S23) | Ex-Blackstone | Stat/CS at Harvard",
+                  "summary": "Email: alex@vectorshift.ai",
+                  "num_of_connections": 3570,
+                  "skills": [],
+                  "profile_picture_url": "https://media.licdn.com/dms/image/v2/C4D03AQEkeE2rNhDUJQ/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1661894915457?e=1749686400&v=beta&t=UI-20FFjtuhszj939pRywBDJScAhf2Xd2NVs6DbeK1s",
+                  "twitter_handle": null,
+                  "languages": [],
+                  "linkedin_open_to_cards": null,
+                  "linkedin_joined_date": null,
+                  "linkedin_verifications": null,
+                  "all_employers": [
+                    "Blackstone",
+                    "Harvard College Consulting Group",
+                    "Harvard Financial Analysts Club",
+                    "Harvard Model United Nations",
+                    "Harvard University",
+                    "VectorShift"
+                  ],
+                  "past_employers": [
+                    {
+                      "employer_name": "Harvard Model United Nations",
+                      "employer_linkedin_id": "1474642",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C4D0BAQEXskLquSXL6A/company-logo_400_400/company-logo_400_400/0/1631347610721?e=1751500800&v=beta&t=cwsPKH3TmbsY6olk8-fCLGC-0y8OMQOVa3MMn5PzJ00",
+                      "employer_linkedin_description": "Harvard Model United Nations (HMUN) is the oldest, largest, and most prestigious United Nations simulation for high school students held in the United States., , , , HMUN is a four-day international relations simulation for high school students held annually in downtown Boston. At HMUN, delegates gain insight into the workings of the United Nations and the dynamics of international relations by assuming the roles of UN representatives and members of other international bodies and national cabinets. HMUN is an exciting opportunity for students to debate issues that confront world leaders and to draft resolutions in response to these global issues. Participants will develop their abilities to work with others who are equally motivated and passionate about the topics of debate and to respond to global concerns., , , , HMUN builds upon decades of experience. In 1927, Harvard held its first annual Model League of Nations, followed by the first Model United Nations conference in 1953. This longevity and the dynamic that only a conference of our size can provide make HMUN the preeminent simulation of its kind in the world.",
+                      "employer_company_id": [
+                        1302109
+                      ],
+                      "employer_company_website_domain": [
+                        "harvardmun.org"
+                      ],
+                      "employee_position_id": 1471766115,
+                      "employee_title": "Director",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2018-09-01T00:00:00+00:00",
+                      "end_date": "2020-02-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard University",
+                      "employer_linkedin_id": "1646",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C4E0BAQF5t62bcL0e9g/company-logo_400_400/company-logo_400_400/0/1631318058235?e=1751500800&v=beta&t=Us1Gr1EfNmMAWd9KoINZI6HCuuEAY7o3qwWegsDvifA",
+                      "employer_linkedin_description": "Harvard University is devoted to excellence in teaching, learning, and research, and to developing leaders in many disciplines who make a difference globally. Founded in 1636, Harvard is the oldest institution of higher learning in the United States., , The official flagship Harvard social media channels are maintained by Harvard Public Affairs and Communications and aim to provide access to the people, places, events, news and research at our Institution. We ask that all visitors to Harvard’s digital spaces be civil to one another and to the site editors. Personal attacks, profanity, commercial solicitations, spam, misinformation or other inappropriate contributions are grounds for comment removal. We ask that you stay on topic when contributing to a discussion and refrain from duplicate posts., , Hateful or discriminatory comments regarding race, ethnicity, religion, gender, disability, sexual orientation, or political beliefs will not be tolerated. The page administrators reserve the right to delete inappropriate or abusive comments and to permanently ban or block users from the Harvard social media accounts.",
+                      "employer_company_id": [
+                        1146234
+                      ],
+                      "employer_company_website_domain": [
+                        "harvard.edu"
+                      ],
+                      "employee_position_id": 1860526509,
+                      "employee_title": "Teaching Fellow: CS50",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2021-09-01T00:00:00+00:00",
+                      "end_date": "2021-12-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard Financial Analysts Club",
+                      "employer_linkedin_id": "27153262",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQGLZDXxZJxfbw/company-logo_400_400/company-logo_400_400/0/1691374058915/harvardfac_logo?e=1751500800&v=beta&t=8QtY7R_UD9NsssiwYjHr3QG4m2dDdQyw0t6SgkNUqqI",
+                      "employer_linkedin_description": "Founded in 1996, the Harvard Financial Analysts Club (HFAC) is dedicated to providing the Harvard student body with financial education programs and real-world investment experience. Through the HFAC Comp, new members are provided an introduction to finance with a focus on internship and career preparation. After completion, students can help research ideas for HFAC's $105k long/short equity fund.",
+                      "employer_company_id": [
+                        6252582
+                      ],
+                      "employer_company_website_domain": [],
+                      "employee_position_id": 1553757428,
+                      "employee_title": "Director of Senior Investment Research",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2019-12-01T00:00:00+00:00",
+                      "end_date": "2020-12-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard Financial Analysts Club",
+                      "employer_linkedin_id": "27153262",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQGLZDXxZJxfbw/company-logo_400_400/company-logo_400_400/0/1691374058915/harvardfac_logo?e=1751500800&v=beta&t=8QtY7R_UD9NsssiwYjHr3QG4m2dDdQyw0t6SgkNUqqI",
+                      "employer_linkedin_description": "Founded in 1996, the Harvard Financial Analysts Club (HFAC) is dedicated to providing the Harvard student body with financial education programs and real-world investment experience. Through the HFAC Comp, new members are provided an introduction to finance with a focus on internship and career preparation. After completion, students can help research ideas for HFAC's $105k long/short equity fund.",
+                      "employer_company_id": [
+                        6252582
+                      ],
+                      "employer_company_website_domain": [],
+                      "employee_position_id": 1471765410,
+                      "employee_title": "Senior Investment Researcher, Quantitative Analyst",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2018-09-01T00:00:00+00:00",
+                      "end_date": "2019-12-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard College Consulting Group",
+                      "employer_linkedin_id": "5054176",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQGiUSo70PlG1A/company-logo_400_400/company-logo_400_400/0/1630647639967/harvard_college_consulting_group_logo?e=1751500800&v=beta&t=dvfzkSC5bywLnBypJYyTeV3gMxlfJCuBWBwu6iz_zts",
+                      "employer_linkedin_description": "Harvard Undergraduate Consulting Group is a nonprofit student organization at Harvard dedicated to helping businesses grow and achieve their strategic goals. With over 20 years of experience, HUCG has advised hundreds of clients, providing a fresh perspective, thorough analysis, and actionable recommendations.",
+                      "employer_company_id": [
+                        1295407
+                      ],
+                      "employer_company_website_domain": [
+                        "harvardundergradconsulting.org"
+                      ],
+                      "employee_position_id": 1469260920,
+                      "employee_title": "Analyst",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2018-09-01T00:00:00+00:00",
+                      "end_date": "2018-12-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard College Consulting Group",
+                      "employer_linkedin_id": "5054176",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQGiUSo70PlG1A/company-logo_400_400/company-logo_400_400/0/1630647639967/harvard_college_consulting_group_logo?e=1751500800&v=beta&t=dvfzkSC5bywLnBypJYyTeV3gMxlfJCuBWBwu6iz_zts",
+                      "employer_linkedin_description": "Harvard Undergraduate Consulting Group is a nonprofit student organization at Harvard dedicated to helping businesses grow and achieve their strategic goals. With over 20 years of experience, HUCG has advised hundreds of clients, providing a fresh perspective, thorough analysis, and actionable recommendations.",
+                      "employer_company_id": [
+                        1295407
+                      ],
+                      "employer_company_website_domain": [
+                        "harvardundergradconsulting.org"
+                      ],
+                      "employee_position_id": 1469263156,
+                      "employee_title": "Associate",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2019-01-01T00:00:00+00:00",
+                      "end_date": "2019-04-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard College Consulting Group",
+                      "employer_linkedin_id": "5054176",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQGiUSo70PlG1A/company-logo_400_400/company-logo_400_400/0/1630647639967/harvard_college_consulting_group_logo?e=1751500800&v=beta&t=dvfzkSC5bywLnBypJYyTeV3gMxlfJCuBWBwu6iz_zts",
+                      "employer_linkedin_description": "Harvard Undergraduate Consulting Group is a nonprofit student organization at Harvard dedicated to helping businesses grow and achieve their strategic goals. With over 20 years of experience, HUCG has advised hundreds of clients, providing a fresh perspective, thorough analysis, and actionable recommendations.",
+                      "employer_company_id": [
+                        1295407
+                      ],
+                      "employer_company_website_domain": [
+                        "harvardundergradconsulting.org"
+                      ],
+                      "employee_position_id": 1553755976,
+                      "employee_title": "Associate Director of Engagement",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2019-12-01T00:00:00+00:00",
+                      "end_date": "2020-04-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard College Consulting Group",
+                      "employer_linkedin_id": "5054176",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQGiUSo70PlG1A/company-logo_400_400/company-logo_400_400/0/1630647639967/harvard_college_consulting_group_logo?e=1751500800&v=beta&t=dvfzkSC5bywLnBypJYyTeV3gMxlfJCuBWBwu6iz_zts",
+                      "employer_linkedin_description": "Harvard Undergraduate Consulting Group is a nonprofit student organization at Harvard dedicated to helping businesses grow and achieve their strategic goals. With over 20 years of experience, HUCG has advised hundreds of clients, providing a fresh perspective, thorough analysis, and actionable recommendations.",
+                      "employer_company_id": [
+                        1295407
+                      ],
+                      "employer_company_website_domain": [
+                        "harvardundergradconsulting.org"
+                      ],
+                      "employee_position_id": 1461605197,
+                      "employee_title": "Case Team Leader",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2019-05-01T00:00:00+00:00",
+                      "end_date": "2019-12-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard College Consulting Group",
+                      "employer_linkedin_id": "5054176",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQGiUSo70PlG1A/company-logo_400_400/company-logo_400_400/0/1630647639967/harvard_college_consulting_group_logo?e=1751500800&v=beta&t=dvfzkSC5bywLnBypJYyTeV3gMxlfJCuBWBwu6iz_zts",
+                      "employer_linkedin_description": "Harvard Undergraduate Consulting Group is a nonprofit student organization at Harvard dedicated to helping businesses grow and achieve their strategic goals. With over 20 years of experience, HUCG has advised hundreds of clients, providing a fresh perspective, thorough analysis, and actionable recommendations.",
+                      "employer_company_id": [
+                        1295407
+                      ],
+                      "employer_company_website_domain": [
+                        "harvardundergradconsulting.org"
+                      ],
+                      "employee_position_id": 1713851827,
+                      "employee_title": "Director, President",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2020-12-01T00:00:00+00:00",
+                      "end_date": "2021-08-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard College Consulting Group",
+                      "employer_linkedin_id": "5054176",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQGiUSo70PlG1A/company-logo_400_400/company-logo_400_400/0/1630647639967/harvard_college_consulting_group_logo?e=1751500800&v=beta&t=dvfzkSC5bywLnBypJYyTeV3gMxlfJCuBWBwu6iz_zts",
+                      "employer_linkedin_description": "Harvard Undergraduate Consulting Group is a nonprofit student organization at Harvard dedicated to helping businesses grow and achieve their strategic goals. With over 20 years of experience, HUCG has advised hundreds of clients, providing a fresh perspective, thorough analysis, and actionable recommendations.",
+                      "employer_company_id": [
+                        1295407
+                      ],
+                      "employer_company_website_domain": [
+                        "harvardundergradconsulting.org"
+                      ],
+                      "employee_position_id": 1623816575,
+                      "employee_title": "Vice Director of Consulting",
+                      "employee_description": null,
+                      "employee_location": "Cambridge, MA",
+                      "start_date": "2020-05-01T00:00:00+00:00",
+                      "end_date": "2020-12-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Blackstone",
+                      "employer_linkedin_id": "7834",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C4E0BAQHM1mo8m_ecGw/company-logo_400_400/company-logo_400_400/0/1678125020983/blackstonegroup_logo?e=1751500800&v=beta&t=7HBIVUrCmu3zBDEgFXsm59c7s7oR2xeiCkMUPu564QA",
+                      "employer_linkedin_description": "Blackstone is the world’s largest alternative asset manager. Blackstone seeks to deliver compelling returns for institutional and individual investors by strengthening the companies in which the firm invests. Blackstone’s nearly $1.2 trillion in assets under management include global investment strategies focused on real estate, private equity, credit, infrastructure, life sciences, growth equity, secondaries and hedge funds. Further information is available at www.blackstone.com. Follow @blackstone on LinkedIn, X (Twitter), and Instagram.",
+                      "employer_company_id": [
+                        681931
+                      ],
+                      "employer_company_website_domain": [
+                        "blackstone.com"
+                      ],
+                      "employee_position_id": 1860530113,
+                      "employee_title": "Analyst",
+                      "employee_description": "Private Equity, Data Science",
+                      "employee_location": "New York, New York, United States",
+                      "start_date": "2022-06-01T00:00:00+00:00",
+                      "end_date": "2023-06-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Blackstone",
+                      "employer_linkedin_id": "7834",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C4E0BAQHM1mo8m_ecGw/company-logo_400_400/company-logo_400_400/0/1678125020983/blackstonegroup_logo?e=1751500800&v=beta&t=7HBIVUrCmu3zBDEgFXsm59c7s7oR2xeiCkMUPu564QA",
+                      "employer_linkedin_description": "Blackstone is the world’s largest alternative asset manager. Blackstone seeks to deliver compelling returns for institutional and individual investors by strengthening the companies in which the firm invests. Blackstone’s nearly $1.2 trillion in assets under management include global investment strategies focused on real estate, private equity, credit, infrastructure, life sciences, growth equity, secondaries and hedge funds. Further information is available at www.blackstone.com. Follow @blackstone on LinkedIn, X (Twitter), and Instagram.",
+                      "employer_company_id": [
+                        681931
+                      ],
+                      "employer_company_website_domain": [
+                        "blackstone.com"
+                      ],
+                      "employee_position_id": 1674185747,
+                      "employee_title": "Summer Analyst",
+                      "employee_description": null,
+                      "employee_location": "New York, New York, United States",
+                      "start_date": "2021-05-01T00:00:00+00:00",
+                      "end_date": "2021-08-01T00:00:00+00:00"
+                    }
+                  ],
+                  "current_employers": [
+                    {
+                      "employer_name": "VectorShift",
+                      "employer_linkedin_id": "98020569",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQHA6tJ8FjLImQ/company-logo_400_400/company-logo_400_400/0/1686524725664?e=1751500800&v=beta&t=xfEj2fAuL6TferKmcKD-mH_iqJ4tff2bCFXEOTUXFzM",
+                      "employer_linkedin_description": "VectorShift is an AI automations platform. Teams leverage AI through VectorShift’s no-code or SDK interfaces to search through knowledge bases, generate documents, and deploy chatbots and assistants.",
+                      "employer_company_id": [
+                        880829
+                      ],
+                      "employer_company_website_domain": [
+                        "vectorshift.ai"
+                      ],
+                      "employee_position_id": 2193451367,
+                      "employee_title": "Co-Founder, CEO",
+                      "employee_description": "YC S23",
+                      "employee_location": "New York, New York, United States",
+                      "start_date": "2023-06-01T00:00:00+00:00",
+                      "end_date": null
+                    }
+                  ],
+                  "education_background": [
+                    {
+                      "degree_name": "Master of Science - MS",
+                      "institute_name": "Harvard University",
+                      "institute_linkedin_id": "1646",
+                      "institute_linkedin_url": "https://www.linkedin.com/school/1646/",
+                      "institute_logo_url": "https://media.licdn.com/dms/image/v2/C4E0BAQF5t62bcL0e9g/company-logo_400_400/company-logo_400_400/0/1631318058235?e=1751500800&v=beta&t=Us1Gr1EfNmMAWd9KoINZI6HCuuEAY7o3qwWegsDvifA",
+                      "field_of_study": "Computational Science and Engineering",
+                      "activities_and_societies": null,
+                      "start_date": "2021-01-01T00:00:00+00:00",
+                      "end_date": "2022-01-01T00:00:00+00:00"
+                    },
+                    {
+                      "degree_name": "High School Diploma",
+                      "institute_name": "Radnor High School",
+                      "institute_linkedin_id": "26569",
+                      "institute_linkedin_url": "https://www.linkedin.com/school/26569/",
+                      "institute_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQH4ZGqLRwTJZg/company-logo_400_400/company-logo_400_400/0/1681924828720?e=1747872000&v=beta&t=zIdwSc5EkHa32IX2a5iZjQMcFsNsKi0OZ3G22EXw0CI",
+                      "field_of_study": "",
+                      "activities_and_societies": null,
+                      "start_date": "2014-01-01T00:00:00+00:00",
+                      "end_date": "2018-01-01T00:00:00+00:00"
+                    },
+                    {
+                      "degree_name": "Bachelor of Arts - BA",
+                      "institute_name": "Harvard University",
+                      "institute_linkedin_id": "1646",
+                      "institute_linkedin_url": "https://www.linkedin.com/school/1646/",
+                      "institute_logo_url": "https://media.licdn.com/dms/image/v2/C4E0BAQF5t62bcL0e9g/company-logo_400_400/company-logo_400_400/0/1631318058235?e=1751500800&v=beta&t=Us1Gr1EfNmMAWd9KoINZI6HCuuEAY7o3qwWegsDvifA",
+                      "field_of_study": "Statistics and Computer Science (Joint), Highest Honors",
+                      "activities_and_societies": null,
+                      "start_date": "2018-01-01T00:00:00+00:00",
+                      "end_date": "2022-01-01T00:00:00+00:00"
+                    }
+                  ],
+                  "certifications": null,
+                  "honors": null,
+                  "all_employers_company_id": [
+                    1302109,
+                    1146234,
+                    6252582,
+                    6252582,
+                    1295407,
+                    1295407,
+                    1295407,
+                    1295407,
+                    1295407,
+                    1295407,
+                    681931,
+                    681931,
+                    880829
+                  ],
+                  "all_titles": [
+                    "Analyst",
+                    "Associate",
+                    "Associate Director of Engagement",
+                    "Case Team Leader",
+                    "Co-Founder, CEO",
+                    "Director",
+                    "Director of Senior Investment Research",
+                    "Director, President",
+                    "Senior Investment Researcher, Quantitative Analyst",
+                    "Summer Analyst",
+                    "Teaching Fellow: CS50",
+                    "Vice Director of Consulting"
+                  ],
+                  "all_schools": [
+                    "Harvard University",
+                    "Radnor High School"
+                  ],
+                  "all_degrees": [
+                    "Bachelor of Arts - BA",
+                    "High School Diploma",
+                    "Master of Science - MS"
+                  ]
+                },
+                {
+                  "linkedin_profile_url": "https://www.linkedin.com/in/ACwAABXOo4YBSCc81muigHaPIACJaC2pdjcDYuM",
+                  "linkedin_flagship_url": "https://www.linkedin.com/in/albert-mao",
+                  "name": "Albert Mao",
+                  "location": "Greater Boston",
+                  "email": "",
+                  "title": "COO & Co-Founder",
+                  "last_updated": "2025-03-13T20:29:25.275903+00:00",
+                  "headline": "Founder @ VectorShift(YC): No-Code AI Platform | Ex-McKinsey | Statistics @ Harvard",
+                  "summary": "Building VectorShift (YC S23): No Code Platform for AI Workflows. https://vectorshift.ai/",
+                  "num_of_connections": 6288,
+                  "skills": [
+                    "Financial Analysis",
+                    "Financial Modeling",
+                    "Management Consulting",
+                    "Data Analysis",
+                    "Python (Programming Language)",
+                    "R"
+                  ],
+                  "profile_picture_url": "https://media.licdn.com/dms/image/v2/D4E03AQH7l37Piyip0A/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1686280521555?e=1747267200&v=beta&t=gvGAe2Ph2FL6R5VwkK9709sCLOJA9ZzTMvP7uc7Uf0c",
+                  "twitter_handle": null,
+                  "languages": [],
+                  "linkedin_open_to_cards": null,
+                  "linkedin_joined_date": null,
+                  "linkedin_verifications": null,
+                  "all_employers": [
+                    "Base4 Capital",
+                    "Harvard College Consulting Group",
+                    "McKinsey & Company",
+                    "VectorShift"
+                  ],
+                  "past_employers": [
+                    {
+                      "employer_name": "McKinsey & Company",
+                      "employer_linkedin_id": "1371",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/D560BAQFTxAlpCMGXuw/company-logo_400_400/B56ZVR8QEtHQAc-/0/1740836504187/mckinsey_logo?e=1751500800&v=beta&t=Jq42HUCjGUa_OBba9zTbP4aaC5pOIBWfMgoqZV8oBVY",
+                      "employer_linkedin_description": "McKinsey & Company is a global management consulting firm. We are the trusted advisor to the world's leading businesses, governments, and institutions. , , , , We work with leading organizations across the private, public and social sectors. Our scale, scope, and knowledge allow us to address problems that no one else can. We have deep functional and industry expertise as well as breadth of geographical reach. We are passionate about taking on immense challenges that matter to our clients and, often, to the world. , , , , We work with our clients as we do with our colleagues. We build their capabilities and leadership skills at every level and every opportunity. We do this to help build internal support, get to real issues, and reach practical recommendations. We bring out the capabilities of clients to fully participate in the process and lead the ongoing work.",
+                      "employer_company_id": [
+                        721642
+                      ],
+                      "employer_company_website_domain": [
+                        "mckinsey.com"
+                      ],
+                      "employee_position_id": 1670723044,
+                      "employee_title": "Consultant",
+                      "employee_description": "Rated distinctive - top 8% of class\nHelped F500 software companies redefine their growth strategies, products, and GTM.",
+                      "employee_location": "New York City Metropolitan Area",
+                      "start_date": "2021-01-01T00:00:00+00:00",
+                      "end_date": "2023-01-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Harvard College Consulting Group",
+                      "employer_linkedin_id": "5054176",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQGiUSo70PlG1A/company-logo_400_400/company-logo_400_400/0/1630647639967/harvard_college_consulting_group_logo?e=1751500800&v=beta&t=dvfzkSC5bywLnBypJYyTeV3gMxlfJCuBWBwu6iz_zts",
+                      "employer_linkedin_description": "Harvard Undergraduate Consulting Group is a nonprofit student organization at Harvard dedicated to helping businesses grow and achieve their strategic goals. With over 20 years of experience, HUCG has advised hundreds of clients, providing a fresh perspective, thorough analysis, and actionable recommendations.",
+                      "employer_company_id": [
+                        1295407
+                      ],
+                      "employer_company_website_domain": [
+                        "harvardundergradconsulting.org"
+                      ],
+                      "employee_position_id": 1714852203,
+                      "employee_title": "Chief Revenue Officer",
+                      "employee_description": "Led 6 person sales team to increase revenue 300% Y/Y to >$1,000,000.",
+                      "employee_location": null,
+                      "start_date": "2018-01-01T00:00:00+00:00",
+                      "end_date": "2021-01-01T00:00:00+00:00"
+                    },
+                    {
+                      "employer_name": "Base4 Capital",
+                      "employer_linkedin_id": "99209741",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/D560BAQGR6F70Z8OByg/company-logo_400_400/company-logo_400_400/0/1704164695701/base4_capital_logo?e=1750291200&v=beta&t=kdlXzcWbJSylIfFRWS35FHBPZiu57j9LFclDtcMZJz8",
+                      "employer_linkedin_description": "Investing in people transforming biology into information science",
+                      "employer_company_id": [
+                        2389406
+                      ],
+                      "employer_company_website_domain": [
+                        "base4capital.com"
+                      ],
+                      "employee_position_id": 1889182843,
+                      "employee_title": "Hedge Fund Analyst",
+                      "employee_description": "Fundamental investment research on the genomics space - specialized in diagnostics companies",
+                      "employee_location": "New York, New York, United States",
+                      "start_date": "2021-01-01T00:00:00+00:00",
+                      "end_date": "2021-01-01T00:00:00+00:00"
+                    }
+                  ],
+                  "current_employers": [
+                    {
+                      "employer_name": "VectorShift",
+                      "employer_linkedin_id": "98020569",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQHA6tJ8FjLImQ/company-logo_400_400/company-logo_400_400/0/1686524725664?e=1751500800&v=beta&t=xfEj2fAuL6TferKmcKD-mH_iqJ4tff2bCFXEOTUXFzM",
+                      "employer_linkedin_description": "VectorShift is an AI automations platform. Teams leverage AI through VectorShift’s no-code or SDK interfaces to search through knowledge bases, generate documents, and deploy chatbots and assistants.",
+                      "employer_company_id": [
+                        880829
+                      ],
+                      "employer_company_website_domain": [
+                        "vectorshift.ai"
+                      ],
+                      "employee_position_id": 2193455013,
+                      "employee_title": "COO & Co-Founder",
+                      "employee_description": "No Code AI Workflows. YC S23. https://vectorshift.ai/",
+                      "employee_location": "San Francisco Bay Area",
+                      "start_date": "2023-01-01T00:00:00+00:00",
+                      "end_date": null
+                    }
+                  ],
+                  "education_background": [
+                    {
+                      "degree_name": "High School Diploma",
+                      "institute_name": "Boston Latin School",
+                      "institute_linkedin_id": "15248655",
+                      "institute_linkedin_url": "https://www.linkedin.com/school/15248655/",
+                      "institute_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQEkBbVi94s-EQ/company-logo_400_400/company-logo_400_400/0/1631364693102?e=1751500800&v=beta&t=RHWJ_HEiBkLVDna3UqOzR5VDHOqGy_WhUpIHsd6I9pw",
+                      "field_of_study": "",
+                      "activities_and_societies": null,
+                      "start_date": null,
+                      "end_date": null
+                    },
+                    {
+                      "degree_name": "Bachelor's degree",
+                      "institute_name": "Harvard University",
+                      "institute_linkedin_id": "1646",
+                      "institute_linkedin_url": "https://www.linkedin.com/school/1646/",
+                      "institute_logo_url": "https://media.licdn.com/dms/image/v2/C4E0BAQF5t62bcL0e9g/company-logo_400_400/company-logo_400_400/0/1631318058235?e=1751500800&v=beta&t=Us1Gr1EfNmMAWd9KoINZI6HCuuEAY7o3qwWegsDvifA",
+                      "field_of_study": "Statistics",
+                      "activities_and_societies": null,
+                      "start_date": null,
+                      "end_date": null
+                    }
+                  ],
+                  "certifications": null,
+                  "honors": null,
+                  "all_employers_company_id": [
+                    721642,
+                    1295407,
+                    880829,
+                    2389406
+                  ],
+                  "all_titles": [
+                    "Chief Revenue Officer",
+                    "Consultant",
+                    "COO & Co-Founder",
+                    "Hedge Fund Analyst"
+                  ],
+                  "all_schools": [
+                    "Boston Latin School",
+                    "Harvard University"
+                  ],
+                  "all_degrees": [
+                    "Bachelor's degree",
+                    "High School Diploma"
+                  ]
+                },
+                {
+                  "linkedin_profile_url": "https://www.linkedin.com/in/ACwAAFXtHScBr_nC3DahPQEExMYnSbMHOyTUZ5M",
+                  "linkedin_flagship_url": "https://www.linkedin.com/in/bina-rani-roy-ab3958342",
+                  "name": "Bina Rani Roy",
+                  "location": "Dhaka, Dhaka, Bangladesh",
+                  "email": null,
+                  "title": "Assistant to Vice President",
+                  "last_updated": "2025-02-12T19:23:43.190833+00:00",
+                  "headline": "Assistant to Vice President at VectorShift",
+                  "summary": null,
+                  "num_of_connections": null,
+                  "skills": null,
+                  "profile_picture_url": null,
+                  "twitter_handle": null,
+                  "languages": null,
+                  "linkedin_open_to_cards": null,
+                  "linkedin_joined_date": null,
+                  "linkedin_verifications": null,
+                  "all_employers": [
+                    "VectorShift"
+                  ],
+                  "past_employers": [],
+                  "current_employers": [
+                    {
+                      "employer_name": "VectorShift",
+                      "employer_linkedin_id": "98020569",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQHA6tJ8FjLImQ/company-logo_400_400/company-logo_400_400/0/1686524725664?e=1751500800&v=beta&t=xfEj2fAuL6TferKmcKD-mH_iqJ4tff2bCFXEOTUXFzM",
+                      "employer_linkedin_description": "VectorShift is an AI automations platform. Teams leverage AI through VectorShift’s no-code or SDK interfaces to search through knowledge bases, generate documents, and deploy chatbots and assistants.",
+                      "employer_company_id": [
+                        880829
+                      ],
+                      "employer_company_website_domain": [
+                        "vectorshift.ai"
+                      ],
+                      "employee_position_id": 2539734727,
+                      "employee_title": "Assistant to Vice President",
+                      "employee_description": null,
+                      "employee_location": null,
+                      "start_date": null,
+                      "end_date": null
+                    }
+                  ],
+                  "education_background": null,
+                  "certifications": null,
+                  "honors": null,
+                  "all_employers_company_id": [
+                    880829
+                  ],
+                  "all_titles": [
+                    "Assistant to Vice President"
+                  ],
+                  "all_schools": null,
+                  "all_degrees": null
+                },
+                {
+                  "linkedin_profile_url": "https://www.linkedin.com/in/ACwAAFYPtXQBE6oVFRCX5bQyqZF1M0FV2oivz_Y",
+                  "linkedin_flagship_url": "https://www.linkedin.com/in/rushikesh-wagaj-b58670343",
+                  "name": "Rushikesh Wagaj",
+                  "location": "Pune, Maharashtra, India",
+                  "email": null,
+                  "title": "Vector ",
+                  "last_updated": "2025-02-12T19:23:45.122926+00:00",
+                  "headline": "Vector  at VectorShift",
+                  "summary": null,
+                  "num_of_connections": null,
+                  "skills": null,
+                  "profile_picture_url": null,
+                  "twitter_handle": null,
+                  "languages": null,
+                  "linkedin_open_to_cards": null,
+                  "linkedin_joined_date": null,
+                  "linkedin_verifications": null,
+                  "all_employers": [
+                    "VectorShift"
+                  ],
+                  "past_employers": [],
+                  "current_employers": [
+                    {
+                      "employer_name": "VectorShift",
+                      "employer_linkedin_id": "98020569",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQHA6tJ8FjLImQ/company-logo_400_400/company-logo_400_400/0/1686524725664?e=1751500800&v=beta&t=xfEj2fAuL6TferKmcKD-mH_iqJ4tff2bCFXEOTUXFzM",
+                      "employer_linkedin_description": "VectorShift is an AI automations platform. Teams leverage AI through VectorShift’s no-code or SDK interfaces to search through knowledge bases, generate documents, and deploy chatbots and assistants.",
+                      "employer_company_id": [
+                        880829
+                      ],
+                      "employer_company_website_domain": [
+                        "vectorshift.ai"
+                      ],
+                      "employee_position_id": 2540590198,
+                      "employee_title": "Vector ",
+                      "employee_description": null,
+                      "employee_location": null,
+                      "start_date": null,
+                      "end_date": null
+                    }
+                  ],
+                  "education_background": null,
+                  "certifications": null,
+                  "honors": null,
+                  "all_employers_company_id": [
+                    880829
+                  ],
+                  "all_titles": [
+                    "Vector "
+                  ],
+                  "all_schools": null,
+                  "all_degrees": null
+                },
+                {
+                  "linkedin_profile_url": "https://www.linkedin.com/in/ACwAAFXsgaABHkTq62_t7KkZLCUH0fbyPdA7gYo",
+                  "linkedin_flagship_url": "https://www.linkedin.com/in/rashedul-islam-a54939342",
+                  "name": "Rashedul Islam",
+                  "location": "Dhaka, Dhaka, Bangladesh",
+                  "email": null,
+                  "title": "Yoga Instructor",
+                  "last_updated": "2025-02-12T19:23:45.225184+00:00",
+                  "headline": "Yoga Instructor at VectorShift",
+                  "summary": null,
+                  "num_of_connections": null,
+                  "skills": null,
+                  "profile_picture_url": null,
+                  "twitter_handle": null,
+                  "languages": null,
+                  "linkedin_open_to_cards": null,
+                  "linkedin_joined_date": null,
+                  "linkedin_verifications": null,
+                  "all_employers": [
+                    "VectorShift"
+                  ],
+                  "past_employers": [],
+                  "current_employers": [
+                    {
+                      "employer_name": "VectorShift",
+                      "employer_linkedin_id": "98020569",
+                      "employer_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQHA6tJ8FjLImQ/company-logo_400_400/company-logo_400_400/0/1686524725664?e=1751500800&v=beta&t=xfEj2fAuL6TferKmcKD-mH_iqJ4tff2bCFXEOTUXFzM",
+                      "employer_linkedin_description": "VectorShift is an AI automations platform. Teams leverage AI through VectorShift’s no-code or SDK interfaces to search through knowledge bases, generate documents, and deploy chatbots and assistants.",
+                      "employer_company_id": [
+                        880829
+                      ],
+                      "employer_company_website_domain": [
+                        "vectorshift.ai"
+                      ],
+                      "employee_position_id": 2539487433,
+                      "employee_title": "Yoga Instructor",
+                      "employee_description": null,
+                      "employee_location": null,
+                      "start_date": null,
+                      "end_date": null
+                    }
+                  ],
+                  "education_background": null,
+                  "certifications": null,
+                  "honors": null,
+                  "all_employers_company_id": [
+                    880829
+                  ],
+                  "all_titles": [
+                    "Yoga Instructor"
+                  ],
+                  "all_schools": null,
+                  "all_degrees": null
+                }
+              ],
+              1
+            ]
+          ],
+          "is_trial_user": false
+        }
+      }
+    ],
+    "Enriching Company": [
+      {
+        "json": {
+          "company_id": 880829,
+          "company_name": "VectorShift",
+          "linkedin_profile_name": null,
+          "linkedin_profile_url": "https://www.linkedin.com/company/vectorshift",
+          "crunchbase_profile_url": "https://crunchbase.com/organization/vectorshift",
+          "crunchbase_profile_uuid": "edbcf55c-0726-4a05-b5d5-6a695af9b8ee",
+          "linkedin_id": "98020569",
+          "linkedin_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQHA6tJ8FjLImQ/company-logo_200_200/company-logo_200_200/0/1686524725664?e=1749081600&v=beta&t=6y2gR6YMGS8rgPIClwyqG9Om8cvcl7w8E89QDYpvy-M",
+          "company_twitter_url": "",
+          "company_website_domain": "vectorshift.ai",
+          "hq_country": "USA",
+          "headquarters": null,
+          "largest_headcount_country": "IND",
+          "hq_street_address": "VectorShift, San Francisco,San Francisco",
+          "company_website": "www.vectorshift.ai",
+          "year_founded": "2023-01-01",
+          "fiscal_year_end": null,
+          "estimated_revenue_lower_bound_usd": 1000000,
+          "estimated_revenue_higher_bound_usd": 2500000,
+          "employee_count_range": "2-10",
+          "company_type": "Privately Held",
+          "linkedin_company_description": "VectorShift is an AI automations platform. Teams leverage AI through VectorShift’s no-code or SDK interfaces to search through knowledge bases, generate documents, and deploy chatbots and assistants.",
+          "acquisition_status": null,
+          "markets": [
+            "PRIVATE"
+          ],
+          "stock_symbols": null,
+          "ceo_location": "New York, New York, United States",
+          "all_office_addresses": null,
+          "taxonomy": {
+            "linkedin_specialities": null,
+            "linkedin_industries": [
+              "IT Services and IT Consulting",
+              "Software Development",
+              "Information Technology & Services"
+            ],
+            "crunchbase_categories": [
+              "Artificial Intelligence",
+              "Search Engine",
+              "Software",
+              "Artificial Intelligence (AI)",
+              "Apps",
+              "Generative AI"
+            ],
+            "primary_naics_detail": {
+              "naics_code": "541511",
+              "sector": "Professional, Scientific, and Technical Services",
+              "sub_sector": "Professional, Scientific, and Technical Services",
+              "industry_group": "Computer Systems Design and Related Services",
+              "industry": "Custom Computer Programming Services",
+              "year": 2022
+            },
+            "sic_detail_list": [
+              {
+                "sic_code": "7371",
+                "industry": "Custom Computer Programming Services",
+                "year": 1987
+              }
+            ]
+          },
+          "competitors": {
+            "competitor_website_domains": [
+              "workhack.ai",
+              "sketchdeck.ai",
+              "shift-technology.com",
+              "creatext.ai",
+              "trace.space",
+              "latticeflow.ai",
+              "magicflow.ai",
+              "shiftbias.com"
+            ],
+            "paid_seo_competitors_website_domains": null,
+            "organic_seo_competitors_website_domains": null
+          },
+          "headcount": {
+            "linkedin_headcount": 28,
+            "linkedin_headcount_total_growth_percent": {
+              "mom": 0,
+              "qoq": 11.95,
+              "six_months": 114.5,
+              "yoy": 295.77,
+              "two_years": 2454.55
+            },
+            "linkedin_headcount_total_growth_absolute": {
+              "mom": 1,
+              "qoq": 15,
+              "six_months": 18,
+              "yoy": 21,
+              "two_years": 27
+            },
+            "linkedin_headcount_by_role_absolute": {
+              "Engineering": 11,
+              "Business Development": 3,
+              "Program and Project Management": 2,
+              "Education": 1,
+              "Entrepreneurship": 1,
+              "Operations": 1,
+              "Quality Assurance": 1,
+              "Administrative": 1,
+              "Sales": 1,
+              "Arts and Design": 1,
+              "Community and Social Services": 1
+            },
+            "linkedin_headcount_by_role_percent": {
+              "Engineering": 39.29,
+              "Business Development": 10.71,
+              "Program and Project Management": 7.14,
+              "Education": 3.57,
+              "Entrepreneurship": 3.57,
+              "Operations": 3.57,
+              "Quality Assurance": 3.57,
+              "Administrative": 3.57,
+              "Sales": 3.57,
+              "Arts and Design": 3.57,
+              "Community and Social Services": 3.57
+            },
+            "linkedin_role_metrics": {
+              "all_roles": "Engineering, Business Development, Program and Project Management, Education, Entrepreneurship, Operations, Quality Assurance, Administrative, Sales, Arts and Design, Community and Social Services",
+              "0_to_10_percent": "Administrative, Arts and Design, Community and Social Services, Education, Entrepreneurship, Operations, Program and Project Management, Quality Assurance, Sales",
+              "11_to_30_percent": "Business Development",
+              "31_to_50_percent": "Engineering",
+              "51_to_70_percent": "Engineering",
+              "71_to_100_percent": "Engineering"
+            },
+            "linkedin_headcount_by_role_six_months_growth_percent": {
+              "engineering": 22.2,
+              "sales": null,
+              "operations": 0,
+              "human_resource": null,
+              "quality_assurance": null
+            },
+            "linkedin_headcount_by_role_yoy_growth_percent": {
+              "engineering": 265.78,
+              "sales": null,
+              "operations": 0,
+              "human_resource": null,
+              "quality_assurance": null
+            },
+            "linkedin_headcount_by_region_absolute": {
+              "India": 14,
+              "United States": 6,
+              "Bangladesh": 6,
+              "Dhaka, Bangladesh": 5,
+              "Dhaka": 5,
+              "Maharashtra, India": 4,
+              "Pune": 3,
+              "Pune/Pimpri-Chinchwad Area": 3,
+              "Karnataka, India": 2,
+              "New York City Metropolitan Area": 2,
+              "Madhya Pradesh, India": 1,
+              "Goa, India": 1,
+              "Bagalkot": 1,
+              "Massachusetts, United States": 1,
+              "Panaji": 1
+            },
+            "linkedin_headcount_by_region_percent": {
+              "India": 50,
+              "United States": 21.43,
+              "Bangladesh": 21.43,
+              "Dhaka, Bangladesh": 17.86,
+              "Dhaka": 17.86,
+              "Maharashtra, India": 14.29,
+              "Pune": 10.71,
+              "Pune/Pimpri-Chinchwad Area": 10.71,
+              "Karnataka, India": 7.14,
+              "New York City Metropolitan Area": 7.14,
+              "Madhya Pradesh, India": 3.57,
+              "Goa, India": 3.57,
+              "Bagalkot": 3.57,
+              "Massachusetts, United States": 3.57,
+              "Panaji": 3.57
+            },
+            "linkedin_region_metrics": {
+              "all_regions": "'India', 'United States', 'Bangladesh', 'Dhaka, Bangladesh', 'Dhaka', 'Maharashtra, India', 'Pune', 'Pune/Pimpri-Chinchwad Area', 'Karnataka, India', 'New York City Metropolitan Area', 'Madhya Pradesh, India', 'Goa, India', 'Bagalkot', 'Massachusetts, United States', 'Panaji'",
+              "0_to_10_percent": "'Bagalkot', 'Goa, India', 'Karnataka, India', 'Madhya Pradesh, India', 'Massachusetts, United States', 'New York City Metropolitan Area', 'Panaji'",
+              "11_to_30_percent": "'Bangladesh', 'Dhaka', 'Dhaka, Bangladesh', 'Maharashtra, India', 'Pune', 'Pune/Pimpri-Chinchwad Area', 'United States'",
+              "31_to_50_percent": "'India'",
+              "51_to_70_percent": "'India'",
+              "71_to_100_percent": "'India'"
+            },
+            "linkedin_headcount_by_skill_absolute": {
+              "JavaScript": 9,
+              "Python (Programming Language)": 8,
+              "Cascading Style Sheets (CSS)": 8,
+              "React.js": 8,
+              "Git": 7,
+              "MySQL": 7,
+              "GitHub": 6,
+              "Express.js": 6,
+              "Web Development": 6,
+              "HTML5": 6,
+              "TypeScript": 5,
+              "Next.js": 5,
+              "Software Development": 5,
+              "Redux.js": 5,
+              "SQL": 5,
+              "Back-End Web Development": 4,
+              "REST APIs": 3,
+              "English": 3,
+              "Google Cloud Platform (GCP)": 3,
+              "GraphQL": 3,
+              "Data Analysis": 3,
+              "Management Consulting": 2,
+              "Firebase": 2,
+              "Android": 2,
+              "React Native": 2,
+              "Strategy": 1
+            },
+            "linkedin_headcount_by_skill_percent": {
+              "JavaScript": 32.14,
+              "Python (Programming Language)": 28.57,
+              "Cascading Style Sheets (CSS)": 28.57,
+              "React.js": 28.57,
+              "Git": 25,
+              "MySQL": 25,
+              "GitHub": 21.43,
+              "Express.js": 21.43,
+              "Web Development": 21.43,
+              "HTML5": 21.43,
+              "TypeScript": 17.86,
+              "Next.js": 17.86,
+              "Software Development": 17.86,
+              "Redux.js": 17.86,
+              "SQL": 17.86,
+              "Back-End Web Development": 14.29,
+              "REST APIs": 10.71,
+              "English": 10.71,
+              "Google Cloud Platform (GCP)": 10.71,
+              "GraphQL": 10.71,
+              "Data Analysis": 10.71,
+              "Management Consulting": 7.14,
+              "Firebase": 7.14,
+              "Android": 7.14,
+              "React Native": 7.14,
+              "Strategy": 3.57
+            },
+            "linkedin_skill_metrics": {
+              "all_skills": "JavaScript, Python (Programming Language), Cascading Style Sheets (CSS), React.js, Git, MySQL, GitHub, Express.js, Web Development, HTML5, TypeScript, Next.js, Software Development, Redux.js, SQL, Back-End Web Development, REST APIs, English, Google Cloud Platform (GCP), GraphQL, Data Analysis, Management Consulting, Firebase, Android, React Native, Strategy",
+              "0_to_10_percent": "Android, Firebase, Management Consulting, React Native, Strategy",
+              "11_to_30_percent": "Back-End Web Development, Cascading Style Sheets (CSS), Data Analysis, English, Express.js, Git, GitHub, Google Cloud Platform (GCP), GraphQL, HTML5, MySQL, Next.js, Python (Programming Language), React.js, Redux.js, REST APIs, Software Development, SQL, TypeScript, Web Development",
+              "31_to_50_percent": "JavaScript",
+              "51_to_70_percent": "Express.js, Git, GitHub, HTML5, MySQL, Next.js, Redux.js, Software Development, SQL, TypeScript, Web Development",
+              "71_to_100_percent": "Cascading Style Sheets (CSS), Git, JavaScript, MySQL, Python (Programming Language), React.js"
+            },
+            "linkedin_headcount_timeseries": [
+              {
+                "date": "2023-02-01T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-02-06T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-02-13T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-02-20T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-02-27T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-03-01T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-03-06T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-03-13T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-03-20T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-03-27T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-04-01T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-04-03T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-04-10T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-04-17T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-04-24T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-05-01T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-05-08T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-05-15T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-05-22T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-05-29T00:00:00+00:00",
+                "employee_count": 1
+              },
+              {
+                "date": "2023-06-01T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-06-05T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-06-12T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-06-19T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-06-26T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-07-01T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-07-03T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-07-10T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-07-17T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-07-24T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-07-31T00:00:00+00:00",
+                "employee_count": 3
+              },
+              {
+                "date": "2023-08-01T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-08-07T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-08-14T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-08-21T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-08-28T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-09-01T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-09-04T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-09-11T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-09-18T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-09-25T00:00:00+00:00",
+                "employee_count": 4
+              },
+              {
+                "date": "2023-10-01T00:00:00+00:00",
+                "employee_count": 6
+              },
+              {
+                "date": "2023-10-02T00:00:00+00:00",
+                "employee_count": 6
+              },
+              {
+                "date": "2023-10-09T00:00:00+00:00",
+                "employee_count": 6
+              },
+              {
+                "date": "2023-10-16T00:00:00+00:00",
+                "employee_count": 6
+              },
+              {
+                "date": "2023-10-23T00:00:00+00:00",
+                "employee_count": 6
+              },
+              {
+                "date": "2023-10-30T00:00:00+00:00",
+                "employee_count": 6
+              },
+              {
+                "date": "2023-11-01T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2023-11-06T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2023-11-13T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2023-11-20T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2023-11-27T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2023-12-01T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2023-12-04T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2023-12-11T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2023-12-18T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2023-12-25T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2024-01-01T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-01-08T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-01-15T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-01-22T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-01-29T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-02-01T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-02-05T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-02-12T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-02-19T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-02-26T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-03-01T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-03-04T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-03-11T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-03-18T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-03-25T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-04-01T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-04-08T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-04-15T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-04-22T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-04-29T00:00:00+00:00",
+                "employee_count": 7
+              },
+              {
+                "date": "2024-05-01T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2024-05-06T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2024-05-13T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2024-05-20T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2024-05-27T00:00:00+00:00",
+                "employee_count": 8
+              },
+              {
+                "date": "2024-06-01T00:00:00+00:00",
+                "employee_count": 9
+              },
+              {
+                "date": "2024-06-03T00:00:00+00:00",
+                "employee_count": 9
+              },
+              {
+                "date": "2024-06-10T00:00:00+00:00",
+                "employee_count": 9
+              },
+              {
+                "date": "2024-06-17T00:00:00+00:00",
+                "employee_count": 9
+              },
+              {
+                "date": "2024-06-24T00:00:00+00:00",
+                "employee_count": 9
+              },
+              {
+                "date": "2024-07-01T00:00:00+00:00",
+                "employee_count": 11
+              },
+              {
+                "date": "2024-07-08T00:00:00+00:00",
+                "employee_count": 11
+              },
+              {
+                "date": "2024-07-15T00:00:00+00:00",
+                "employee_count": 11
+              },
+              {
+                "date": "2024-07-22T00:00:00+00:00",
+                "employee_count": 11
+              },
+              {
+                "date": "2024-07-29T00:00:00+00:00",
+                "employee_count": 11
+              },
+              {
+                "date": "2024-08-01T00:00:00+00:00",
+                "employee_count": 10
+              },
+              {
+                "date": "2024-08-05T00:00:00+00:00",
+                "employee_count": 10
+              },
+              {
+                "date": "2024-08-12T00:00:00+00:00",
+                "employee_count": 10
+              },
+              {
+                "date": "2024-08-19T00:00:00+00:00",
+                "employee_count": 10
+              },
+              {
+                "date": "2024-08-26T00:00:00+00:00",
+                "employee_count": 10
+              },
+              {
+                "date": "2024-09-01T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-09-02T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-09-09T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-09-16T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-09-23T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-09-30T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-10-01T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-10-07T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-10-14T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-10-21T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-10-28T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-11-01T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-11-04T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-11-11T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-11-18T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-11-25T00:00:00+00:00",
+                "employee_count": 13
+              },
+              {
+                "date": "2024-12-01T00:00:00+00:00",
+                "employee_count": 25
+              },
+              {
+                "date": "2024-12-02T00:00:00+00:00",
+                "employee_count": 25
+              },
+              {
+                "date": "2024-12-09T00:00:00+00:00",
+                "employee_count": 25
+              },
+              {
+                "date": "2024-12-16T00:00:00+00:00",
+                "employee_count": 25
+              },
+              {
+                "date": "2024-12-23T00:00:00+00:00",
+                "employee_count": 25
+              },
+              {
+                "date": "2024-12-30T00:00:00+00:00",
+                "employee_count": 25
+              },
+              {
+                "date": "2025-01-01T00:00:00+00:00",
+                "employee_count": 27
+              },
+              {
+                "date": "2025-01-06T00:00:00+00:00",
+                "employee_count": 27
+              },
+              {
+                "date": "2025-01-13T00:00:00+00:00",
+                "employee_count": 27
+              },
+              {
+                "date": "2025-01-20T00:00:00+00:00",
+                "employee_count": 27
+              },
+              {
+                "date": "2025-01-27T00:00:00+00:00",
+                "employee_count": 27
+              },
+              {
+                "date": "2025-02-01T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-02-03T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-02-10T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-02-17T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-02-24T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-03-01T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-03-03T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-03-10T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-03-17T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-03-24T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-03-31T00:00:00+00:00",
+                "employee_count": 28
+              },
+              {
+                "date": "2025-04-01T00:00:00+00:00",
+                "employee_count": 28
+              }
+            ],
+            "linkedin_headcount_by_function_timeseries": {
+              "CURRENT_FUNCTION": {
+                "Administrative": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Arts and Design": [
+                  {
+                    "date": "2024-10-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-09-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-04-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-05-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-06-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-07-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-02-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-08-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-01-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-12-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-11-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Business Development": [
+                  {
+                    "date": "2024-12-01T00:00:00+00:00",
+                    "employee_count": 2
+                  },
+                  {
+                    "date": "2024-07-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 3
+                  },
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 3
+                  },
+                  {
+                    "date": "2024-08-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-05-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-04-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-10-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-01-01T00:00:00+00:00",
+                    "employee_count": 2
+                  },
+                  {
+                    "date": "2024-06-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-11-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-02-01T00:00:00+00:00",
+                    "employee_count": 2
+                  },
+                  {
+                    "date": "2024-09-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Community and Social Services": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Consulting": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Education": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Engineering": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 11
+                  },
+                  {
+                    "date": "2024-03-01T00:00:00+00:00",
+                    "employee_count": 3
+                  },
+                  {
+                    "date": "2024-04-01T00:00:00+00:00",
+                    "employee_count": 3
+                  },
+                  {
+                    "date": "2024-05-01T00:00:00+00:00",
+                    "employee_count": 4
+                  },
+                  {
+                    "date": "2024-06-01T00:00:00+00:00",
+                    "employee_count": 5
+                  },
+                  {
+                    "date": "2024-07-01T00:00:00+00:00",
+                    "employee_count": 7
+                  },
+                  {
+                    "date": "2024-08-01T00:00:00+00:00",
+                    "employee_count": 6
+                  },
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 4
+                  },
+                  {
+                    "date": "2024-09-01T00:00:00+00:00",
+                    "employee_count": 9
+                  },
+                  {
+                    "date": "2024-10-01T00:00:00+00:00",
+                    "employee_count": 9
+                  },
+                  {
+                    "date": "2024-11-01T00:00:00+00:00",
+                    "employee_count": 9
+                  },
+                  {
+                    "date": "2024-12-01T00:00:00+00:00",
+                    "employee_count": 9
+                  },
+                  {
+                    "date": "2025-01-01T00:00:00+00:00",
+                    "employee_count": 11
+                  },
+                  {
+                    "date": "2025-02-01T00:00:00+00:00",
+                    "employee_count": 11
+                  }
+                ],
+                "Entrepreneurship": [
+                  {
+                    "date": "2024-12-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-09-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-01-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-10-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-04-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-05-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-06-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-07-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-02-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-08-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-11-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Information Technology": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Operations": [
+                  {
+                    "date": "2024-04-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-09-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 2
+                  },
+                  {
+                    "date": "2025-01-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-12-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-11-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-02-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-08-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-07-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-06-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-10-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-05-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Program and Project Management": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 2
+                  }
+                ],
+                "Quality Assurance": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Sales": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ]
+              },
+              "GEO_REGION": {
+                "Bagalkot": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Bangladesh": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 6
+                  }
+                ],
+                "Berlin, Germany": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Boston, MA": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "California, United States": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Delhi, India": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Dhaka": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 5
+                  }
+                ],
+                "Dhaka, Bangladesh": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 5
+                  }
+                ],
+                "Florida, United States": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Germany": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Goa, India": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "India": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 14
+                  },
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 2
+                  }
+                ],
+                "Irvine, CA": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Karnataka, India": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 2
+                  }
+                ],
+                "Madhya Pradesh, India": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Maharashtra, India": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 4
+                  }
+                ],
+                "Massachusetts, United States": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Miami, FL": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "New York City Metropolitan Area": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 2
+                  }
+                ],
+                "New York, NY": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "New York, United States": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Panaji": [
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 1
+                  },
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 1
+                  }
+                ],
+                "Pune": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 3
+                  }
+                ],
+                "Pune/Pimpri-Chinchwad Area": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 3
+                  }
+                ],
+                "United States": [
+                  {
+                    "date": "2025-03-01T00:00:00+00:00",
+                    "employee_count": 6
+                  },
+                  {
+                    "date": "2024-08-26T00:00:00+00:00",
+                    "employee_count": 4
+                  }
+                ]
+              }
+            }
+          },
+          "web_traffic": {
+            "monthly_visitors": 118268,
+            "monthly_visitor_mom_pct": -13.49,
+            "monthly_visitor_qoq_pct": -26.23,
+            "traffic_source_social_pct": 4.291004669224402,
+            "traffic_source_search_pct": 41.02467691383979,
+            "traffic_source_direct_pct": 48.71963211043631,
+            "traffic_source_paid_referral_pct": 0.3082162948173017,
+            "traffic_source_referral_pct": 5.570038717151534,
+            "monthly_visitors_timeseries": [
+              {
+                "date": "2024-09-01T00:00:00+00:00",
+                "monthly_visitors": 60557
+              },
+              {
+                "date": "2024-08-01T00:00:00+00:00",
+                "monthly_visitors": 75207
+              },
+              {
+                "date": "2024-07-01T00:00:00+00:00",
+                "monthly_visitors": 61404
+              },
+              {
+                "date": "2024-09-01T00:00:00+00:00",
+                "monthly_visitors": 116113
+              },
+              {
+                "date": "2024-12-01T00:00:00+00:00",
+                "monthly_visitors": 160314
+              },
+              {
+                "date": "2025-01-01T00:00:00+00:00",
+                "monthly_visitors": 136706
+              },
+              {
+                "date": "2025-02-01T00:00:00+00:00",
+                "monthly_visitors": 118268
+              },
+              {
+                "date": "2024-10-01T00:00:00+00:00",
+                "monthly_visitors": 131491
+              },
+              {
+                "date": "2024-11-01T00:00:00+00:00",
+                "monthly_visitors": 124417
+              }
+            ],
+            "traffic_source_social_pct_timeseries": [
+              {
+                "date": "2024-09-01T00:00:00+00:00",
+                "traffic_source_social_pct": 8.580896902984735
+              },
+              {
+                "date": "2024-12-01T00:00:00+00:00",
+                "traffic_source_social_pct": 7.664527437031361
+              },
+              {
+                "date": "2025-02-01T00:00:00+00:00",
+                "traffic_source_social_pct": 4.291004669224402
+              },
+              {
+                "date": "2024-11-01T00:00:00+00:00",
+                "traffic_source_social_pct": 7.133497911266577
+              }
+            ],
+            "traffic_source_search_pct_timeseries": [
+              {
+                "date": "2024-09-01T00:00:00+00:00",
+                "traffic_source_search_pct": 37.3567589437079
+              },
+              {
+                "date": "2024-12-01T00:00:00+00:00",
+                "traffic_source_search_pct": 38.94719840124278
+              },
+              {
+                "date": "2025-02-01T00:00:00+00:00",
+                "traffic_source_search_pct": 41.02467691383979
+              },
+              {
+                "date": "2024-11-01T00:00:00+00:00",
+                "traffic_source_search_pct": 39.18427735701774
+              }
+            ],
+            "traffic_source_direct_pct_timeseries": [
+              {
+                "date": "2024-09-01T00:00:00+00:00",
+                "traffic_source_direct_pct": 47.21842993199426
+              },
+              {
+                "date": "2024-12-01T00:00:00+00:00",
+                "traffic_source_direct_pct": 46.712344064515435
+              },
+              {
+                "date": "2025-02-01T00:00:00+00:00",
+                "traffic_source_direct_pct": 48.71963211043631
+              },
+              {
+                "date": "2024-11-01T00:00:00+00:00",
+                "traffic_source_direct_pct": 47.53083323450335
+              }
+            ],
+            "traffic_source_paid_referral_pct_timeseries": [
+              {
+                "date": "2024-09-01T00:00:00+00:00",
+                "traffic_source_paid_referral_pct": 0.3432408096618143
+              },
+              {
+                "date": "2024-12-01T00:00:00+00:00",
+                "traffic_source_paid_referral_pct": 0.36457599150658393
+              },
+              {
+                "date": "2025-02-01T00:00:00+00:00",
+                "traffic_source_paid_referral_pct": 0.3082162948173017
+              },
+              {
+                "date": "2024-11-01T00:00:00+00:00",
+                "traffic_source_paid_referral_pct": 0.3691504052499562
+              }
+            ],
+            "traffic_source_referral_pct_timeseries": [
+              {
+                "date": "2024-09-01T00:00:00+00:00",
+                "traffic_source_referral_pct": 6.320593158327526
+              },
+              {
+                "date": "2024-12-01T00:00:00+00:00",
+                "traffic_source_referral_pct": 5.865750036371134
+              },
+              {
+                "date": "2025-02-01T00:00:00+00:00",
+                "traffic_source_referral_pct": 5.570038717151534
+              },
+              {
+                "date": "2024-11-01T00:00:00+00:00",
+                "traffic_source_referral_pct": 5.610120730840948
+              }
+            ]
+          },
+          "glassdoor": {
+            "glassdoor_overall_rating": null,
+            "glassdoor_ceo_approval_pct": null,
+            "glassdoor_business_outlook_pct": null,
+            "glassdoor_review_count": null,
+            "glassdoor_senior_management_rating": null,
+            "glassdoor_compensation_rating": null,
+            "glassdoor_career_opportunities_rating": null,
+            "glassdoor_culture_rating": null,
+            "glassdoor_diversity_rating": null,
+            "glassdoor_work_life_balance_rating": null,
+            "glassdoor_recommend_to_friend_pct": null,
+            "glassdoor_ceo_approval_growth_percent": {
+              "mom": null,
+              "qoq": null,
+              "yoy": null
+            },
+            "glassdoor_review_count_growth_percent": {
+              "mom": null,
+              "qoq": null,
+              "yoy": null
+            }
+          },
+          "g2": {
+            "g2_review_count": null,
+            "g2_average_rating": null,
+            "g2_review_count_mom_pct": null,
+            "g2_review_count_qoq_pct": null,
+            "g2_review_count_yoy_pct": null
+          },
+          "linkedin_followers": {
+            "linkedin_followers": 2276,
+            "linkedin_follower_count_timeseries": [
+              {
+                "date": "2023-08-14T00:00:00+00:00",
+                "follower_count": 302
+              },
+              {
+                "date": "2023-08-21T00:00:00+00:00",
+                "follower_count": 317
+              },
+              {
+                "date": "2023-08-28T00:00:00+00:00",
+                "follower_count": 342
+              },
+              {
+                "date": "2023-09-01T00:00:00+00:00",
+                "follower_count": 344
+              },
+              {
+                "date": "2023-09-04T00:00:00+00:00",
+                "follower_count": 344
+              },
+              {
+                "date": "2023-09-11T00:00:00+00:00",
+                "follower_count": 363
+              },
+              {
+                "date": "2023-09-18T00:00:00+00:00",
+                "follower_count": 382
+              },
+              {
+                "date": "2023-09-25T00:00:00+00:00",
+                "follower_count": 382
+              },
+              {
+                "date": "2023-10-01T00:00:00+00:00",
+                "follower_count": 406
+              },
+              {
+                "date": "2023-10-02T00:00:00+00:00",
+                "follower_count": 406
+              },
+              {
+                "date": "2023-10-09T00:00:00+00:00",
+                "follower_count": 422
+              },
+              {
+                "date": "2023-10-16T00:00:00+00:00",
+                "follower_count": 432
+              },
+              {
+                "date": "2023-10-23T00:00:00+00:00",
+                "follower_count": 473
+              },
+              {
+                "date": "2023-10-30T00:00:00+00:00",
+                "follower_count": 477
+              },
+              {
+                "date": "2023-11-01T00:00:00+00:00",
+                "follower_count": 479
+              },
+              {
+                "date": "2023-11-06T00:00:00+00:00",
+                "follower_count": 482
+              },
+              {
+                "date": "2023-11-13T00:00:00+00:00",
+                "follower_count": 495
+              },
+              {
+                "date": "2023-11-20T00:00:00+00:00",
+                "follower_count": 502
+              },
+              {
+                "date": "2023-11-27T00:00:00+00:00",
+                "follower_count": 516
+              },
+              {
+                "date": "2023-12-01T00:00:00+00:00",
+                "follower_count": 516
+              },
+              {
+                "date": "2023-12-04T00:00:00+00:00",
+                "follower_count": 527
+              },
+              {
+                "date": "2023-12-11T00:00:00+00:00",
+                "follower_count": 538
+              },
+              {
+                "date": "2023-12-18T00:00:00+00:00",
+                "follower_count": 547
+              },
+              {
+                "date": "2023-12-25T00:00:00+00:00",
+                "follower_count": 550
+              },
+              {
+                "date": "2024-01-01T00:00:00+00:00",
+                "follower_count": 557
+              },
+              {
+                "date": "2024-01-08T00:00:00+00:00",
+                "follower_count": 574
+              },
+              {
+                "date": "2024-01-15T00:00:00+00:00",
+                "follower_count": 579
+              },
+              {
+                "date": "2024-01-22T00:00:00+00:00",
+                "follower_count": 585
+              },
+              {
+                "date": "2024-01-29T00:00:00+00:00",
+                "follower_count": 825
+              },
+              {
+                "date": "2024-02-01T00:00:00+00:00",
+                "follower_count": 858
+              },
+              {
+                "date": "2024-02-05T00:00:00+00:00",
+                "follower_count": 858
+              },
+              {
+                "date": "2024-02-12T00:00:00+00:00",
+                "follower_count": 918
+              },
+              {
+                "date": "2024-02-19T00:00:00+00:00",
+                "follower_count": 944
+              },
+              {
+                "date": "2024-02-26T00:00:00+00:00",
+                "follower_count": 1169
+              },
+              {
+                "date": "2024-03-01T00:00:00+00:00",
+                "follower_count": 1246
+              },
+              {
+                "date": "2024-03-04T00:00:00+00:00",
+                "follower_count": 1246
+              },
+              {
+                "date": "2024-03-11T00:00:00+00:00",
+                "follower_count": 1279
+              },
+              {
+                "date": "2024-03-18T00:00:00+00:00",
+                "follower_count": 1297
+              },
+              {
+                "date": "2024-03-25T00:00:00+00:00",
+                "follower_count": 1302
+              },
+              {
+                "date": "2024-04-01T00:00:00+00:00",
+                "follower_count": 1312
+              },
+              {
+                "date": "2024-04-08T00:00:00+00:00",
+                "follower_count": 1345
+              },
+              {
+                "date": "2024-04-15T00:00:00+00:00",
+                "follower_count": 1350
+              },
+              {
+                "date": "2024-04-22T00:00:00+00:00",
+                "follower_count": 1379
+              },
+              {
+                "date": "2024-04-29T00:00:00+00:00",
+                "follower_count": 1693
+              },
+              {
+                "date": "2024-05-01T00:00:00+00:00",
+                "follower_count": 1693
+              },
+              {
+                "date": "2024-05-06T00:00:00+00:00",
+                "follower_count": 1725
+              },
+              {
+                "date": "2024-05-13T00:00:00+00:00",
+                "follower_count": 1781
+              },
+              {
+                "date": "2024-05-20T00:00:00+00:00",
+                "follower_count": 1781
+              },
+              {
+                "date": "2024-05-27T00:00:00+00:00",
+                "follower_count": 1820
+              },
+              {
+                "date": "2024-06-01T00:00:00+00:00",
+                "follower_count": 1831
+              },
+              {
+                "date": "2024-06-03T00:00:00+00:00",
+                "follower_count": 1844
+              },
+              {
+                "date": "2024-06-10T00:00:00+00:00",
+                "follower_count": 1866
+              },
+              {
+                "date": "2024-06-17T00:00:00+00:00",
+                "follower_count": 1878
+              },
+              {
+                "date": "2024-06-24T00:00:00+00:00",
+                "follower_count": 2119
+              },
+              {
+                "date": "2024-07-01T00:00:00+00:00",
+                "follower_count": 2215
+              },
+              {
+                "date": "2024-07-08T00:00:00+00:00",
+                "follower_count": 2215
+              },
+              {
+                "date": "2024-07-15T00:00:00+00:00",
+                "follower_count": 2268
+              },
+              {
+                "date": "2024-07-22T00:00:00+00:00",
+                "follower_count": 2276
+              },
+              {
+                "date": "2024-07-29T00:00:00+00:00",
+                "follower_count": 2276
+              },
+              {
+                "date": "2024-08-01T00:00:00+00:00",
+                "follower_count": 2369
+              },
+              {
+                "date": "2024-08-05T00:00:00+00:00",
+                "follower_count": 2453
+              },
+              {
+                "date": "2024-08-12T00:00:00+00:00",
+                "follower_count": 2453
+              },
+              {
+                "date": "2024-08-19T00:00:00+00:00",
+                "follower_count": 2569
+              },
+              {
+                "date": "2024-08-26T00:00:00+00:00",
+                "follower_count": 2569
+              },
+              {
+                "date": "2024-09-01T00:00:00+00:00",
+                "follower_count": 2733
+              },
+              {
+                "date": "2024-09-02T00:00:00+00:00",
+                "follower_count": 2733
+              },
+              {
+                "date": "2024-09-09T00:00:00+00:00",
+                "follower_count": 2867
+              },
+              {
+                "date": "2024-09-16T00:00:00+00:00",
+                "follower_count": 2927
+              },
+              {
+                "date": "2024-09-23T00:00:00+00:00",
+                "follower_count": 3092
+              },
+              {
+                "date": "2024-09-30T00:00:00+00:00",
+                "follower_count": 3134
+              },
+              {
+                "date": "2024-10-01T00:00:00+00:00",
+                "follower_count": 3134
+              },
+              {
+                "date": "2024-10-07T00:00:00+00:00",
+                "follower_count": 3134
+              },
+              {
+                "date": "2024-10-14T00:00:00+00:00",
+                "follower_count": 3169
+              },
+              {
+                "date": "2024-10-21T00:00:00+00:00",
+                "follower_count": 3250
+              },
+              {
+                "date": "2024-10-28T00:00:00+00:00",
+                "follower_count": 3250
+              },
+              {
+                "date": "2024-11-01T00:00:00+00:00",
+                "follower_count": 3842
+              },
+              {
+                "date": "2024-11-04T00:00:00+00:00",
+                "follower_count": 3867
+              },
+              {
+                "date": "2024-11-11T00:00:00+00:00",
+                "follower_count": 3907
+              },
+              {
+                "date": "2024-11-18T00:00:00+00:00",
+                "follower_count": 3907
+              },
+              {
+                "date": "2024-11-25T00:00:00+00:00",
+                "follower_count": 4253
+              },
+              {
+                "date": "2024-12-01T00:00:00+00:00",
+                "follower_count": 4372
+              },
+              {
+                "date": "2024-12-02T00:00:00+00:00",
+                "follower_count": 4372
+              },
+              {
+                "date": "2024-12-09T00:00:00+00:00",
+                "follower_count": 4916
+              },
+              {
+                "date": "2024-12-16T00:00:00+00:00",
+                "follower_count": 4916
+              },
+              {
+                "date": "2024-12-23T00:00:00+00:00",
+                "follower_count": 5823
+              },
+              {
+                "date": "2024-12-30T00:00:00+00:00",
+                "follower_count": 5887
+              },
+              {
+                "date": "2025-01-01T00:00:00+00:00",
+                "follower_count": 6235
+              },
+              {
+                "date": "2025-01-06T00:00:00+00:00",
+                "follower_count": 6235
+              },
+              {
+                "date": "2025-01-13T00:00:00+00:00",
+                "follower_count": 6235
+              },
+              {
+                "date": "2025-01-20T00:00:00+00:00",
+                "follower_count": 6235
+              },
+              {
+                "date": "2025-01-27T00:00:00+00:00",
+                "follower_count": 6235
+              },
+              {
+                "date": "2025-02-01T00:00:00+00:00",
+                "follower_count": 6235
+              },
+              {
+                "date": "2025-02-03T00:00:00+00:00",
+                "follower_count": 6235
+              },
+              {
+                "date": "2025-02-10T00:00:00+00:00",
+                "follower_count": 7108
+              },
+              {
+                "date": "2025-03-01T00:00:00+00:00",
+                "follower_count": 7694
+              },
+              {
+                "date": "2025-03-03T00:00:00+00:00",
+                "follower_count": 7694
+              },
+              {
+                "date": "2025-03-10T00:00:00+00:00",
+                "follower_count": 7694
+              },
+              {
+                "date": "2025-03-17T00:00:00+00:00",
+                "follower_count": 7694
+              },
+              {
+                "date": "2025-03-24T00:00:00+00:00",
+                "follower_count": 7694
+              },
+              {
+                "date": "2025-03-31T00:00:00+00:00",
+                "follower_count": 7694
+              },
+              {
+                "date": "2025-04-01T00:00:00+00:00",
+                "follower_count": 7694
+              }
+            ],
+            "linkedin_followers_mom_percent": 5.22,
+            "linkedin_followers_qoq_percent": 34.43,
+            "linkedin_followers_six_months_growth_percent": 175.86,
+            "linkedin_followers_yoy_percent": null
+          },
+          "funding_and_investment": {
+            "crunchbase_total_investment_usd": 3000000,
+            "days_since_last_fundraise": 392,
+            "last_funding_round_type": "SEED",
+            "crunchbase_investors_info_list": [
+              {
+                "name": "468 Capital",
+                "uuid": "74c352f2-904f-45af-87d5-3917af65a734",
+                "type": "organization"
+              },
+              {
+                "name": "Y Combinator",
+                "uuid": "73633ee4-ea65-2967-6c5d-9b5fec7d2d5e",
+                "type": "organization"
+              },
+              {
+                "name": "Soma Capital",
+                "uuid": "38e872c6-1718-50e1-6150-a12038568992",
+                "type": "organization"
+              },
+              {
+                "name": "Pioneer Fund",
+                "uuid": "9d11d829-645f-4ebe-bbd1-e84d1a0ddaf0",
+                "type": "organization"
+              },
+              {
+                "name": "Defy.vc",
+                "uuid": "84830ed2-8395-02bf-33f8-bceea26cdbec",
+                "type": "organization"
+              },
+              {
+                "name": "1984 Ventures",
+                "uuid": "ae788d4a-ad06-4b89-9ddb-7587cbc31760",
+                "type": "organization"
+              },
+              {
+                "name": "Pioneer Venture Partners",
+                "uuid": "9a4c3d15-1384-4c43-c0d8-64e964871ac1",
+                "type": "organization"
+              },
+              {
+                "name": "Formus Capital",
+                "uuid": "42763241-ce90-4275-ad9e-58678f308f6b",
+                "type": "organization"
+              },
+              {
+                "name": "Stratus Ventures",
+                "uuid": "2a0d6fdc-95c2-47e8-a213-aa41c8cbed7a",
+                "type": "organization"
+              }
+            ],
+            "crunchbase_investors": [
+              "Defy.vc",
+              "Pioneer Fund",
+              "Stratus Ventures",
+              "Formus Capital",
+              "1984 Ventures",
+              "468 Capital",
+              "Soma Capital",
+              "Pioneer Venture Partners",
+              "Y Combinator"
+            ],
+            "last_funding_round_investment_usd": 3000000,
+            "funding_milestones_timeseries": [
+              {
+                "funding_date": "2023-04-03T00:00:00+00:00",
+                "funding_milestone_amount_usd": null,
+                "funding_round": "Pre Seed Round - VectorShift",
+                "funding_milestone_investors": "",
+                "date": "2023-04-03T00:00:00+00:00"
+              },
+              {
+                "funding_date": "2023-07-01T00:00:00+00:00",
+                "funding_milestone_amount_usd": null,
+                "funding_round": "Seed Round - VectorShift",
+                "funding_milestone_investors": "Gravity Capital,Y Combinator,Pioneer Fund,Stratus Ventures",
+                "date": "2023-07-01T00:00:00+00:00"
+              },
+              {
+                "funding_date": "2024-02-21T00:00:00+00:00",
+                "funding_milestone_amount_usd": 3000000,
+                "funding_round": "Seed Round - VectorShift",
+                "funding_milestone_investors": "1984 Ventures,Defy.vc,Formus Capital,468 Capital,Soma Capital,Y Combinator,Pioneer Venture Partners",
+                "date": "2024-02-21T00:00:00+00:00"
+              }
+            ]
+          },
+          "job_openings": {
+            "recent_job_openings_title": null,
+            "job_openings_count": null,
+            "job_openings_count_growth_percent": {
+              "mom": null,
+              "qoq": null,
+              "yoy": null
+            },
+            "job_openings_by_function_qoq_pct": {
+              "accounting": null,
+              "art_and_design": null,
+              "business_development": null,
+              "engineering": null,
+              "finance": null,
+              "human_resource": null,
+              "information_technology": null,
+              "marketing": null,
+              "media_and_communication": null,
+              "operations": null,
+              "research": null,
+              "sales": null,
+              "product_management": null
+            },
+            "job_openings_by_function_six_months_growth_pct": {
+              "accounting": null,
+              "art_and_design": null,
+              "business_development": null,
+              "engineering": null,
+              "finance": null,
+              "human_resource": null,
+              "information_technology": null,
+              "marketing": null,
+              "media_and_communication": null,
+              "operations": null,
+              "research": null,
+              "sales": null,
+              "product_management": null
+            },
+            "open_jobs_timeseries": [
+              {
+                "date": "2024-05-28T00:00:00Z",
+                "open_jobs": 1
+              },
+              {
+                "date": "2024-06-28T00:00:00Z",
+                "open_jobs": 4
+              },
+              {
+                "date": "2024-07-28T00:00:00Z",
+                "open_jobs": 1
+              },
+              {
+                "date": "2024-08-28T00:00:00Z",
+                "open_jobs": 2
+              },
+              {
+                "date": "2024-12-28T00:00:00Z",
+                "open_jobs": 1
+              },
+              {
+                "date": "2025-02-28T00:00:00Z",
+                "open_jobs": 1
+              },
+              {
+                "date": "2025-04-28T00:00:00Z",
+                "open_jobs": 1
+              }
+            ],
+            "recent_job_openings": [
+              {
+                "title": "Backend Engineer (India)",
+                "category": "Engineering",
+                "url": "https://www.linkedin.com/jobs/view/4210075385",
+                "number_of_openings": 1,
+                "description": "VectorShift is a No-Code Generative AI Platform.\n\nAs an Backend Engineer you will build new and work on existing VectorShift’s product lines (e.g., improving workflow run efficiency and scalability, integrate new developments in AI into our platform, manage our database infrastructure).\n\nThis will be a challenging and dynamic role, and you will be working at the forefront of distributed systems infrastructure and AI.\n\nAlong with building product lines, you can also expect to:\n\nBuild integrations of the VectorShift platform with 3rd party applicationsTalk with customers to understanding core pain points and iterating with them on feature requests.Contribute to customer support, especially for the products you build!Stay up to date with the latest developments in AI to integrate new capabilities into our platform.\n\nResponsibilities\n\nWork directly with the founders to conceptualize and implement sub-products and features, end to end.Lead technical architecture decisions, ensuring the platform is scalable and maintainable.Drive forward performance optimization.Establish foundational technical practices that will guide future team members.\n\nRequirements\n\nDegree in a technical discipline, preferably computer science.Experience with Python/ FastAPI.Understanding of performance optimization best practices.Strong communication skills and ability to work in high paced environments.Excellent problem solving skills and proven ability to overcome challenges.\n\nNice To Have\n\nExperience in early-stage startup environments.Experience with no/low-code platforms.Experience in AI, machine learning, and building RAG workflows.",
+                "date_added": "2025-04-15T01:11:20Z",
+                "date_updated": "2025-04-15T00:00:00Z",
+                "city": null,
+                "location_text": "India"
+              },
+              {
+                "title": "Backend Engineer (India)",
+                "category": "Engineering",
+                "url": "https://www.linkedin.com/jobs/view/4165606483",
+                "number_of_openings": 1,
+                "description": "VectorShift is a No-Code Generative AI Platform.\n\nAs an Backend Engineer you will build new and work on existing VectorShift’s product lines (e.g., improving workflow run efficiency and scalability, integrate new developments in AI into our platform, manage our database infrastructure).\n\nThis will be a challenging and dynamic role, and you will be working at the forefront of distributed systems infrastructure and AI.\n\nAlong with building product lines, you can also expect to:\n\nBuild integrations of the VectorShift platform with 3rd party applicationsTalk with customers to understanding core pain points and iterating with them on feature requests.Contribute to customer support, especially for the products you build!Stay up to date with the latest developments in AI to integrate new capabilities into our platform.\n\nResponsibilities\n\nWork directly with the founders to conceptualize and implement sub-products and features, end to end.Lead technical architecture decisions, ensuring the platform is scalable and maintainable.Drive forward performance optimization.Establish foundational technical practices that will guide future team members.\n\nRequirements\n\nDegree in a technical discipline, preferably computer science.Experience with Python/ FastAPI.Understanding of performance optimization best practices.Strong communication skills and ability to work in high paced environments.Excellent problem solving skills and proven ability to overcome challenges.\n\nNice To Have\n\nExperience in early-stage startup environments.Experience with no/low-code platforms.Experience in AI, machine learning, and building RAG workflows.",
+                "date_added": "2025-02-26T20:13:29Z",
+                "date_updated": "2025-02-27T00:00:00Z",
+                "city": null,
+                "location_text": "India"
+              }
+            ]
+          },
+          "seo": {
+            "average_seo_organic_rank": null,
+            "monthly_paid_clicks": null,
+            "monthly_organic_clicks": null,
+            "average_ad_rank": null,
+            "total_organic_results": null,
+            "monthly_google_ads_budget": null,
+            "monthly_organic_value": null,
+            "total_ads_purchased": null,
+            "lost_ranked_seo_keywords": null,
+            "gained_ranked_seo_keywords": null,
+            "newly_ranked_seo_keywords": null
+          },
+          "founders": {
+            "founders_locations": [
+              "New York, New York, United States",
+              "Greater Boston"
+            ],
+            "founders_education_institute": "Harvard University; Boston Latin School; Radnor High School",
+            "founders_degree_name": "Bachelor of Arts - BA; Master of Science - MS; High School Diploma; Bachelor's degree",
+            "founders_previous_companies": [
+              "Harvard Model United Nations",
+              "McKinsey & Company",
+              "The Blackstone Group",
+              "VectorShift",
+              "Base4 Capital",
+              "Harvard College Consulting Group",
+              "Harvard University",
+              "Harvard Financial Analysts Club"
+            ],
+            "founders_previous_titles": [
+              "Vice Director of Consulting",
+              "Associate",
+              "Teaching Fellow: CS50",
+              "Consultant",
+              "Hedge Fund Analyst",
+              "Analyst",
+              "Director",
+              "Case Team Leader",
+              "Associate Director of Engagement",
+              "Senior Investment Researcher, Quantitative Analyst",
+              "Director, President",
+              "COO & Co-Founder",
+              "Director of Senior Investment Research",
+              "Co-Founder, CEO",
+              "Chief Revenue Officer",
+              "Summer Analyst"
+            ]
+          },
+          "news_articles": [
+            {
+              "article_url": "https://www.geeky-gadgets.com/?p=436079",
+              "article_publisher_name": "Geeky Gadgets",
+              "article_title": "How to automate your life with AI and Vector Shift and AI automations",
+              "article_publish_date": "2024-08-27T00:00:00Z",
+              "company_id": 880829
+            },
+            {
+              "article_url": "https://www.geeky-gadgets.com/automating-tasks-with-ai/",
+              "article_publisher_name": "Geeky Gadgets",
+              "article_title": "Use no-code AI automation on workflows and tasks with VectorShift",
+              "article_publish_date": "2024-05-28T00:00:00Z",
+              "company_id": 880829
+            },
+            {
+              "article_url": "https://www.geeky-gadgets.com/how-to-build-chatgpt-4o-ai-agents/",
+              "article_publisher_name": "Geeky Gadgets",
+              "article_title": "Build ChatGPT-4o AI Agents using drag-and-drop with VectorShift",
+              "article_publish_date": "2024-05-21T00:00:00Z",
+              "company_id": 880829
+            },
+            {
+              "article_url": "https://www.geeky-gadgets.com/?p=427563",
+              "article_publisher_name": "Geeky Gadgets",
+              "article_title": "Build ChatGPT-4o AI Agents using drag-and-drop with VectorShift",
+              "article_publish_date": "2024-05-19T00:00:00Z",
+              "company_id": 880829
+            },
+            {
+              "article_url": "https://automationvault.net/vectorshift-secures-3-million-in-seed-funding-for-llm-application-development/",
+              "article_publisher_name": "Automation Vault",
+              "article_title": "VectorShift Secures $3 Million in Seed Funding for LLM Application Development",
+              "article_publish_date": "2024-02-23T00:00:00Z",
+              "company_id": 880829
+            },
+            {
+              "article_url": "https://www.finsmes.com/2024/02/vectorshift-raises-3m-in-seed-funding.html",
+              "article_publisher_name": "FinSMES",
+              "article_title": "VectorShift Raises $3M in Seed Funding",
+              "article_publish_date": "2024-02-22T00:00:00Z",
+              "company_id": 880829
+            },
+            {
+              "article_url": "https://venturebeat.com/ai/exclusive-vectorshift-raises-3m-to-modularize-llm-application-development/",
+              "article_publisher_name": "VentureBeat",
+              "article_title": "Exclusive: VectorShift raises $3M to modularize LLM application development",
+              "article_publish_date": "2024-02-21T00:00:00Z",
+              "company_id": 880829
+            }
+          ],
+          "producthunt": [],
+          "gartner": {
+            "slug": null,
+            "company_name": null,
+            "company_website_url": null,
+            "description": null,
+            "year_founded": null,
+            "head_office_city": null,
+            "head_office_country": null,
+            "num_employees_min": null,
+            "num_employees_max": null,
+            "products": [],
+            "reviews": []
+          },
+          "is_full_domain_match": true,
+          "query_identifier": 880829
+        }
+      }
+    ],
+    "Company headcount": [
+      {
+        "json": {
+          "fields": [
+            {
+              "type": "foreign_key",
+              "api_name": "company_id",
+              "hidden": false,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            },
+            {
+              "type": "string",
+              "api_name": "company_website",
+              "hidden": false,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            },
+            {
+              "type": "string",
+              "api_name": "linkedin_id",
+              "hidden": false,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            },
+            {
+              "type": "string",
+              "api_name": "company_website_domain",
+              "hidden": false,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            },
+            {
+              "type": "array",
+              "api_name": "headcount_timeseries",
+              "hidden": false,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            },
+            {
+              "type": "number",
+              "api_name": "total_rows",
+              "hidden": true,
+              "options": [],
+              "summary": "",
+              "local_metric": false,
+              "display_name": "",
+              "company_profile_name": "",
+              "preview_description": "",
+              "geocode": false
+            }
+          ],
+          "rows": [
+            [
+              880829,
+              "https://www.vectorshift.ai/",
+              "98020569",
+              "vectorshift.ai",
+              [
+                {
+                  "date": "2023-02-01T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-02-06T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-02-13T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-02-20T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-02-27T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-03-01T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-03-06T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-03-13T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-03-20T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-03-27T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-04-01T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-04-03T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-04-10T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-04-17T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-04-24T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-05-01T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-05-08T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-05-15T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-05-22T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-05-29T00:00:00+00:00",
+                  "employee_count": 1,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-06-01T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-06-05T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-06-12T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-06-19T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-06-26T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-07-01T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-07-03T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-07-10T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-07-17T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-07-24T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-07-31T00:00:00+00:00",
+                  "employee_count": 3,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-08-01T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-08-07T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": null
+                },
+                {
+                  "date": "2023-08-14T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": 302
+                },
+                {
+                  "date": "2023-08-21T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": 317
+                },
+                {
+                  "date": "2023-08-28T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": 342
+                },
+                {
+                  "date": "2023-09-01T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": 344
+                },
+                {
+                  "date": "2023-09-04T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": 344
+                },
+                {
+                  "date": "2023-09-11T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": 363
+                },
+                {
+                  "date": "2023-09-18T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": 382
+                },
+                {
+                  "date": "2023-09-25T00:00:00+00:00",
+                  "employee_count": 4,
+                  "follower_count": 382
+                },
+                {
+                  "date": "2023-10-01T00:00:00+00:00",
+                  "employee_count": 7,
+                  "follower_count": 406
+                },
+                {
+                  "date": "2023-10-02T00:00:00+00:00",
+                  "employee_count": 7,
+                  "follower_count": 406
+                },
+                {
+                  "date": "2023-10-09T00:00:00+00:00",
+                  "employee_count": 7,
+                  "follower_count": 422
+                },
+                {
+                  "date": "2023-10-16T00:00:00+00:00",
+                  "employee_count": 7,
+                  "follower_count": 432
+                },
+                {
+                  "date": "2023-10-23T00:00:00+00:00",
+                  "employee_count": 7,
+                  "follower_count": 473
+                },
+                {
+                  "date": "2023-10-30T00:00:00+00:00",
+                  "employee_count": 7,
+                  "follower_count": 477
+                },
+                {
+                  "date": "2023-11-01T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 479
+                },
+                {
+                  "date": "2023-11-06T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 482
+                },
+                {
+                  "date": "2023-11-13T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 495
+                },
+                {
+                  "date": "2023-11-20T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 502
+                },
+                {
+                  "date": "2023-11-27T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 516
+                },
+                {
+                  "date": "2023-12-01T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 516
+                },
+                {
+                  "date": "2023-12-04T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 527
+                },
+                {
+                  "date": "2023-12-11T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 538
+                },
+                {
+                  "date": "2023-12-18T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 547
+                },
+                {
+                  "date": "2023-12-25T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 550
+                },
+                {
+                  "date": "2024-01-01T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 557
+                },
+                {
+                  "date": "2024-01-08T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 574
+                },
+                {
+                  "date": "2024-01-15T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 579
+                },
+                {
+                  "date": "2024-01-22T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 585
+                },
+                {
+                  "date": "2024-01-29T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 825
+                },
+                {
+                  "date": "2024-02-01T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 858
+                },
+                {
+                  "date": "2024-02-05T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 858
+                },
+                {
+                  "date": "2024-02-12T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 918
+                },
+                {
+                  "date": "2024-02-19T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 944
+                },
+                {
+                  "date": "2024-02-26T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1169
+                },
+                {
+                  "date": "2024-03-01T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1246
+                },
+                {
+                  "date": "2024-03-04T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1246
+                },
+                {
+                  "date": "2024-03-11T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1279
+                },
+                {
+                  "date": "2024-03-18T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1297
+                },
+                {
+                  "date": "2024-03-25T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1302
+                },
+                {
+                  "date": "2024-04-01T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1312
+                },
+                {
+                  "date": "2024-04-08T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1345
+                },
+                {
+                  "date": "2024-04-15T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1350
+                },
+                {
+                  "date": "2024-04-22T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1379
+                },
+                {
+                  "date": "2024-04-29T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1693
+                },
+                {
+                  "date": "2024-05-01T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1693
+                },
+                {
+                  "date": "2024-05-06T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1725
+                },
+                {
+                  "date": "2024-05-13T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1781
+                },
+                {
+                  "date": "2024-05-20T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1781
+                },
+                {
+                  "date": "2024-05-27T00:00:00+00:00",
+                  "employee_count": 8,
+                  "follower_count": 1820
+                },
+                {
+                  "date": "2024-06-01T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 1831
+                },
+                {
+                  "date": "2024-06-03T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 1844
+                },
+                {
+                  "date": "2024-06-10T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 1866
+                },
+                {
+                  "date": "2024-06-17T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 1878
+                },
+                {
+                  "date": "2024-06-24T00:00:00+00:00",
+                  "employee_count": 9,
+                  "follower_count": 2119
+                },
+                {
+                  "date": "2024-07-01T00:00:00+00:00",
+                  "employee_count": 11,
+                  "follower_count": 2215
+                },
+                {
+                  "date": "2024-07-08T00:00:00+00:00",
+                  "employee_count": 11,
+                  "follower_count": 2215
+                },
+                {
+                  "date": "2024-07-15T00:00:00+00:00",
+                  "employee_count": 11,
+                  "follower_count": 2268
+                },
+                {
+                  "date": "2024-07-22T00:00:00+00:00",
+                  "employee_count": 11,
+                  "follower_count": 2276
+                },
+                {
+                  "date": "2024-07-29T00:00:00+00:00",
+                  "employee_count": 11,
+                  "follower_count": 2276
+                },
+                {
+                  "date": "2024-08-01T00:00:00+00:00",
+                  "employee_count": 10,
+                  "follower_count": 2369
+                },
+                {
+                  "date": "2024-08-05T00:00:00+00:00",
+                  "employee_count": 10,
+                  "follower_count": 2453
+                },
+                {
+                  "date": "2024-08-12T00:00:00+00:00",
+                  "employee_count": 10,
+                  "follower_count": 2453
+                },
+                {
+                  "date": "2024-08-19T00:00:00+00:00",
+                  "employee_count": 10,
+                  "follower_count": 2569
+                },
+                {
+                  "date": "2024-08-26T00:00:00+00:00",
+                  "employee_count": 10,
+                  "follower_count": 2569
+                },
+                {
+                  "date": "2024-09-01T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 2733
+                },
+                {
+                  "date": "2024-09-02T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 2733
+                },
+                {
+                  "date": "2024-09-09T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 2867
+                },
+                {
+                  "date": "2024-09-16T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 2927
+                },
+                {
+                  "date": "2024-09-23T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3092
+                },
+                {
+                  "date": "2024-09-30T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3134
+                },
+                {
+                  "date": "2024-10-01T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3134
+                },
+                {
+                  "date": "2024-10-07T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3134
+                },
+                {
+                  "date": "2024-10-14T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3169
+                },
+                {
+                  "date": "2024-10-21T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3250
+                },
+                {
+                  "date": "2024-10-28T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3250
+                },
+                {
+                  "date": "2024-11-01T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3842
+                },
+                {
+                  "date": "2024-11-04T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3867
+                },
+                {
+                  "date": "2024-11-11T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3907
+                },
+                {
+                  "date": "2024-11-18T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 3907
+                },
+                {
+                  "date": "2024-11-25T00:00:00+00:00",
+                  "employee_count": 13,
+                  "follower_count": 4253
+                },
+                {
+                  "date": "2024-12-01T00:00:00+00:00",
+                  "employee_count": 21,
+                  "follower_count": 4372
+                },
+                {
+                  "date": "2024-12-02T00:00:00+00:00",
+                  "employee_count": 21,
+                  "follower_count": 4372
+                },
+                {
+                  "date": "2024-12-09T00:00:00+00:00",
+                  "employee_count": 21,
+                  "follower_count": 4916
+                },
+                {
+                  "date": "2024-12-16T00:00:00+00:00",
+                  "employee_count": 21,
+                  "follower_count": 4916
+                },
+                {
+                  "date": "2024-12-23T00:00:00+00:00",
+                  "employee_count": 21,
+                  "follower_count": 5823
+                },
+                {
+                  "date": "2024-12-30T00:00:00+00:00",
+                  "employee_count": 21,
+                  "follower_count": 5887
+                },
+                {
+                  "date": "2025-01-01T00:00:00+00:00",
+                  "employee_count": 23,
+                  "follower_count": 6235
+                },
+                {
+                  "date": "2025-01-06T00:00:00+00:00",
+                  "employee_count": 23,
+                  "follower_count": 6235
+                },
+                {
+                  "date": "2025-01-13T00:00:00+00:00",
+                  "employee_count": 23,
+                  "follower_count": 6235
+                },
+                {
+                  "date": "2025-01-20T00:00:00+00:00",
+                  "employee_count": 23,
+                  "follower_count": 6235
+                },
+                {
+                  "date": "2025-01-27T00:00:00+00:00",
+                  "employee_count": 23,
+                  "follower_count": 6235
+                },
+                {
+                  "date": "2025-02-01T00:00:00+00:00",
+                  "employee_count": 24,
+                  "follower_count": 6235
+                },
+                {
+                  "date": "2025-02-03T00:00:00+00:00",
+                  "employee_count": 24,
+                  "follower_count": 6235
+                },
+                {
+                  "date": "2025-02-10T00:00:00+00:00",
+                  "employee_count": 24,
+                  "follower_count": 7108
+                },
+                {
+                  "date": "2025-02-17T00:00:00+00:00",
+                  "employee_count": 24,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-02-24T00:00:00+00:00",
+                  "employee_count": 24,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-03-01T00:00:00+00:00",
+                  "employee_count": 25,
+                  "follower_count": 7694
+                },
+                {
+                  "date": "2025-03-03T00:00:00+00:00",
+                  "employee_count": 25,
+                  "follower_count": 7694
+                },
+                {
+                  "date": "2025-03-10T00:00:00+00:00",
+                  "employee_count": 25,
+                  "follower_count": 7694
+                },
+                {
+                  "date": "2025-03-17T00:00:00+00:00",
+                  "employee_count": 25,
+                  "follower_count": 7694
+                },
+                {
+                  "date": "2025-03-24T00:00:00+00:00",
+                  "employee_count": 25,
+                  "follower_count": 7694
+                },
+                {
+                  "date": "2025-03-31T00:00:00+00:00",
+                  "employee_count": 25,
+                  "follower_count": 7694
+                },
+                {
+                  "date": "2025-04-01T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": 7694
+                },
+                {
+                  "date": "2025-04-07T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-04-14T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-04-21T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-04-28T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-05-01T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-05-05T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-05-12T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-05-19T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": null
+                },
+                {
+                  "date": "2025-05-26T00:00:00+00:00",
+                  "employee_count": 26,
+                  "follower_count": null
+                }
+              ],
+              1
+            ]
+          ],
+          "is_trial_user": false
+        }
+      }
+    ],
+    "Specific Decision Maker": [
+      {
+        "json": {
+          "profiles": [
+            {
+              "name": "Albert Mao",
+              "location": "Greater Boston",
+              "linkedin_profile_url": "https://www.linkedin.com/in/ACwAABXOo4YBSCc81muigHaPIACJaC2pdjcDYuM",
+              "linkedin_profile_urn": "ACwAABXOo4YBSCc81muigHaPIACJaC2pdjcDYuM",
+              "default_position_title": "COO & Co-Founder",
+              "default_position_company_linkedin_id": "98020569",
+              "default_position_is_decision_maker": true,
+              "flagship_profile_url": "https://www.linkedin.com/in/albert-mao",
+              "profile_picture_url": "https://media.licdn.com/dms/image/v2/D4E03AQH7l37Piyip0A/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1686280521555?e=1752105600&v=beta&t=sQhK_8PHbBHO3-yJYpHz0JV28PR5-YEiUTxmWjyIDCg",
+              "headline": "Founder @ VectorShift(YC): No-Code AI Platform | Ex-McKinsey | Statistics @ Harvard",
+              "summary": "Building VectorShift (YC S23): No Code Platform for AI Workflows. https://vectorshift.ai/",
+              "num_of_connections": 6568,
+              "related_colleague_company_id": 98020569,
+              "skills": [
+                "Financial Analysis",
+                "Financial Modeling",
+                "Management Consulting",
+                "Data Analysis",
+                "Python (Programming Language)",
+                "R"
+              ],
+              "employer": [
+                {
+                  "title": "COO & Co-Founder",
+                  "company_name": "VectorShift",
+                  "company_linkedin_id": "98020569",
+                  "company_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQHA6tJ8FjLImQ/company-logo_400_400/company-logo_400_400/0/1686524725664?e=1752105600&v=beta&t=jswGqkQuc3uHkmPkQ0yzHFExa-rd2aTPpzsBp-E4R1Q",
+                  "start_date": "2023-01-01T00:00:00",
+                  "end_date": null,
+                  "position_id": 2193455013,
+                  "description": "No Code AI Workflows. YC S23. https://vectorshift.ai/",
+                  "location": "San Francisco Bay Area",
+                  "rich_media": []
+                },
+                {
+                  "title": "Consultant",
+                  "company_name": "McKinsey & Company",
+                  "company_linkedin_id": "1371",
+                  "company_logo_url": "https://media.licdn.com/dms/image/v2/D560BAQFTxAlpCMGXuw/company-logo_400_400/B56ZVR8QEtHQAc-/0/1740836504187/mckinsey_logo?e=1752105600&v=beta&t=GMyh_UfYSvsr7ysgJQIZIvG7n9jrWn-GVN_OFqM9qmk",
+                  "start_date": "2021-01-01T00:00:00",
+                  "end_date": "2023-01-01T00:00:00",
+                  "position_id": 1670723044,
+                  "description": "Rated distinctive - top 8% of class\nHelped F500 software companies redefine their growth strategies, products, and GTM.",
+                  "location": "New York City Metropolitan Area",
+                  "rich_media": []
+                },
+                {
+                  "title": "Hedge Fund Analyst",
+                  "company_name": "Base4 Capital",
+                  "company_linkedin_id": "99209741",
+                  "company_logo_url": "https://media.licdn.com/dms/image/v2/D560BAQGR6F70Z8OByg/company-logo_400_400/company-logo_400_400/0/1704164695701/base4_capital_logo?e=1752105600&v=beta&t=fAN2pOQo5Y3yTQKaV6lPOM4HTIPJFJ30kcp0N0i41_Y",
+                  "start_date": "2021-01-01T00:00:00",
+                  "end_date": "2021-01-01T00:00:00",
+                  "position_id": 1889182843,
+                  "description": "Fundamental investment research on the genomics space - specialized in diagnostics companies",
+                  "location": "New York, New York, United States",
+                  "rich_media": []
+                },
+                {
+                  "title": "Chief Revenue Officer",
+                  "company_name": "Harvard College Consulting Group",
+                  "company_linkedin_id": "5054176",
+                  "company_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQGiUSo70PlG1A/company-logo_400_400/company-logo_400_400/0/1630647639967/harvard_college_consulting_group_logo?e=1752105600&v=beta&t=sdNWboAx3p77H2E6mP-qz-IcpDVDGJzRd-mqervYFFk",
+                  "start_date": "2018-01-01T00:00:00",
+                  "end_date": "2021-01-01T00:00:00",
+                  "position_id": 1714852203,
+                  "description": "Led 6 person sales team to increase revenue 300% Y/Y to >$1,000,000.",
+                  "location": null,
+                  "rich_media": []
+                }
+              ],
+              "education_background": [
+                {
+                  "degree_name": "Bachelor's degree",
+                  "institute_name": "Harvard University",
+                  "field_of_study": "Statistics",
+                  "start_date": null,
+                  "end_date": null,
+                  "institute_linkedin_id": "1646",
+                  "institute_linkedin_url": "https://www.linkedin.com/school/1646/",
+                  "institute_logo_url": "https://media.licdn.com/dms/image/v2/C4E0BAQF5t62bcL0e9g/company-logo_400_400/company-logo_400_400/0/1631318058235?e=1752105600&v=beta&t=I_XNxpOJmqLglBwX4BR_bQdRcU-HVhb4ihpI3UNc8M0"
+                },
+                {
+                  "degree_name": null,
+                  "institute_name": "Y Combinator",
+                  "field_of_study": "S23",
+                  "start_date": null,
+                  "end_date": null,
+                  "institute_linkedin_id": "167872",
+                  "institute_linkedin_url": "https://www.linkedin.com/school/167872/",
+                  "institute_logo_url": "https://media.licdn.com/dms/image/v2/C4D0BAQGPzdBPNxrmEg/company-logo_400_400/company-logo_400_400/0/1673555093250/y_combinator_logo?e=1752105600&v=beta&t=EQSDwJeiiEZMxpDG69h6Yq-DzJS9xB6pNOz7pwp7iCQ"
+                },
+                {
+                  "degree_name": "High School Diploma",
+                  "institute_name": "Boston Latin School",
+                  "field_of_study": "",
+                  "start_date": null,
+                  "end_date": null,
+                  "institute_linkedin_id": "15248655",
+                  "institute_linkedin_url": "https://www.linkedin.com/school/15248655/",
+                  "institute_logo_url": "https://media.licdn.com/dms/image/v2/C560BAQEkBbVi94s-EQ/company-logo_400_400/company-logo_400_400/0/1631364693102?e=1752105600&v=beta&t=w8BOgf2SE9IdoI9K-JOjphXe5DXhJ_v-yNyPXb798Y8"
+                }
+              ],
+              "emails": [],
+              "websites": [],
+              "twitter_handle": null,
+              "languages": [],
+              "pronoun": null,
+              "query_person_linkedin_urn": "ACwAABXOo4YBSCc81muigHaPIACJaC2pdjcDYuM",
+              "linkedin_slug_or_urns": [
+                "ACwAABXOo4YBSCc81muigHaPIACJaC2pdjcDYuM",
+                "albert-mao"
+              ],
+              "current_title": "COO & Co-Founder"
+            }
+          ],
+          "total_display_count": "1"
+        }
+      }
+    ],
+    "Basic LLM Chain": [
+      {
+        "json": {
+          "text": "```json\n{\n  \"icebreaker\": \"Hey Albert, saw your post about trusting your team at VectorShift to deliver, no matter where they're working from. Clearly, you're prioritizing output and customer experience, which totally resonates with our focus on AI-driven workflow automation. Given your COO & Co-Founder role at VectorShift, and your experience building no-code AI workflows, you'd have incredible insights to share. We're hosting an exclusive conference on AI and automation innovations, and would be honored if you'd consider speaking. Figured I'd reach out.\"\n}\n```"
+        }
+      }
+    ],
+    "Linkedin Post": [
+      {
+        "json": {
+          "posts": [
+            {
+              "backend_urn": "urn:li:activity:7317894469696040960",
+              "actor_backend_urn": null,
+              "share_urn": "urn:li:share:7317781658194096128",
+              "share_url": "https://www.linkedin.com/feed/update/urn:li:share:7317781658194096128/",
+              "text": "I was in a 1-1 with a team member and he said he wanted to work from another country for a month.\n\nHe started to explain why.\n\nI just said “Approved.”\n\nHe tried again to explain why.\n\nI told him “I don’t need to know.”\n\nMany founders think they need everyone in the office 5 days a week.\n\nI completely disagree.\n\nThe number one focus for me at VectorShift is: are we helping companies automate their workflows with AI.\n\nYou decide how you work:\n\nA different country every month?\nApproved.\n\nFrom your childhood bedroom?\nApproved.\n\n3 hours off to take your dog to the vet?\nApproved.\n\nThe only thing that matters is output.\n\nFounders should only care if their employees improve the customer experience.",
+              "hyperlinks": {
+                "company_linkedin_urls": [],
+                "person_linkedin_urls": [],
+                "other_urls": []
+              },
+              "actor_name": "Albert Mao",
+              "date_posted": "2025-04-20",
+              "total_reactions": 153,
+              "total_comments": 20,
+              "reactions_by_type": {
+                "LIKE": 131,
+                "PRAISE": 1,
+                "CURIOUS": null,
+                "EMPATHY": 10,
+                "INTEREST": 1,
+                "APPRECIATION": 10,
+                "ENTERTAINMENT": null
+              },
+              "num_shares": 1,
+              "is_repost_without_thoughts": false
+            },
+            {
+              "backend_urn": "urn:li:activity:7316890651575410690",
+              "actor_backend_urn": "urn:li:activity:7314995492470358017",
+              "share_urn": "urn:li:share:7314866641278820352",
+              "share_url": "https://www.linkedin.com/feed/update/urn:li:share:7314866641278820352/",
+              "text": "Last week, an 18 year old who built a $30M ARR business got REJECTED from Harvard and every other elite college he applied to.\n\nI sure didn’t meet anyone who came close to his level of agency and drive when I was at Harvard.\n\nIn fact, I would like to see the average Harvard student, who desperately tries to be a worker bee at Big Tech, MBB, or a large bank accomplish anything remotely close.\n\nAdmissions officers at these “elite” colleges have totally lost the plot.\n\nInstead, they’d rather admit candidates who:\n- Promised to “cure cancer” in their essay but was first in line at the Goldman Sachs networking session\n- Explored the “intersection” between math and literature when in reality, they aren’t good at either\n- Diligently followed the rules: did well in school/SAT, won traditional awards, and hired a 5-figure college consultant to wrap their boring package into a good “story”\n\nAfter starting VectorShift, I realized: starting up is the great equalizer.\n\nCustomers don’t care about your “interdisciplinary passions.”\nCustomers don’t care that you won the quiz bowl.\nCustomers don’t care about your sob story about “personal identity.”\n\nCustomers only care that your product solves their problems.\n\nEveryone starts from the same place. Nothing you did before matters. Anyone can start up.\n\n“Failed” previously? Didn’t get your dream job? Didn’t go to an Ivy league college? That’s ok. The only thing that matters is if you have what it takes now.",
+              "hyperlinks": {
+                "company_linkedin_urls": [],
+                "person_linkedin_urls": [],
+                "other_urls": []
+              },
+              "actor_name": "Albert Mao",
+              "date_posted": "2025-04-13",
+              "total_reactions": 566,
+              "total_comments": 117,
+              "reactions_by_type": {
+                "LIKE": 473,
+                "PRAISE": 30,
+                "CURIOUS": null,
+                "EMPATHY": 29,
+                "INTEREST": 20,
+                "APPRECIATION": 8,
+                "ENTERTAINMENT": 6
+              },
+              "num_shares": 11,
+              "is_repost_without_thoughts": true
+            },
+            {
+              "backend_urn": "urn:li:activity:7318619343926267904",
+              "actor_backend_urn": null,
+              "share_urn": "urn:li:share:7318556134812835841",
+              "share_url": "https://www.linkedin.com/feed/update/urn:li:share:7318556134812835841/",
+              "text": "Recently, an 18 year old built a $30M ARR business and got REJECTED from Harvard and every elite college he applied to.\n\nMany people find this shocking.\n\nAs a former Harvard student, I don’t. Why?\n\nTop colleges often select candidates for deterministic reasons:\nWho your parents are.\nWhere you were born.\nWhat background you come from.\n\nAt Harvard, I often came across:\n- 8th generation legacy students whose great great great great great grandfather also went to Harvard\n- Kids of public company CEOs & global political leaders\n- Kid who grew up on a farm in rural Idaho so the admissions department could put his photo on brochures to show that Harvard is “geographically diverse”\n\nHarvard admissions officers enforce quotas for “underrepresented” geographies, countries, and races.\n\nIn my high school, Asians had to achieve higher GPAs / SAT scores vs non-Asians to get admitted.\n\nThe result?\n\nTrue competence is crowded out.  \n\nAdmissions should be simple: what did you do? Not: where did you come from?",
+              "hyperlinks": {
+                "company_linkedin_urls": [],
+                "person_linkedin_urls": [],
+                "other_urls": []
+              },
+              "actor_name": "Albert Mao",
+              "date_posted": "2025-04-20",
+              "total_reactions": 171,
+              "total_comments": 27,
+              "reactions_by_type": {
+                "LIKE": 154,
+                "PRAISE": 1,
+                "CURIOUS": null,
+                "EMPATHY": 4,
+                "INTEREST": 3,
+                "APPRECIATION": 4,
+                "ENTERTAINMENT": 5
+              },
+              "num_shares": 1,
+              "is_repost_without_thoughts": false
+            },
+            {
+              "backend_urn": "urn:li:activity:7317180817582018560",
+              "actor_backend_urn": "urn:li:activity:7316082580171182083",
+              "share_urn": "urn:li:share:7316026836268797952",
+              "share_url": "https://www.linkedin.com/feed/update/urn:li:share:7316026836268797952/",
+              "text": "A YC company was quoted $63k for a custom AI invoice automation\n\nTheir intern built it in 5 minutes\n\nWith VectorShift, employees forward invoices to a designated email and GPT4o:\n- Extracts vendor name + amount from the invoices\n- Matches the invoice against POs in Quickbooks\n- Approves or rejects the invoice + adds data to a Google Sheet",
+              "hyperlinks": {
+                "company_linkedin_urls": [],
+                "person_linkedin_urls": [],
+                "other_urls": []
+              },
+              "actor_name": "Albert Mao",
+              "date_posted": "2025-04-13",
+              "total_reactions": 109,
+              "total_comments": 3,
+              "reactions_by_type": {
+                "LIKE": 98,
+                "PRAISE": 2,
+                "CURIOUS": null,
+                "EMPATHY": 5,
+                "INTEREST": 4,
+                "APPRECIATION": null,
+                "ENTERTAINMENT": null
+              },
+              "num_shares": 8,
+              "is_repost_without_thoughts": true
+            },
+            {
+              "backend_urn": "urn:li:activity:7318256941615509505",
+              "actor_backend_urn": null,
+              "share_urn": "urn:li:share:7318124101326299137",
+              "share_url": "https://www.linkedin.com/feed/update/urn:li:share:7318124101326299137/",
+              "text": "“Stop hiring humans. Use AI.” Shopify’s CEO, Tobi Lutke, told employees in a leaked memo.\n\nIf you think he’s wrong, I’m sorry to tell you your role will be obsolete.\n\nIn the memo, Lutke wrote:\n1. Before hiring a human, justify why AI can’t perform the same tasks\n2. Every human must use AI\n3. Every human will be assessed on how much they use AI\n\nBetween 2022-2024, Shopify laid off 3,500 employees (30% of its workforce).\n\nIf you aren’t using AI today, you’ll be the first to be fired in the future.\n\nPeople most at risk of losing their jobs to AI in corporate:\n- Middle-managers who spend their days “managing up” and churning out PowerPoints for execs who don’t read them\n- That guy in meetings who just rephrases what everyone else says and then sends a meeting recap email to go “above and beyond”\n- Strategy analysts who churn out 50-page reports predicting market trends that AI can nail in 30 seconds with better accuracy\n- The \"culture cheerleader\" who orchestrates forced happy hours\n\nTired of corporate politics? Doing real work?\n\nI have good news for you. You will be valued 10x more.",
+              "hyperlinks": {
+                "company_linkedin_urls": [],
+                "person_linkedin_urls": [],
+                "other_urls": []
+              },
+              "actor_name": "Albert Mao",
+              "date_posted": "2025-04-20",
+              "total_reactions": 29,
+              "total_comments": 6,
+              "reactions_by_type": {
+                "LIKE": 25,
+                "PRAISE": null,
+                "CURIOUS": null,
+                "EMPATHY": null,
+                "INTEREST": 4,
+                "APPRECIATION": null,
+                "ENTERTAINMENT": null
+              },
+              "num_shares": 2,
+              "is_repost_without_thoughts": false
+            }
+          ]
+        }
+      }
+    ],
+    "Identify Company": [
+      {
+        "json": {
+          "company_id": 880829,
+          "company_name": "VectorShift",
+          "company_slug": "vectorshift",
+          "company_website_domain": "vectorshift.ai",
+          "company_website": "www.vectorshift.ai",
+          "linkedin_profile_url": "https://www.linkedin.com/company/vectorshift",
+          "linkedin_headcount": 28,
+          "acquisition_status": null,
+          "linkedin_logo_url": "https://media.licdn.com/dms/image/v2/D4E0BAQHA6tJ8FjLImQ/company-logo_200_200/company-logo_200_200/0/1686524725664?e=1749081600&v=beta&t=6y2gR6YMGS8rgPIClwyqG9Om8cvcl7w8E89QDYpvy-M",
+          "crunchbase_profile_url": "https://crunchbase.com/organization/vectorshift",
+          "crunchbase_total_investment_usd": 3000000,
+          "score": 0.3,
+          "is_full_domain_match": true,
+          "total_rows": 1,
+          "last_job_listings_parser_run": "2024-12-28T13:36:13.404498Z"
+        }
+      }
+    ]
+  },
+  "versionId": "27ddf2b5-846c-49cd-b74b-a36418a2ab95",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-30T15:25:14.702Z",
+      "updatedAt": "2025-09-30T15:25:14.702Z",
+      "role": "workflow:owner",
+      "workflowId": "ylDAWQSjiaXvx1GG",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
