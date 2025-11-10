@@ -1,0 +1,482 @@
+{
+  "createdAt": "2025-09-18T03:44:20.893Z",
+  "updatedAt": "2025-09-18T10:31:20.000Z",
+  "id": "lMYxu93JxKdFKBia",
+  "name": "wasenderapi whatsapp flow",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ec68fbae-d698-41a4-b69d-ab9ea14a6352",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        816
+      ],
+      "id": "dbda4f84-c1d6-48c2-81e0-692b6d688023",
+      "name": "Webhook",
+      "webhookId": "ec68fbae-d698-41a4-b69d-ab9ea14a6352"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ef191d3-bbeb-4a53-b3d8-c7bff31d7526",
+              "name": "body.data.messages.message",
+              "value": "={{ $json.body.data.messages.message }}",
+              "type": "object"
+            },
+            {
+              "id": "00682555-4e80-4351-8ed3-71812ecd54f6",
+              "name": "body.data.messages.remoteJid",
+              "value": "={{ $json.body.data.messages.remoteJid }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -704,
+        544
+      ],
+      "id": "3b671f22-188e-46e2-a9fe-55a2c7513b05",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nfunction getDecryptionKeys(mediaKeyBuffer, mediaType) {\n    const infoMap = {\n        image: 'WhatsApp Image Keys', sticker: 'WhatsApp Image Keys',\n        video: 'WhatsApp Video Keys', audio: 'WhatsApp Audio Keys',\n        document: 'WhatsApp Document Keys',\n    };\n    const info = infoMap[mediaType];\n    if (!info) throw new Error(`Invalid media type: ${mediaType}`);\n    return new Promise((resolve, reject) => {\n        crypto.hkdf('sha256', mediaKeyBuffer, '', Buffer.from(info), 112, (err, key) => {\n            if (err) return reject(err);\n            resolve(Buffer.from(key));\n        });\n    });\n}\n\ntry {\n    const item = items[0];\n    console.log('1. Received input item:', JSON.stringify(item.json, null, 2));\n\n    const message = item.json.body?.data?.messages?.message;\n\n    if (!message) {\n        console.log('STOP: No message found in the expected path. Stopping execution.');\n        return null; \n    }\n\n    let mediaDetails;\n    let mediaType = '';\n\n    if (message.imageMessage) {\n        mediaType = 'image';\n        mediaDetails = message.imageMessage;\n    } else if (message.audioMessage) {\n        mediaType = 'audio';\n        mediaDetails = message.audioMessage;\n    } else if (message.videoMessage) {\n        mediaType = 'video';\n        mediaDetails = message.videoMessage;\n    } else if (message.documentMessage) {\n        mediaType = 'document';\n        mediaDetails = message.documentMessage;\n    }\n\n    if (!mediaDetails) {\n        return null;\n    }\n\n    const mediaUrl = mediaDetails.url;\n    const mediaKey = mediaDetails.mediaKey;\n\n\n    const response = await this.helpers.httpRequest({ url: mediaUrl, method: 'GET', encoding: 'arraybuffer' });\n    const encryptedData = Buffer.from(response);\n\n    const mediaKeyBuffer = Buffer.from(mediaKey, 'base64');\n    const keys = await getDecryptionKeys(mediaKeyBuffer, mediaType);\n    const iv = keys.slice(0, 16);\n    const cipherKey = keys.slice(16, 48);\n    const ciphertext = encryptedData.slice(0, -10);\n\n    const decipher = crypto.createDecipheriv('aes-256-cbc', cipherKey, iv);\n    const decryptedData = Buffer.concat([decipher.update(ciphertext), decipher.final()]);\n    const mimeType = mediaDetails.mimetype;\n    const fileName = mediaDetails.fileName || crypto.randomUUID();\n    const extension = mimeType.split('/')[1].split(';')[0].trim() || 'bin';\n    const finalFileNameWithExt = `${fileName}.${extension}`;\n\n    const binaryData = await this.helpers.prepareBinaryData(decryptedData, finalFileNameWithExt, mimeType);\n    item.binary = { data: binaryData };\n    item.json.decryptionSuccess = true;\n      \n    return item;\n\n} catch (error) {\n    throw error;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e7170726-b463-4ea0-adff-b3d9aed7ac71",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        96,
+        320
+      ],
+      "id": "aa070c80-d987-4dd0-9ba8-195a40451f3b",
+      "name": "Transcribe a recording"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/send-message",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $('Edit Fields').item.json.body.data.messages.remoteJid }}"
+            },
+            {
+              "name": "audioUrl",
+              "value": "={{ $('Upload file').item.json.webContentLink }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        1072
+      ],
+      "id": "bc8241a6-cbbf-494e-9ccb-416256c6804d",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.message.content }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        512,
+        384
+      ],
+      "id": "3c6a172e-dfe7-4ccd-879d-2a86fc1a7f41",
+      "name": "Generate audio"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.text }} || {{ $json.body.data.messages.message.extendedTextMessage.text }} || {{ $json.body.data.messages.message.conversation }} "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        288,
+        624
+      ],
+      "id": "3fe3cd18-1d0e-4170-891d-6242e5d9a700",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1360,
+        400
+      ],
+      "id": "4656d747-dfc0-4426-b653-bda7fe68e90d",
+      "name": "Share file"
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        768,
+        224
+      ],
+      "id": "1235b8e1-9a02-4273-8cca-458fcce1673b",
+      "name": "Upload file"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "18dc97ac-e185-4322-b04d-1db0c1952962",
+              "leftValue": "={{ $json.body.data.messages.key.fromMe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        864
+      ],
+      "id": "7e5db782-5204-467a-aa8d-ff45e2135444",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.data.messages.message.extendedTextMessage.text }} || {{ $json.body.data.messages.message.conversation }} ",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    },
+                    "id": "01feebe8-fdc0-48d0-a92b-28f31acbe0a0"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3b7d2c83-a70c-40c2-a2c6-f4b8ce5ebe19",
+                    "leftValue": "={{ $json.body.data.messages.message.audioMessage }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -512,
+        64
+      ],
+      "id": "5cfdbfc7-efac-4805-8587-27bbf22719ad",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/send-message",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $('Edit Fields').item.json.body.data.messages.remoteJid }}"
+            },
+            {
+              "name": "audioUrl",
+              "value": "=message type is not supported please send and audio or text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        448
+      ],
+      "id": "df536fdb-3bd2-41a0-bc5a-cb7685d25b62",
+      "name": "HTTP Request2"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate audio": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Generate audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Share file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "73260f81-22e0-400b-829b-3ceaf7700c1b",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-18T03:44:20.896Z",
+      "updatedAt": "2025-09-18T03:44:20.896Z",
+      "role": "workflow:owner",
+      "workflowId": "lMYxu93JxKdFKBia",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
