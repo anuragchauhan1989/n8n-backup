@@ -1,0 +1,434 @@
+{
+  "createdAt": "2025-10-15T09:57:30.100Z",
+  "updatedAt": "2025-10-16T15:05:21.000Z",
+  "id": "ylCWxcuZq3zIOJEU",
+  "name": "Check Linkedin Connections",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "id": "c058fc0a-7e97-40b2-9c96-d600c539530b",
+      "name": "Daily Connection Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1104,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.linkedin.com/oauth/v2/accessToken",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "refresh_token"
+            },
+            {
+              "name": "refresh_token",
+              "value": "AQW1e8RYrfGwO1Sfl42Icxuy2wHLQyj1xjNYRTzvUhCXlr1GwMMiuazCdiF8uFntC3uKMxV7aEUu6Hv_Q8dlMQszoImiKuTr4Avlc96XDkQfoq2P9bKqmq24tlShqUFSUzXSmgPDKdoiMKiV3XGQ4qwoHPkFZLMoacDMVzmwrsBE0IPAGxN_OKZN5eBWwEztP8PRIyEbtRGXgj5E_iaTmOC8KagtGxSYMNvVTn17PXnqdlzq0BlkfU-glW3FzNUo6ci2GNYFm0JVxtiDwpOhewNnPFDZU1a5kxshiiCwuu0RhhEUQ1qcURpCl6pJOdHtgm_z1D_JrOmdVpZwgw56_RKnEXDrAQ"
+            },
+            {
+              "name": "client_id",
+              "value": "86ckqu24wiczq6"
+            },
+            {
+              "name": "client_secret",
+              "value": "WPL_AP1.l67SzGQ9QuY1LwC6.k3JBNg=="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a90b7d0a-8161-4e79-9553-764396857895",
+      "name": "Refresh LinkedIn Access Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -880,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appSyRFfQAU9hVeAP",
+          "mode": "list",
+          "cachedResultName": "LinkedIn",
+          "cachedResultUrl": "https://airtable.com/appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblv3Eqz4W1fJFWO6",
+          "mode": "list",
+          "cachedResultName": "Prospects",
+          "cachedResultUrl": "https://airtable.com/appSyRFfQAU9hVeAP/tblv3Eqz4W1fJFWO6"
+        },
+        "filterByFormula": "=AND({Connection Sent} = 1, {Connection Accepted} = 0)",
+        "options": {}
+      },
+      "id": "95e95bc1-00a8-4552-b02f-6b3be95af98a",
+      "name": "Get Pending Connections",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -656,
+        112
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/connections",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "viewer"
+            },
+            {
+              "name": "start",
+              "value": "0"
+            },
+            {
+              "name": "count",
+              "value": "100"
+            },
+            {
+              "name": "projection",
+              "value": "(elements*(to~(id,firstName,lastName,vanityName)),paging)"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Refresh LinkedIn Access Token').item.json.access_token }}"
+            },
+            {
+              "name": "LinkedIn-Version",
+              "value": "202409"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e221e956-364e-49b8-9e0f-fb29bc6bcfcb",
+      "name": "Get LinkedIn Connections",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -448,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.paging.total }}",
+              "rightValue": "={{ $json.paging.start + $json.paging.count }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "id": "4d70e5be-6f16-463a-8b99-bce053e6277d"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "080f037e-1ef0-4ef5-86ee-31b76089ac12",
+      "name": "More Pages?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/connections",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "viewer"
+            },
+            {
+              "name": "start",
+              "value": "={{ $json.paging.start + $json.paging.count }}"
+            },
+            {
+              "name": "count",
+              "value": "100"
+            },
+            {
+              "name": "projection",
+              "value": "(elements*(to~(id,firstName,lastName,vanityName)),paging)"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Refresh LinkedIn Access Token').item.json.access_token }}"
+            },
+            {
+              "name": "LinkedIn-Version",
+              "value": "202409"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f4fe0776-bb8f-4176-bd4c-aac41f6cdf39",
+      "name": "Fetch Next Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $input.all();\nconst allConnections = [];\n\nfor (const item of allItems) {\n  const elements = item.json.elements || [];\n  allConnections.push(...elements);\n}\n\nconst connectionMap = {};\n\nfor (const conn of allConnections) {\n  if (!conn['to~']) continue;\n  \n  const profile = conn['to~'];\n  const personId = profile.id;\n  const vanityName = profile.vanityName || '';\n  const firstName = profile.firstName?.localized?.en_US || '';\n  const lastName = profile.lastName?.localized?.en_US || '';\n  const fullName = `${firstName} ${lastName}`.trim();\n  \n  connectionMap[personId] = {\n    personId,\n    vanityName,\n    firstName,\n    lastName,\n    fullName,\n    linkedInUrl: vanityName ? `https://www.linkedin.com/in/${vanityName}/` : ''\n  };\n}\n\nreturn [{\n  json: {\n    totalConnections: allConnections.length,\n    connections: connectionMap,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "871a60c3-a3b2-4bdf-8374-79d6915472b1",
+      "name": "Aggregate All Connections",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const airtableRecords = $('Get Pending Connections').all();\nconst connectionData = $input.first().json;\nconst connectionMap = connectionData.connections;\n\nconst matches = [];\n\nfunction normalize(str) {\n  if (!str) return '';\n  return str.toLowerCase().trim().replace(/[^a-z0-9]/g, '');\n}\n\nfor (const record of airtableRecords) {\n  const data = record.json;\n  let matched = false;\n  let matchMethod = null;\n  let matchedConnection = null;\n  \n  if (data.LinkedIn_Person_ID && connectionMap[data.LinkedIn_Person_ID]) {\n    matched = true;\n    matchMethod = 'person_id';\n    matchedConnection = connectionMap[data.LinkedIn_Person_ID];\n  }\n  \n  if (!matched && data.Employee_LinkedIn_URL) {\n    const urlParts = data.Employee_LinkedIn_URL.split('/in/');\n    if (urlParts.length > 1) {\n      const vanityName = urlParts[1].replace('/', '').toLowerCase();\n      \n      for (const [personId, conn] of Object.entries(connectionMap)) {\n        if (conn.vanityName && normalize(conn.vanityName) === normalize(vanityName)) {\n          matched = true;\n          matchMethod = 'vanity_url';\n          matchedConnection = conn;\n          break;\n        }\n      }\n    }\n  }\n  \n  if (!matched && data.Employee_Full_Name) {\n    const airtableName = normalize(data.Employee_Full_Name);\n    \n    for (const [personId, conn] of Object.entries(connectionMap)) {\n      const linkedinName = normalize(conn.fullName);\n      \n      if (airtableName === linkedinName) {\n        matched = true;\n        matchMethod = 'exact_name';\n        matchedConnection = conn;\n        break;\n      }\n    }\n  }\n  \n  if (matched && matchedConnection) {\n    matches.push({\n      json: {\n        ...data,\n        matched: true,\n        matchMethod,\n        LinkedIn_Person_ID: matchedConnection.personId,\n        LinkedIn_Full_Name: matchedConnection.fullName,\n        LinkedIn_Profile_URL: matchedConnection.linkedInUrl,\n        checkedAt: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn matches;"
+      },
+      "id": "04410928-32ef-4f1b-94ad-b0ec76a65b0a",
+      "name": "Match Records with Connections",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblv3Eqz4W1fJFWO6"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Connection Accepted": 1
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "e7152fd4-5c96-4f02-a2c7-a02fb21ab8d5",
+      "name": "Update Accepted Connections",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        112
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const updated = $input.all();\n\nreturn [{\n  json: {\n    success: true,\n    timestamp: new Date().toISOString(),\n    recordsChecked: $('Get Pending Connections').all().length,\n    connectionsAccepted: updated.length,\n    message: `Successfully updated ${updated.length} connection(s) to accepted status`\n  }\n}];"
+      },
+      "id": "26a681e2-93f3-43d9-8b85-e165f6987a5e",
+      "name": "Create Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        112
+      ]
+    }
+  ],
+  "connections": {
+    "Daily Connection Check": {
+      "main": [
+        [
+          {
+            "node": "Refresh LinkedIn Access Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh LinkedIn Access Token": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Connections": {
+      "main": [
+        [
+          {
+            "node": "Get LinkedIn Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LinkedIn Connections": {
+      "main": [
+        [
+          {
+            "node": "More Pages?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "More Pages?": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Connections",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Next Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Next Page": {
+      "main": [
+        [
+          {
+            "node": "More Pages?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Connections": {
+      "main": [
+        [
+          {
+            "node": "Match Records with Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match Records with Connections": {
+      "main": [
+        [
+          {
+            "node": "Update Accepted Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Accepted Connections": {
+      "main": [
+        [
+          {
+            "node": "Create Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "a68bcfd5-3d8d-41cd-9317-e03e63cc2b27",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-15T09:57:30.103Z",
+      "updatedAt": "2025-10-15T09:57:30.103Z",
+      "role": "workflow:owner",
+      "workflowId": "ylCWxcuZq3zIOJEU",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
