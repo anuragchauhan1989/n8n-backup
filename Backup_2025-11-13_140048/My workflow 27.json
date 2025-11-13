@@ -1,0 +1,538 @@
+{
+  "createdAt": "2025-10-10T10:01:17.337Z",
+  "updatedAt": "2025-10-10T11:32:23.000Z",
+  "id": "fgV0mTsZwQ69vTDL",
+  "name": "My workflow 27",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hamper-chat-rag",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "41d905c5-2ac4-4443-b0e7-a1fa0fff7054",
+      "name": "Webhook - Chat Input",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        112
+      ],
+      "webhookId": "hamper-chat-rag"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract incoming chat message and session data\nconst body = $input.item.json.body;\n\nreturn {\n  json: {\n    userQuery: body.message || body.query || '',\n    step: body.step || 0,\n    orderData: body.orderData || {},\n    sessionId: body.sessionId || $execution.id,\n    conversationHistory: body.conversationHistory || [],\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "f453fa19-65b1-4e9d-ba43-2c04f0c36f55",
+      "name": "Process Chat Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=31908932",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "67b5f16e-966e-4c68-a8a0-8bc2509fff90",
+      "name": "Fetch Product Catalog",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -384,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform inventory into documents for embedding\nconst inventory = $input.all();\n\nconst documents = inventory.map(item => {\n  const data = item.json;\n  \n  // Create rich document text for embedding\n  const docText = `\nProduct: ${data.ItemName || 'Unknown'}\nCategory: ${data.Category || 'General'}\nPrice: Rs ${data.Price || 'N/A'}\nDescription: ${data.Description || ''}\nTags: ${data.Tags || ''}\nOccasion: ${data.Occasion || 'Any'}\nAvailability: ${data.Available || 'Unknown'}\nSKU: ${data.SKU || 'N/A'}\n  `.trim();\n  \n  return {\n    json: {\n      pageContent: docText,\n      metadata: {\n        itemName: data.ItemName || 'Unknown',\n        category: data.Category || 'General',\n        price: parseFloat(data.Price) || 0,\n        sku: data.SKU || 'N/A',\n        available: data.Available === 'Yes',\n        tags: data.Tags ? data.Tags.split(',').map(t => t.trim()) : [],\n        occasion: data.Occasion || 'Any',\n        source: 'inventory'\n      }\n    }\n  };\n});\n\nreturn documents;"
+      },
+      "id": "78e15211-da49-401e-a179-a71b7780e33a",
+      "name": "Prepare Documents for Embedding",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "29afff57-eb8d-4e97-93e3-94bd206d1d86",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        176,
+        144
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "9dc7fdca-def5-4a25-9ddc-6a953f8c07bd",
+      "name": "Vector Store - Insert Products",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemoryInsert",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -688
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3224f7f8-134c-4d48-8740-67475e91f18d",
+      "name": "Vector Store - Search Products",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemoryLoad",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "maxTokens": 1000,
+          "temperature": 0.7
+        }
+      },
+      "id": "ee6d1f5e-7d2d-49f1-8654-85c1dceacf3c",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        176,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI assistant for a premium gift hamper company. Your role is to help customers create perfect gift hampers for various occasions.\n\n**Current Conversation Context:**\nStep: {{ $('Process Chat Input').item.json.step }}\nCustomer Query: {{ $('Process Chat Input').item.json.userQuery }}\n\n**Customer's Order Information So Far:**\n{{ JSON.stringify($('Process Chat Input').item.json.orderData, null, 2) }}\n\n**Available Products from Inventory (Retrieved via RAG):**\n{{ $json.context }}\n\n**Your Instructions:**\n\n1. **Understand Customer Needs**: Analyze their budget, quantity, deadline, and item preferences\n\n2. **Use RAG Context**: Use ONLY the products retrieved from the vector store above. These are semantically similar to customer requirements.\n\n3. **Smart Recommendations**:\n   - Match products to their budget and preferences\n   - Suggest combinations that make sense\n   - Consider occasion appropriateness\n   - Factor in availability\n\n4. **Conversation Flow**:\n   - Step 0-3: Ask clarifying questions naturally\n   - Step 4 (Item Preference): THIS IS WHERE RAG SHINES - Use vector search results to recommend specific products\n   - Step 5 (Packaging): Suggest packaging options\n   - Step 6: Generate final quotation\n\n5. **Pricing Logic**:\n   - Calculate based on actual product prices from inventory\n   - Add packaging costs (Rs 150-250 based on type)\n   - Apply 10% discount for 200+ quantity orders\n   - Stay within customer budget\n\n6. **Response Format**:\n   - Be conversational and helpful\n   - Provide specific product recommendations with prices\n   - Explain why products are good choices\n   - Show value for money\n\n**Important**: Always reference actual products from the RAG context. Don't make up products or prices.\n\nRespond to the customer now:",
+        "options": {}
+      },
+      "id": "811d2512-0216-4655-b118-cf7b1d5a8034",
+      "name": "RAG Chain - Answer Query",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response and structure it\nconst aiResponse = $('RAG Chain - Answer Query').item.json;\nconst inputData = $('Process Chat Input').item.json;\n\n// Extract recommended products from the AI response if available\nconst response = aiResponse.text || aiResponse.response || '';\n\nreturn {\n  json: {\n    botMessage: response,\n    step: inputData.step,\n    sessionId: inputData.sessionId,\n    timestamp: new Date().toISOString(),\n    metadata: {\n      retrievedProducts: aiResponse.sourceDocuments?.length || 0,\n      conversationComplete: inputData.step >= 6\n    }\n  }\n};"
+      },
+      "id": "bb5e5167-0628-499a-af14-881a4a9230dc",
+      "name": "Format AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "step-check",
+              "leftValue": "={{ $('Process Chat Input').item.json.step }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f231c7e4-e584-49d0-be72-c8dae488d022",
+      "name": "Check If Final Step",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        624,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate detailed quotation using RAG-retrieved products\nconst inputData = $('Process Chat Input').item.json;\nconst aiResponse = $('Format AI Response').item.json;\nconst orderData = inputData.orderData;\n\nconst budget = parseInt(orderData.budget) || 1000;\nconst quantity = parseInt(orderData.quantity) || 100;\nconst bulkDiscount = quantity >= 200 ? 10 : 0;\n\n// Parse AI recommendations to extract product details\n// In real scenario, this would be structured data from the AI\nconst packagingCost = orderData.packagingType?.includes('Ratan') ? 150 :\n                     orderData.packagingType?.includes('Premium') ? 200 :\n                     orderData.packagingType?.includes('Luxury') ? 250 : 150;\n\nconst itemCost = budget - packagingCost;\nconst subtotal = budget * quantity;\nconst discountAmount = (subtotal * bulkDiscount) / 100;\nconst finalTotal = subtotal - discountAmount;\n\nconst quotation = {\n  quotationId: `QT-${Date.now()}`,\n  orderDetails: {\n    budgetPerPiece: budget,\n    quantity: quantity,\n    deliveryDate: orderData.deadline,\n    packagingType: orderData.packagingType || 'Standard Box',\n    itemPreference: orderData.itemPreference\n  },\n  pricing: {\n    itemCostPerPiece: itemCost,\n    packagingCostPerPiece: packagingCost,\n    subtotal: subtotal,\n    discountPercent: bulkDiscount,\n    discountAmount: discountAmount,\n    finalTotal: finalTotal,\n    perPieceTotal: budget\n  },\n  aiRecommendation: aiResponse.botMessage,\n  specialOffer: bulkDiscount > 0 ? `🎉 ${bulkDiscount}% bulk discount applied!` : null,\n  nextSteps: [\n    'Review quotation',\n    'Confirm order',\n    'Proceed to payment',\n    'Track delivery'\n  ],\n  timestamp: new Date().toISOString()\n};\n\nreturn { json: quotation };"
+      },
+      "id": "1afa3b5b-f53d-4100-822d-ed940b1ec77c",
+      "name": "Generate Final Quotation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        16
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3a7033dc-4a8d-4388-b2e8-1d997812b9ff",
+      "name": "DALL-E Generate Product Visual",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.4,
+      "position": [
+        1024,
+        16
+      ],
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Orders",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "QuotationID": "={{ $('Generate Final Quotation').item.json.quotationId }}",
+            "Timestamp": "={{ $('Generate Final Quotation').item.json.timestamp }}",
+            "Budget": "={{ $('Generate Final Quotation').item.json.orderDetails.budgetPerPiece }}",
+            "Quantity": "={{ $('Generate Final Quotation').item.json.orderDetails.quantity }}",
+            "DeliveryDate": "={{ $('Generate Final Quotation').item.json.orderDetails.deliveryDate }}",
+            "Packaging": "={{ $('Generate Final Quotation').item.json.orderDetails.packagingType }}",
+            "ItemPreference": "={{ $('Generate Final Quotation').item.json.orderDetails.itemPreference }}",
+            "Subtotal": "={{ $('Generate Final Quotation').item.json.pricing.subtotal }}",
+            "Discount": "={{ $('Generate Final Quotation').item.json.pricing.discountAmount }}",
+            "FinalTotal": "={{ $('Generate Final Quotation').item.json.pricing.finalTotal }}",
+            "AIRecommendation": "={{ $('Generate Final Quotation').item.json.aiRecommendation.substring(0, 500) }}",
+            "Status": "Pending Confirmation"
+          }
+        },
+        "options": {}
+      },
+      "id": "6ebef116-75e4-4d13-8d8e-f350bf41a2df",
+      "name": "Save Quotation to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1216,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Final response with quotation\nconst quotation = $('Generate Final Quotation').item.json;\nconst productImage = $('DALL-E Generate Product Visual').first()?.json?.data?.[0]?.url || null;\n\nreturn {\n  json: {\n    success: true,\n    type: 'quotation',\n    quotation: quotation,\n    productVisualization: productImage,\n    message: 'Your custom gift hamper quotation is ready! 🎁'\n  }\n};"
+      },
+      "id": "f41ba31f-128e-40db-ae33-766dd11a8155",
+      "name": "Format Quotation Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Regular conversation response\nconst aiResponse = $('Format AI Response').item.json;\n\nreturn {\n  json: {\n    success: true,\n    type: 'conversation',\n    botMessage: aiResponse.botMessage,\n    step: aiResponse.step,\n    sessionId: aiResponse.sessionId,\n    metadata: aiResponse.metadata,\n    suggestions: aiResponse.step === 4 ? [\n      'Show me more options',\n      'What about adding sweets?',\n      'Can you suggest within budget?'\n    ] : null\n  }\n};"
+      },
+      "id": "31f74c10-9452-4e3e-ab6f-a23e54b7511a",
+      "name": "Format Conversation Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "75341c35-bd8d-4f78-aecb-2be0c7064a6e",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1968,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "options": {}
+      },
+      "id": "2c68394a-7e9d-4ef1-8f9a-e1d7b0411417",
+      "name": "Merge Response Types",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1696,
+        16
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Chat Input1": {
+      "main": [
+        [
+          {
+            "node": "Process Chat Input1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Chat Input1": {
+      "main": [
+        [
+          {
+            "node": "Generate Final Quotation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check If Final Step",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format AI Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RAG Chain - Answer Query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Vector Store - Insert Products",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Documents for Embedding",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Product Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Chat Input": {
+      "main": [
+        [
+          {
+            "node": "Process Chat Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Chat Input": {
+      "main": [
+        [
+          {
+            "node": "RAG Chain - Answer Query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Product Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Product Catalog": {
+      "main": [
+        [
+          {
+            "node": "Prepare Documents for Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Documents for Embedding": {
+      "main": [
+        [
+          {
+            "node": "Vector Store - Insert Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Vector Store - Insert Products",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Vector Store - Search Products",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG Chain - Answer Query",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Chain - Answer Query": {
+      "main": [
+        [
+          {
+            "node": "Format AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format AI Response": {
+      "main": [
+        [
+          {
+            "node": "Check If Final Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Final Step": {
+      "main": [
+        [
+          {
+            "node": "Generate Final Quotation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Quotation to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Format Quotation Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Quotation Response": {
+      "main": [
+        [
+          {
+            "node": "Merge Response Types",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Response Types": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "582e597b-6fba-45f2-9cb6-feb624db2c2e",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-10T10:01:17.343Z",
+      "updatedAt": "2025-10-10T10:01:17.343Z",
+      "role": "workflow:owner",
+      "workflowId": "fgV0mTsZwQ69vTDL",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
