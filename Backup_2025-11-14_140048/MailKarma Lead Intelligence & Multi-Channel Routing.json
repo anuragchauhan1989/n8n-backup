@@ -1,0 +1,567 @@
+{
+  "createdAt": "2025-09-30T14:15:04.950Z",
+  "updatedAt": "2025-10-09T06:52:13.000Z",
+  "id": "bbHZCXihrqnY7Gcl",
+  "name": "MailKarma Lead Intelligence & Multi-Channel Routing",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-0001-0000-0000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        256,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://oauth.reddit.com/r/sales+entrepreneur+marketing/search.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "cold email OR deliverability OR Smartlead OR Instantly OR Apollo OR Lemlist"
+            },
+            {
+              "name": "limit",
+              "value": "25"
+            },
+            {
+              "name": "sort",
+              "value": "new"
+            },
+            {
+              "name": "t",
+              "value": "month"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-0000-0000-000000000002",
+      "name": "Reddit API - Search Posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        208
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "notes": "Free Reddit API - Search for SaaS leads"
+    },
+    {
+      "parameters": {
+        "url": "https://api.twitter.com/2/tweets/search/recent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "(cold email tool OR email automation OR deliverability) -is:retweet"
+            },
+            {
+              "name": "max_results",
+              "value": "25"
+            },
+            {
+              "name": "tweet.fields",
+              "value": "created_at,author_id,public_metrics"
+            },
+            {
+              "name": "user.fields",
+              "value": "username,name,public_metrics"
+            },
+            {
+              "name": "expansions",
+              "value": "author_id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-0000-0000-000000000003",
+      "name": "Twitter API - Search Tweets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        400
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "notes": "Twitter Basic v2 API - Search tweets"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "YOUR_API_KEY"
+            },
+            {
+              "name": "cx",
+              "value": "YOUR_SEARCH_ENGINE_ID"
+            },
+            {
+              "name": "q",
+              "value": "Smartlead OR Instantly OR Apollo review"
+            },
+            {
+              "name": "num",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0004-0000-0000-000000000004",
+      "name": "Google Custom Search - Find Blogs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        608
+      ],
+      "notes": "100 free queries/day"
+    },
+    {
+      "parameters": {
+        "jsCode": "const leads = [];\n\nif ($input.item.json.data && $input.item.json.data.children) {\n  for (const post of $input.item.json.data.children) {\n    const data = post.data;\n    \n    leads.push({\n      name: data.author || 'Unknown',\n      username: data.author,\n      profile_url: `https://reddit.com/user/${data.author}`,\n      content_snippet: (data.title + ' ' + (data.selftext || '')).substring(0, 200),\n      source_platform: 'Reddit',\n      source_url: `https://reddit.com${data.permalink}`,\n      subreddit: data.subreddit,\n      karma: data.ups || 0,\n      created_at: new Date(data.created_utc * 1000).toISOString(),\n      raw_data: data\n    });\n  }\n}\n\nreturn leads.map(lead => ({ json: lead }));"
+      },
+      "id": "a1b2c3d4-0005-0000-0000-000000000005",
+      "name": "Parse Reddit Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        208
+      ],
+      "notes": "Parse Reddit API response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const leads = [];\n\nif ($input.item.json.data) {\n  const tweets = $input.item.json.data;\n  const users = $input.item.json.includes?.users || [];\n  \n  const userMap = {};\n  users.forEach(user => {\n    userMap[user.id] = user;\n  });\n  \n  for (const tweet of tweets) {\n    const user = userMap[tweet.author_id] || {};\n    \n    leads.push({\n      name: user.name || 'Unknown',\n      username: user.username || 'unknown',\n      profile_url: `https://twitter.com/${user.username}`,\n      content_snippet: tweet.text.substring(0, 200),\n      source_platform: 'Twitter',\n      source_url: `https://twitter.com/${user.username}/status/${tweet.id}`,\n      followers_count: user.public_metrics?.followers_count || 0,\n      tweet_engagement: tweet.public_metrics?.like_count || 0,\n      created_at: tweet.created_at,\n      raw_data: { tweet, user }\n    });\n  }\n}\n\nreturn leads.map(lead => ({ json: lead }));"
+      },
+      "id": "a1b2c3d4-0006-0000-0000-000000000006",
+      "name": "Parse Twitter Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        400
+      ],
+      "notes": "Parse Twitter API response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const leads = [];\n\nif ($input.item.json.items) {\n  for (const item of $input.item.json.items) {\n    leads.push({\n      name: item.displayLink || 'Unknown',\n      username: item.displayLink,\n      profile_url: item.link,\n      content_snippet: item.snippet.substring(0, 200),\n      source_platform: 'Google Search',\n      source_url: item.link,\n      page_title: item.title,\n      website: item.displayLink,\n      created_at: new Date().toISOString(),\n      raw_data: item\n    });\n  }\n}\n\nreturn leads.map(lead => ({ json: lead }));"
+      },
+      "id": "a1b2c3d4-0007-0000-0000-000000000007",
+      "name": "Parse Google Search Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        608
+      ],
+      "notes": "Parse Google Search results"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0008-0000-0000-000000000008",
+      "name": "Merge All Leads",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        896,
+        400
+      ],
+      "notes": "Combine all lead sources"
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\nconst uniqueLeads = [];\n\nfor (const item of $input.all()) {\n  const lead = item.json;\n  const key = lead.profile_url || lead.username || lead.name;\n  \n  if (!seen.has(key)) {\n    seen.add(key);\n    uniqueLeads.push(item);\n  }\n}\n\nreturn uniqueLeads;"
+      },
+      "id": "a1b2c3d4-0009-0000-0000-000000000009",
+      "name": "Deduplicate Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        400
+      ],
+      "notes": "Remove duplicate leads"
+    },
+    {
+      "parameters": {
+        "url": "https://api.hunter.io/v2/email-finder",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "YOUR_HUNTER_API_KEY"
+            },
+            {
+              "name": "domain",
+              "value": "={{ $json.website || $json.profile_url.split('/')[2] }}"
+            },
+            {
+              "name": "first_name",
+              "value": "={{ $json.name.split(' ')[0] }}"
+            },
+            {
+              "name": "last_name",
+              "value": "={{ $json.name.split(' ').slice(1).join(' ') }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {}
+          }
+        }
+      },
+      "id": "a1b2c3d4-0010-0000-0000-000000000010",
+      "name": "Hunter.io - Find Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1264,
+        304
+      ],
+      "notes": "50 free credits/month - Email finder"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.item.json;\n\nlet emailScore = 0;\nlet socialScore = 0;\nlet callingScore = 0;\nlet websiteScore = 0;\n\n// EMAIL SCORE\nif (lead.email_verified) emailScore += 50;\n\nconst freeDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];\nif (lead.domain && !freeDomains.includes(lead.domain.toLowerCase())) {\n  emailScore += 20;\n}\n\nif (lead.email_score >= 95) emailScore += 30;\n\n// SOCIAL SCORE\nif (lead.source_platform === 'Twitter' || lead.source_platform === 'LinkedIn') {\n  socialScore += 30;\n}\n\nconst followers = lead.followers_count || lead.connections || 0;\nif (followers > 500) socialScore += 40;\n\nconst daysSinceActivity = Math.floor((new Date() - new Date(lead.created_at)) / (1000 * 60 * 60 * 24));\nif (daysSinceActivity <= 7) socialScore += 30;\n\n// CALLING SCORE\nif (lead.phone_validated) callingScore += 50;\nif (lead.location) callingScore += 20;\nif (lead.domain && !freeDomains.includes(lead.domain.toLowerCase())) {\n  callingScore += 30;\n}\n\n// WEBSITE SCORE\nif (lead.website) websiteScore += 40;\nif (lead.domain && !freeDomains.includes(lead.domain.toLowerCase())) {\n  websiteScore += 30;\n}\nif (lead.company || lead.position || lead.content_snippet) websiteScore += 30;\n\nreturn {\n  json: {\n    ...lead,\n    scores: {\n      email: emailScore,\n      social: socialScore,\n      calling: callingScore,\n      website: websiteScore\n    }\n  }\n};"
+      },
+      "id": "a1b2c3d4-0011-0000-0000-000000000011",
+      "name": "Calculate Multi-Channel Scores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        400
+      ],
+      "notes": "Phase 3: Multi-channel scoring algorithm"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.item.json;\nconst scores = lead.scores;\n\nconst channelsAbove80 = Object.values(scores).filter(s => s >= 80).length;\nconst channelsAbove70 = Object.values(scores).filter(s => s >= 70).length;\nconst channelsAbove50 = Object.values(scores).filter(s => s >= 50).length;\n\nconst sortedChannels = Object.entries(scores)\n  .sort((a, b) => b[1] - a[1])\n  .map(([channel, score]) => ({ channel, score }));\n\nconst bestChannel = sortedChannels[0];\nconst secondChannel = sortedChannels[1];\n\nlet strategyType = 'Nurture';\nif (channelsAbove80 >= 2) {\n  strategyType = 'Multi-Channel Blitz';\n} else if (bestChannel.score >= 70 && secondChannel.score >= 60) {\n  strategyType = 'Sequential Outreach';\n} else if (bestChannel.score >= 70) {\n  strategyType = 'Single Channel Focus';\n} else if (channelsAbove50 > 0) {\n  strategyType = 'Nurture';\n}\n\nlet grade = 'C';\nif (bestChannel.score >= 90 && secondChannel.score >= 70) {\n  grade = 'A+';\n} else if (bestChannel.score >= 80 && secondChannel.score >= 60) {\n  grade = 'A';\n} else if (bestChannel.score >= 70 && secondChannel.score >= 50) {\n  grade = 'B+';\n} else if (bestChannel.score >= 60 && bestChannel.score < 70) {\n  grade = 'B';\n}\n\nreturn {\n  json: {\n    ...lead,\n    routing: {\n      strategy_type: strategyType,\n      grade: grade,\n      best_channel: bestChannel.channel,\n      best_channel_score: bestChannel.score,\n      second_channel: secondChannel.channel,\n      second_channel_score: secondChannel.score,\n      all_channels_ranked: sortedChannels\n    }\n  }\n};"
+      },
+      "id": "a1b2c3d4-0012-0000-0000-000000000012",
+      "name": "Route & Prioritize Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        400
+      ],
+      "notes": "Phase 4: Route and prioritize leads"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "All_Leads_Analysis",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "profile_url"
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0013-0000-0000-000000000013",
+      "name": "Google Sheets - All Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        2064,
+        304
+      ],
+      "notes": "Save complete analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.item.json;\n\nreturn {\n  json: {\n    lead_name: lead.name,\n    username: lead.username,\n    source_platform: lead.source_platform,\n    best_channel: lead.routing.best_channel,\n    best_channel_score: lead.routing.best_channel_score,\n    strategy_type: lead.routing.strategy_type,\n    grade: lead.routing.grade,\n    email: lead.email || '',\n    profile_url: lead.profile_url,\n    company: lead.company || '',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "a1b2c3d4-0014-0000-0000-000000000014",
+      "name": "Prepare Routing Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        512
+      ],
+      "notes": "Simplify for routing sheet"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Channel_Routing",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "profile_url"
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0015-0000-0000-000000000015",
+      "name": "Google Sheets - Channel Routing",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        2256,
+        512
+      ],
+      "notes": "Save routing recommendations"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Deduplicate Leads').item.json;\nconst hunterData = $input.item.json.data || {};\n\nconst email = hunterData.email || '';\nconst emailScore = hunterData.score || 0;\nconst emailStatus = hunterData.status || 'unknown';\nconst website = lead.website || '';\nconst domain = website ? website.replace(/^https?:\\/\\//, '').split('/')[0] : '';\n\nconst enrichedLead = {\n  ...lead,\n  email: email,\n  email_score: emailScore,\n  email_status: emailStatus,\n  email_verified: emailStatus === 'valid',\n  website: website,\n  domain: domain,\n  enrichment_timestamp: new Date().toISOString()\n};\n\nreturn { json: enrichedLead };"
+      },
+      "id": "a1b2c3d4-0016-0000-0000-000000000016",
+      "name": "Enrich Lead Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        400
+      ],
+      "notes": "Merge enrichment data"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Reddit API - Search Posts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Twitter API - Search Tweets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Custom Search - Find Blogs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit API - Search Posts": {
+      "main": [
+        [
+          {
+            "node": "Parse Reddit Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twitter API - Search Tweets": {
+      "main": [
+        [
+          {
+            "node": "Parse Twitter Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Custom Search - Find Blogs": {
+      "main": [
+        [
+          {
+            "node": "Parse Google Search Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reddit Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Twitter Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Leads",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Parse Google Search Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Leads",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge All Leads": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate Leads": {
+      "main": [
+        [
+          {
+            "node": "Hunter.io - Find Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hunter.io - Find Email": {
+      "main": [
+        [
+          {
+            "node": "Enrich Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Calculate Multi-Channel Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Multi-Channel Scores": {
+      "main": [
+        [
+          {
+            "node": "Route & Prioritize Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route & Prioritize Leads": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - All Leads",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Routing Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Routing Data": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Channel Routing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "82b65d4d-d652-471b-94fe-0a3eb22df2f2",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-30T14:15:04.952Z",
+      "updatedAt": "2025-09-30T14:15:04.952Z",
+      "role": "workflow:owner",
+      "workflowId": "bbHZCXihrqnY7Gcl",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
