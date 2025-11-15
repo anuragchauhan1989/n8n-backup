@@ -1,0 +1,79 @@
+{
+  "createdAt": "2025-10-22T05:05:43.925Z",
+  "updatedAt": "2025-10-22T07:39:18.000Z",
+  "id": "f5ZgKYC54OIKRBuz",
+  "name": "My workflow 109",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "=49 10 * * 1-5"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        192
+      ],
+      "id": "6ed58df4-981e-446a-aa0b-b2e99e6530b4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10,
+              "triggerAtMinute": 48
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "097e8d29-ed5b-4617-81e1-717f90942b65",
+      "name": "daily 10am"
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:daily 11am": {
+      "recurrenceRules": []
+    },
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    },
+    "node:daily 10am": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": {},
+  "versionId": "fadce2ee-f4c0-42d9-8204-94c3874edc5a",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "createdAt": "2025-10-22T05:05:43.957Z",
+      "updatedAt": "2025-10-22T05:05:43.957Z",
+      "role": "workflow:owner",
+      "workflowId": "f5ZgKYC54OIKRBuz",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
