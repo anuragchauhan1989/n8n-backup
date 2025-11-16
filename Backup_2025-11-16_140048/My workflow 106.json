@@ -1,0 +1,394 @@
+{
+  "createdAt": "2025-10-19T02:00:13.487Z",
+  "updatedAt": "2025-10-20T04:24:20.000Z",
+  "id": "4kK3Oh0kF0jIlBnN",
+  "name": "My workflow 106",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "=Welcome to Kiwi Gift Hamper! 🎉\nI'll help you create the perfect custom gift hamper.",
+        "options": {
+          "inputPlaceholder": "Type your message...",
+          "loadPreviousSession": "memory",
+          "showWelcomeScreen": false,
+          "subtitle": "Your personal gift hamper assistant",
+          "title": "Kiwi Gift Hamper 🎁",
+          "responseMode": "streaming"
+        }
+      },
+      "id": "21af05eb-fc07-4c40-bcd0-2967a737e232",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -704,
+        96
+      ],
+      "webhookId": "68232a84-4e3e-4156-8fb9-be97d5dddfba"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Advanced NLU for extracting information from any user input\nconst userMessage = $input.item.json.chatInput;\nconst sessionData = $input.item.json.sessionData || {};\n\n// Initialize or update extracted information\nlet extractedInfo = {\n  budget: sessionData.budget || null,\n  quantity: sessionData.quantity || null,\n  deliveryDate: sessionData.deliveryDate || null,\n  preferences: sessionData.preferences || [],\n  rawMessage: userMessage,\n  timestamp: new Date().toISOString()\n};\n\n// Pattern matching for budget (handles various formats)\nconst budgetPatterns = [\n  /(?:budget|spend|pay|afford|price|cost)[^\\d]*(\\d+(?:,\\d{3})*(?:\\.\\d{2})?)/i,\n  /(\\d+(?:,\\d{3})*(?:\\.\\d{2})?)\\s*(?:rs|rupees|inr|₹)/i,\n  /(?:around|about|approximately|roughly|near)?\\s*(\\d+(?:,\\d{3})*)/i\n];\n\nfor (const pattern of budgetPatterns) {\n  const match = userMessage.match(pattern);\n  if (match && !extractedInfo.budget) {\n    extractedInfo.budget = parseInt(match[1].replace(/,/g, ''));\n    break;\n  }\n}\n\n// Pattern matching for quantity (various phrasings)\nconst quantityPatterns = [\n  /(?:quantity|pieces|units|items|hampers|gifts|boxes|packs)[^\\d]*(\\d+)/i,\n  /(\\d+)\\s*(?:piece|unit|item|hamper|gift|box|pack|qty)/i,\n  /(?:need|want|require|order)?\\s*(\\d+)\\s*(?:of them|total|in total)?/i\n];\n\nfor (const pattern of quantityPatterns) {\n  const match = userMessage.match(pattern);\n  if (match && !extractedInfo.quantity) {\n    extractedInfo.quantity = parseInt(match[1]);\n    break;\n  }\n}\n\n// Date extraction (multiple formats)\nconst datePatterns = [\n  /(?:deliver|delivery|need|want|by|before|on)\\s*(?:by|on|before)?\\s*([\\w\\s]+\\d{1,2}(?:st|nd|rd|th)?(?:\\s*,?\\s*\\d{4})?)/i,\n  /(\\d{1,2}[\\/-]\\d{1,2}[\\/-]\\d{2,4})/,\n  /(today|tomorrow|day after tomorrow|next week|this week)/i,\n  /(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i,\n  /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\w*\\s*\\d{1,2}/i\n];\n\nfor (const pattern of datePatterns) {\n  const match = userMessage.match(pattern);\n  if (match && !extractedInfo.deliveryDate) {\n    extractedInfo.deliveryDate = match[1];\n    break;\n  }\n}\n\n// Preference extraction (products, occasions, themes)\nconst preferenceKeywords = [\n  'dry fruits', 'nuts', 'almonds', 'cashews', 'pistachios', 'walnuts',\n  'chocolate', 'sweets', 'mithai', 'candy', 'cookies',\n  'diya', 'candle', 'decoration', 'festive',\n  'tea', 'coffee', 'beverages',\n  'organic', 'healthy', 'premium', 'luxury',\n  'diwali', 'christmas', 'birthday', 'anniversary', 'corporate', 'wedding'\n];\n\nconst foundPreferences = [];\nfor (const keyword of preferenceKeywords) {\n  if (userMessage.toLowerCase().includes(keyword)) {\n    foundPreferences.push(keyword);\n  }\n}\n\nif (foundPreferences.length > 0) {\n  extractedInfo.preferences = [...new Set([...extractedInfo.preferences, ...foundPreferences])];\n}\n\n// Check what information is still missing\nconst missingInfo = [];\nif (!extractedInfo.budget) missingInfo.push('budget');\nif (!extractedInfo.quantity) missingInfo.push('quantity');\nif (!extractedInfo.deliveryDate) missingInfo.push('delivery date');\nif (extractedInfo.preferences.length === 0) missingInfo.push('preferences (optional)');\n\n// Determine conversation state\nlet conversationState = 'in_progress';\nif (missingInfo.length === 0 || (missingInfo.length === 1 && missingInfo[0] === 'preferences (optional)')) {\n  conversationState = 'ready_for_recommendation';\n}\n\n// Intent detection for special cases\nconst intent = {\n  greeting: /^(hi|hello|hey|good morning|good evening|namaste)/i.test(userMessage),\n  changeRequest: /(change|modify|update|different|instead)/i.test(userMessage),\n  clarification: /(what|which|how|why|explain|tell me more)/i.test(userMessage),\n  confirmation: /(yes|yeah|sure|okay|fine|perfect|great|confirm)/i.test(userMessage),\n  rejection: /(no|nope|cancel|stop|wrong)/i.test(userMessage),\n  priceQuery: /(how much|cost|price|expensive|cheap|discount)/i.test(userMessage),\n  helpRequest: /(help|assist|guide|suggest|recommend)/i.test(userMessage)\n};\n\nreturn {\n  json: {\n    userMessage: userMessage,\n    extractedInfo: extractedInfo,\n    missingInfo: missingInfo,\n    conversationState: conversationState,\n    intent: intent,\n    sessionId: $input.item.json.sessionId || 'session_' + Date.now()\n  }\n};"
+      },
+      "id": "0ac800f9-d5a0-466c-9868-aae24317413c",
+      "name": "NLU Processor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.userMessage }}",
+        "options": {
+          "systemMessage": "You are Kiwi, a friendly and intelligent gift hamper specialist assistant. You help customers create personalized gift hampers through natural conversation.\n\n## Current Customer Information:\n- Budget: {{ $json.extractedInfo.budget || 'Not provided yet' }}\n- Quantity: {{ $json.extractedInfo.quantity || 'Not provided yet' }}\n- Delivery Date: {{ $json.extractedInfo.deliveryDate || 'Not provided yet' }}\n- Preferences: {{ $json.extractedInfo.preferences.join(', ') || 'None specified' }}\n\n## Missing Information:\n{{ $json.missingInfo.join(', ') || 'All information collected' }}\n\n## Detected Intent:\n{{ Object.entries($json.intent).filter(([k,v]) => v).map(([k]) => k).join(', ') }}\n\n## IMPORTANT BEHAVIORAL RULES:\n\n1. **Flexible Conversation**: \n   - Accept information in ANY order\n   - Handle multiple pieces of information in one message\n   - Allow customers to change their mind\n   - Be conversational and natural, not robotic\n\n2. **Information Gathering**:\n   - Only ask for missing information\n   - If user provides partial info, acknowledge it and ask for the rest\n   - Accept various formats (e.g., \"2k\" = 2000, \"next Monday\" for dates)\n   - Don't repeat questions for information already provided\n\n3. **Dynamic Responses**:\n   - If user asks questions, answer them\n   - If user wants to change something, accommodate it\n   - If user seems confused, provide examples\n   - Apply discounts automatically (40% for >200 pieces, 35% for ≤200)\n\n4. **Natural Language Understanding**:\n   - \"I have 5000 to spend\" → Budget: 5000\n   - \"Need 100 gifts by Diwali\" → Quantity: 100, Delivery: Diwali\n   - \"Something with dry fruits and chocolates\" → Preferences: dry fruits, chocolates\n\n5. **When Ready for Recommendations**:\n   - Use the search_gift_hamper_products tool\n   - Provide detailed, personalized suggestions\n   - Include pricing breakdown with discounts\n   - Suggest packaging options\n\n6. **Handle Edge Cases**:\n   - If budget seems too low, suggest adjusting quantity\n   - If delivery date is too soon, mention express options\n   - If preferences don't match budget, suggest alternatives\n\nRemember: Be helpful, adaptive, and conversational. The customer might say anything - adapt to their style!",
+          "maxIterations": 15,
+          "returnIntermediateSteps": false,
+          "enableStreaming": true
+        }
+      },
+      "id": "6ac0dc34-0678-4fc8-ade9-abbd3799bb7f",
+      "name": "Dynamic AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        32,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "frequencyPenalty": 0.3,
+          "maxTokens": 500,
+          "presencePenalty": 0.3,
+          "temperature": 0.7
+        }
+      },
+      "id": "204e59bf-01f4-443c-9232-1fbc94f848ea",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "sessionId",
+        "contextWindowLength": 15
+      },
+      "id": "20c0f8da-aca4-4d0f-b37c-8e5cf7e6bf08",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "name": "search_gift_hamper_products",
+        "description": "Search for gift hamper products based on customer requirements. This tool searches through our product catalog to find items that match the budget, quantity, and preferences.",
+        "topK": 8
+      },
+      "id": "3c45d531-4d38-4d88-a143-f97c941772cc",
+      "name": "RAG Product Search",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        128,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "name": "calculate_final_price",
+        "description": "Calculate final price with discounts based on quantity",
+        "jsCode": "const budget = $input.budget || 0;\nconst quantity = $input.quantity || 1;\n\n// Calculate discount\nlet discountPercent = 0;\nif (quantity > 200) {\n  discountPercent = 40;\n} else {\n  discountPercent = 35;\n}\n\nconst discountMultiplier = (100 - discountPercent) / 100;\nconst finalPrice = budget * discountMultiplier;\nconst savedAmount = budget - finalPrice;\n\nreturn {\n  originalBudget: budget,\n  quantity: quantity,\n  discountPercent: discountPercent,\n  discountMultiplier: discountMultiplier,\n  finalPrice: Math.round(finalPrice),\n  savedAmount: Math.round(savedAmount),\n  pricePerUnit: Math.round(finalPrice / quantity)\n};"
+      },
+      "id": "af3b734e-836e-4ebf-9d79-4eb0822c6764",
+      "name": "Price Calculator Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        416,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "pineconeIndex": "gift-hamper-products",
+        "options": {
+          "pineconeNamespace": "products"
+        }
+      },
+      "id": "1571714b-7e72-4186-a3d2-1a848e7dece4",
+      "name": "Pinecone Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [
+        128,
+        528
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "aWTuoJ6ldBZ2gPsm",
+          "name": "PineconeApi account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d28e5e4e-9826-4421-86d3-e715788864c3",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        208,
+        736
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.conversationState }}",
+              "rightValue": "ready_for_recommendation",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "f60f23a2-5dab-48b0-bc4c-d1b4f5b71f4a"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9448baea-4c9d-4103-8bda-282e77cc5444",
+      "name": "Check If Ready",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        624,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate comprehensive order summary\nconst data = $input.item.json;\nconst extracted = data.extractedInfo;\n\n// Calculate pricing\nconst quantity = extracted.quantity || 1;\nconst budget = extracted.budget || 0;\nconst discountPercent = quantity > 200 ? 40 : 35;\nconst finalPrice = budget * (1 - discountPercent/100);\n\n// Generate order ID\nconst orderId = 'KGH-' + Date.now();\n\n// Format order details\nconst orderDetails = {\n  orderId: orderId,\n  sessionId: data.sessionId,\n  customer: {\n    sessionId: data.sessionId,\n    timestamp: new Date().toISOString()\n  },\n  requirements: {\n    budget: budget,\n    quantity: quantity,\n    deliveryDate: extracted.deliveryDate,\n    preferences: extracted.preferences\n  },\n  pricing: {\n    originalBudget: budget,\n    discountPercent: discountPercent,\n    discountAmount: budget * (discountPercent/100),\n    finalPrice: finalPrice,\n    pricePerUnit: finalPrice / quantity\n  },\n  status: 'pending_confirmation',\n  createdAt: new Date().toISOString()\n};\n\nreturn {\n  json: orderDetails\n};"
+      },
+      "id": "452bbf6d-de5b-40ef-b50c-136e1ea5c6c9",
+      "name": "Process Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "order_id",
+              "fieldValue": "={{ $json.orderId }}"
+            },
+            {
+              "fieldName": "session_id",
+              "fieldValue": "={{ $json.sessionId }}"
+            },
+            {
+              "fieldName": "requirements",
+              "fieldValue": "={{ JSON.stringify($json.requirements) }}"
+            },
+            {
+              "fieldName": "pricing",
+              "fieldValue": "={{ JSON.stringify($json.pricing) }}"
+            },
+            {
+              "fieldName": "status",
+              "fieldValue": "={{ $json.status }}"
+            }
+          ]
+        }
+      },
+      "id": "1d124718-68e9-4e82-8e47-bbd672462f81",
+      "name": "Store Order",
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        1072,
+        192
+      ]
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "NLU Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NLU Processor": {
+      "main": [
+        [
+          {
+            "node": "Dynamic AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dynamic AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Check If Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Dynamic AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Dynamic AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Product Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Dynamic AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Price Calculator Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Dynamic AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Ready": {
+      "main": [
+        [
+          {
+            "node": "Process Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Order": {
+      "main": [
+        [
+          {
+            "node": "Store Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "c1191be1-0e15-412c-bdf6-b871959bb79c",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-19T02:00:13.491Z",
+      "updatedAt": "2025-10-19T02:00:13.491Z",
+      "role": "workflow:owner",
+      "workflowId": "4kK3Oh0kF0jIlBnN",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
