@@ -1,0 +1,351 @@
+{
+  "createdAt": "2025-10-09T19:06:20.154Z",
+  "updatedAt": "2025-11-03T06:48:46.000Z",
+  "id": "61yjwbT7e2rbjLCn",
+  "name": "Get_YouTube_Videos_From_Channel",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channelId",
+              "value": "UCy6PzE-qeOKy-uDVZl_gfMg"
+            },
+            {
+              "name": "part",
+              "value": "snippet"
+            },
+            {
+              "name": "order",
+              "value": "date"
+            },
+            {
+              "name": "type",
+              "value": "video"
+            },
+            {
+              "name": "maxResults",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "152b930f-fad5-48cf-93a2-38f6f780513e",
+      "name": "Fetch YouTube Videos",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cAWTpPjxWun8tUIM",
+          "name": "Header Auth account - google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY",
+          "mode": "list",
+          "cachedResultName": "Youtube to blog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        560,
+        0
+      ],
+      "id": "3fa8d7e3-08dd-4dfe-81cf-09f1d389ead2",
+      "name": "Check Past Data",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY",
+          "mode": "list",
+          "cachedResultName": "Youtube to blog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QdzuRPpEX3FACHB19YrcdE6DIoOo6IY7JW_qjIQwFLY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Youtube Video Link": "={{ $json['Youtube Video Link'] }}",
+            "Status": "Ready",
+            "Video Title": "={{ $json['Video Title'] }}",
+            "Video Thumbnail": "={{ $json['Video Thumbnail'] }}",
+            "Video Id": "={{ $json['Video Id'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Youtube Video Link",
+              "displayName": "Youtube Video Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video Title",
+              "displayName": "Video Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video Thumbnail",
+              "displayName": "Video Thumbnail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video Id",
+              "displayName": "Video Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Transcript",
+              "displayName": "Transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Post Made?",
+              "displayName": "Post Made?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Linkedin Post Text",
+              "displayName": "Linkedin Post Text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        0
+      ],
+      "id": "56edbbab-3828-45bd-a0c9-aad0ea72be59",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be238904-d755-4a8b-b0c0-758d7aa994c6",
+              "name": "items",
+              "value": "={{ $json.items }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        384,
+        0
+      ],
+      "id": "e6a785f9-9a56-43ff-9f82-6583088b3192",
+      "name": "Prepare YouTube Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get YouTube videos from HTTP Request node\nconst youtubeData = $('Fetch YouTube Videos').first().json;\nconst youtubeVideos = youtubeData.items || [];\n\n// Get existing data from Google Sheets\nconst sheetData = $('Check Past Data').all();\n\n// Extract existing video IDs from sheet (check all 4 columns for duplicates)\nlet existingVideoIds = new Set();\nlet existingVideoLinks = new Set();\nlet existingTitles = new Set();\nlet existingThumbnails = new Set();\n\nif (sheetData.length > 0) {\n  sheetData.forEach(item => {\n    if (item.json['Video Id']) {\n      existingVideoIds.add(item.json['Video Id']);\n    }\n    if (item.json['Youtube Video Link']) {\n      existingVideoLinks.add(item.json['Youtube Video Link']);\n    }\n    if (item.json['Video Title']) {\n      existingTitles.add(item.json['Video Title']);\n    }\n    if (item.json['Video Thumbnail']) {\n      existingThumbnails.add(item.json['Video Thumbnail']);\n    }\n  });\n}\n\nconsole.log('YouTube videos found:', youtubeVideos.length);\nconsole.log('Existing videos in sheet:', existingVideoIds.size);\n\n// Filter out videos that already exist (check by Video ID primarily)\nconst newVideos = youtubeVideos.filter(video => {\n  const videoId = video.id.videoId;\n  const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;\n  \n  // Check if video already exists by any of the 4 criteria\n  const existsByVideoId = existingVideoIds.has(videoId);\n  const existsByUrl = existingVideoLinks.has(videoUrl);\n  const existsByTitle = existingTitles.has(video.snippet.title);\n  \n  const isNew = !existsByVideoId && !existsByUrl && !existsByTitle;\n  \n  console.log(`Video ${videoId}: ${isNew ? 'NEW' : 'EXISTS'}`);\n  return isNew;\n});\n\nconsole.log('New videos to add:', newVideos.length);\n\n// If no new videos, return empty to stop workflow\nif (newVideos.length === 0) {\n  console.log('No new videos found. Stopping workflow.');\n  return [];\n}\n\n// Get the current max row number from sheet\nlet nextRowNumber = 1;\nif (sheetData.length > 0) {\n  const rowNumbers = sheetData\n    .map(item => parseInt(item.json['row_number']) || 0)\n    .filter(num => !isNaN(num));\n  \n  if (rowNumbers.length > 0) {\n    nextRowNumber = Math.max(...rowNumbers) + 1;\n  }\n}\n\n// Format new videos for Google Sheets with all columns\nreturn newVideos.map((video, index) => {\n  const videoId = video.id.videoId;\n  const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;\n  \n  return {\n    json: {\n      'row_number': nextRowNumber + index,\n      'Youtube Video Link': videoUrl,\n      'Status': 'New',\n      'Video Title': video.snippet.title,\n      'Video Thumbnail': video.snippet.thumbnails.high?.url || video.snippet.thumbnails.default.url,\n      'Video Id': videoId,\n      'Transcript': '',\n      'Post Made?': 'No',\n      'Linkedin Post Text': ''\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "id": "5a342201-94a4-4178-be6a-07e78e4656b6",
+      "name": "Filter out videos that already exist"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4833420d-70ba-435d-8796-57289372ec8f",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "connections": {
+    "Fetch YouTube Videos": {
+      "main": [
+        [
+          {
+            "node": "Prepare YouTube Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Past Data": {
+      "main": [
+        [
+          {
+            "node": "Filter out videos that already exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare YouTube Data": {
+      "main": [
+        [
+          {
+            "node": "Check Past Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter out videos that already exist": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch YouTube Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "7f5bbcaa-0d2b-4482-8eea-ed1d576d4218",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-10-09T19:06:20.160Z",
+      "updatedAt": "2025-10-09T19:06:20.160Z",
+      "role": "workflow:owner",
+      "workflowId": "61yjwbT7e2rbjLCn",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
