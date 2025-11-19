@@ -1,0 +1,30 @@
+{
+  "createdAt": "2025-11-15T17:39:51.256Z",
+  "updatedAt": "2025-11-15T17:42:22.000Z",
+  "id": "adLYwyWMlru3Zfx5",
+  "name": "Cognigenai RAG ChatBot",
+  "active": false,
+  "isArchived": false,
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "3454d217-9493-4be4-a896-f576bcbf8013",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-15T17:39:51.261Z",
+      "updatedAt": "2025-11-15T17:39:51.261Z",
+      "role": "workflow:owner",
+      "workflowId": "adLYwyWMlru3Zfx5",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
