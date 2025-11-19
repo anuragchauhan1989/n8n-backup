@@ -1,0 +1,269 @@
+{
+  "createdAt": "2025-10-15T10:08:55.389Z",
+  "updatedAt": "2025-10-15T11:22:10.000Z",
+  "id": "tu7nkuQuVugqzcfT",
+  "name": "My workflow 36",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "list",
+          "value": "app6WaShKX2OlX0mS",
+          "cachedResultUrl": "https://airtable.com/app6WaShKX2OlX0mS",
+          "cachedResultName": "Google Reviews"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tbl0hOv9eA4EKhnLU",
+          "cachedResultUrl": "https://airtable.com/app6WaShKX2OlX0mS/tbl0hOv9eA4EKhnLU",
+          "cachedResultName": "Reviews"
+        },
+        "columns": {
+          "value": {
+            "Comment": "={{ $json.comment }}",
+            "Review ID": "={{ $json.reviewId }}",
+            "Reply Name": "={{ $json.name }}",
+            "Agent Reply": "={{ $json.reviewReply?.comment || '' }}",
+            "Star Rating": "={{ $json.starRating }}",
+            "Display Name": "={{ $json.reviewer.displayName }}",
+            "Reply Status": "New",
+            "Review Reply": "={{ $json.reviewReply?.comment || '' }}",
+            "Profile Photo URL": "={{ $json.reviewer.profilePhotoUrl }}"
+          },
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Review ID"
+          ]
+        },
+        "options": {
+          "typecast": true
+        },
+        "operation": "upsert"
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1648,
+        320
+      ],
+      "id": "4e3558b5-5ecf-4004-a9af-94d608fd43d2",
+      "name": "Create or update a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "review",
+        "operation": "getAll",
+        "account": {
+          "__rl": true,
+          "value": "accounts/116545851101517434562",
+          "mode": "list",
+          "cachedResultName": "Remy Gaskell"
+        },
+        "location": {
+          "__rl": true,
+          "value": "locations/2886037407121254131",
+          "mode": "list",
+          "cachedResultName": "locations/2886037407121254131"
+        },
+        "returnAll": true,
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.googleBusinessProfile",
+      "typeVersion": 1,
+      "position": [
+        816,
+        320
+      ],
+      "id": "b54e88c0-7b97-4dca-aba2-e8e08fff7da1",
+      "name": "Get many reviews",
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "hvbFvgH58ujjob7I",
+          "name": "Google Business Profile account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Check if new reviews came and store it inside airtable wih New Status",
+        "height": 240,
+        "width": 1216,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        496,
+        240
+      ],
+      "typeVersion": 1,
+      "id": "af43b5a1-bf69-4699-9692-08072258b2aa",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        592,
+        320
+      ],
+      "id": "03911cf2-7503-4076-ac04-8556636322fe",
+      "name": "Daily Cron - 07:00 AEST"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "app6WaShKX2OlX0mS",
+          "mode": "list",
+          "cachedResultName": "Google Reviews",
+          "cachedResultUrl": "https://airtable.com/app6WaShKX2OlX0mS"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl0hOv9eA4EKhnLU",
+          "mode": "list",
+          "cachedResultName": "Reviews",
+          "cachedResultUrl": "https://airtable.com/app6WaShKX2OlX0mS/tbl0hOv9eA4EKhnLU"
+        },
+        "id": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1232,
+        320
+      ],
+      "id": "b27eefff-5358-4661-9317-3553702eec9b",
+      "name": "Get All Existing Review IDs",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get current date and 5 days ago\nconst now = new Date();\nconst fiveDaysAgo = new Date(now.getTime() - (5 * 24 * 60 * 60 * 1000));\n\n// Filter reviews from the last 5 days\nconst recentReviews = $input.all().filter(item => {\n  if (!item.json.createTime) return false;\n  const reviewDate = new Date(item.json.createTime);\n  return reviewDate >= fiveDaysAgo;\n});\n\nreturn recentReviews;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        320
+      ],
+      "id": "d386d859-67d7-4047-86b9-04d10456ff08",
+      "name": "Filter Last 5 Days"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get existing Review IDs from Airtable\n// Note: Airtable returns data as json.records[]\nconst airtableData = $('Get All Existing Review IDs').all();\nconst existingReviewIds = new Set();\n\n// Extract Review IDs from the nested structure\nairtableData.forEach(item => {\n  if (item.json.records && Array.isArray(item.json.records)) {\n    item.json.records.forEach(record => {\n      if (record.fields && record.fields['Review ID']) {\n        existingReviewIds.add(record.fields['Review ID']);\n      }\n    });\n  }\n});\n\n// Get recent reviews from Google\nconst recentReviews = $('Filter Last 5 Days').all();\n\n// Filter out reviews that already exist in Airtable\nconst newReviews = recentReviews.filter(item => {\n  const reviewId = item.json.reviewId;\n  return reviewId && !existingReviewIds.has(reviewId);\n});\n\nreturn newReviews;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        320
+      ],
+      "id": "4d3e635d-97e5-48d5-adf2-0293b2a74700",
+      "name": "Filter Out Existing Reviews"
+    }
+  ],
+  "connections": {
+    "Get many reviews": {
+      "main": [
+        [
+          {
+            "node": "Filter Last 5 Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Cron - 07:00 AEST": {
+      "main": [
+        [
+          {
+            "node": "Get many reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Existing Review IDs": {
+      "main": [
+        [
+          {
+            "node": "Filter Out Existing Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Last 5 Days": {
+      "main": [
+        [
+          {
+            "node": "Get All Existing Review IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Out Existing Reviews": {
+      "main": [
+        [
+          {
+            "node": "Create or update a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "e4b38234-bfa2-4ea5-99bb-78698deab26f",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-15T10:08:55.445Z",
+      "updatedAt": "2025-10-15T10:08:55.445Z",
+      "role": "workflow:owner",
+      "workflowId": "tu7nkuQuVugqzcfT",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
