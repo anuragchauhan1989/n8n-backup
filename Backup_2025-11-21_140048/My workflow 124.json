@@ -1,0 +1,674 @@
+{
+  "createdAt": "2025-11-21T05:29:18.116Z",
+  "updatedAt": "2025-11-21T07:39:16.000Z",
+  "id": "tEAysGUo1JINQmqR",
+  "name": "My workflow 124",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -816,
+        80
+      ],
+      "id": "58b82db7-4746-457b-931a-a636ad202d00",
+      "name": "9am"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -800,
+        432
+      ],
+      "id": "cf9de61d-a86e-45b0-beee-be7a37bd17ac",
+      "name": "12pm"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.Post }}",
+        "additionalFields": {
+          "attachments": ""
+        }
+      },
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        128,
+        384
+      ],
+      "id": "302350dc-b8f0-4ec2-a1fb-350b4f2aa8d2",
+      "name": "Create Tweet",
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "AMzsx5ccv8XlFxnV",
+          "name": "X account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1AK8wDYeLm4cVV1K1Q1gyaFPtsBkoTR7C3Dq073vwJqs",
+          "mode": "list",
+          "cachedResultName": "Social Media Post's",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AK8wDYeLm4cVV1K1Q1gyaFPtsBkoTR7C3Dq073vwJqs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AK8wDYeLm4cVV1K1Q1gyaFPtsBkoTR7C3Dq073vwJqs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Linkedin Post Container').item.json.row_number }}",
+            "Status": "published"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Post",
+              "displayName": "Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        48
+      ],
+      "id": "6103b741-7cbe-4323-ba41-e8c7a02b8426",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1vKYZqKlyI0mQi-n5PrtekjcCbOHMCtBqt3kmukw1c6E",
+          "mode": "list",
+          "cachedResultName": "X Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vKYZqKlyI0mQi-n5PrtekjcCbOHMCtBqt3kmukw1c6E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AK8wDYeLm4cVV1K1Q1gyaFPtsBkoTR7C3Dq073vwJqs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('X Post Container').item.json.row_number }}",
+            "Status": "published"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Post",
+              "displayName": "Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        384
+      ],
+      "id": "1c095c20-0838-45df-8852-dae4c1b53a75",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vKYZqKlyI0mQi-n5PrtekjcCbOHMCtBqt3kmukw1c6E",
+          "mode": "list",
+          "cachedResultName": "X Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vKYZqKlyI0mQi-n5PrtekjcCbOHMCtBqt3kmukw1c6E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vKYZqKlyI0mQi-n5PrtekjcCbOHMCtBqt3kmukw1c6E/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "waiting"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -64,
+        384
+      ],
+      "id": "0cf6f593-64ee-4e7a-acc7-30505cdf7e22",
+      "name": "X Post Container",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1AK8wDYeLm4cVV1K1Q1gyaFPtsBkoTR7C3Dq073vwJqs",
+          "mode": "list",
+          "cachedResultName": "Linkedin Post's",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AK8wDYeLm4cVV1K1Q1gyaFPtsBkoTR7C3Dq073vwJqs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AK8wDYeLm4cVV1K1Q1gyaFPtsBkoTR7C3Dq073vwJqs/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "waiting"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -80,
+        80
+      ],
+      "id": "1b9aa917-aa02-4262-96d1-d3ccd7d1cac3",
+      "name": "Linkedin Post Container",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4ce41db1-3b30-4d33-8d90-e53f91681d09",
+              "leftValue": "={{ $json.Image }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "4abbedfb-025a-418b-897c-bf16da675895",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        80
+      ],
+      "id": "ff182c82-c3a8-453d-a20d-0c3972ea3968",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "person": "fD6ESJ7lQR",
+        "text": "={{ $json.Post }}",
+        "shareMediaCategory": "=",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        336,
+        128
+      ],
+      "id": "21e16d19-93b2-4aed-bea4-9325d5771c3d",
+      "name": "Without Image",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "5L42H8ZJFVu2qfGn",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "person": "fD6ESJ7lQR",
+        "text": "={{ $('If').item.json.Post }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {
+          "visibility": "PUBLIC"
+        }
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -48
+      ],
+      "id": "29128d92-5f03-4df0-8d64-780ff73ab31f",
+      "name": "With Image",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "5L42H8ZJFVu2qfGn",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.Image }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        240,
+        -48
+      ],
+      "id": "266b380a-0a71-4ead-91f4-d9c65a45dc73",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OF1WKdd2PL1HcLqp",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/technology/rss.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        -672,
+        80
+      ],
+      "id": "3a542dfa-8c88-4802-8f24-1aa409f69e49",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=📝 AI Agent Node Prompt for Social Media Post Creation\nThis prompt is designed to be used in the System Prompt field of the n8n AI Agent Node. It clearly defines the agent's role, constraints (latest/relevant AI news), and the required output format.\n\nSystem Prompt\nYour Role: You are an expert social media content curator for a dedicated AI niche account. Your goal is to transform provided news data into highly engaging, concise social media posts (e.g., for X/Twitter or LinkedIn).\n\nInput Data: You will receive a batch of news articles, which includes titles, summaries, and source links.\n\nCritical Constraints:\n\nRelevance & Timeliness: STRICTLY analyze the input data and select ONLY the top one (1) most recent and relevant news item that is highly interesting to a tech-savvy audience interested in Artificial Intelligence. Discard all outdated, non-AI-related, or low-impact news.\n\nOutput Format: Create a single, high-quality social media post based only on the selected news item.\n\nPost Requirements:\n\nConcise Hook: Start with a strong, engaging opening sentence.\n\nKey Insight: Summarize the core takeaway of the news in 1-2 sentences.\n\nCall to Action (CTA): Include a short, relevant CTA like \"Read more:\" or \"What do you think?\".\n\nHashtags: Use 3-5 high-impact, relevant hashtags (e.g., #AI, #TechNews, #GenerativeAI).\n\nLength: Keep the total post length under 280 characters (optimal for most platforms).\n\nOutput: Provide only the final, complete social media post text, with no preamble, explanation, or additional text.\n\nUser Message/Input Configuration\nIn the User Message field of the AI Agent Node, pass the aggregated news data using an expression like:\n\nInput News Data: {{ JSON.stringify($json.all_news) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -384,
+        80
+      ],
+      "id": "4ec113d7-d0e2-4af7-a44d-4958c09fdf87",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        240
+      ],
+      "id": "a6e621e3-acd1-462c-a738-557deaec306e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "all_news",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        80
+      ],
+      "id": "7fd50f83-a3df-401e-9bd3-0f5d08dd43e5",
+      "name": "Aggregate"
+    }
+  ],
+  "connections": {
+    "9am": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12pm": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Tweet": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X Post Container": {
+      "main": [
+        [
+          {
+            "node": "Create Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin Post Container": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Without Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Without Image": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "With Image": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "With Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Linkedin Post Container",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "X Post Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c196c3dc-2d34-4358-8b8e-b2a04eada1bf",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-21T05:29:18.121Z",
+      "updatedAt": "2025-11-21T05:29:18.121Z",
+      "role": "workflow:owner",
+      "workflowId": "tEAysGUo1JINQmqR",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
