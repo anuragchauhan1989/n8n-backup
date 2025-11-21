@@ -1,0 +1,330 @@
+{
+  "createdAt": "2025-10-17T10:59:30.502Z",
+  "updatedAt": "2025-10-17T13:24:43.000Z",
+  "id": "snEUpgaRUTEVAjoU",
+  "name": "My workflow 100",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa",
+            "mode": "list",
+            "cachedResultName": "ZenshopInfluencer",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        16,
+        48
+      ],
+      "id": "798476dc-130f-48d6-83d2-aa3b7d2ac18d",
+      "name": "list_influencer_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        592,
+        64
+      ],
+      "id": "85a1f283-6821-4256-80d7-de925b13afd2",
+      "name": "influencer_image_to_base_64"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      { \"text\": \"Create a realistic lifestyle photo showcasing the hair product from image 1. Generate a scene where someone with beautiful, long, flowing hair similar in style and color to the hair extensions shown in image 1 is photographed in a casual, relatable setting like outdoors, at home, or in an everyday location. Use the person's appearance from image 2 as reference for facial features and style. They should look confident and happy, with the hair clearly visible and flowing naturally. Use angle variation {{ $runIndex % 5 }}: 0=front view facing camera with hair framing the face, 1=side profile showing hair length and volume, 2=back view showcasing the full length and texture, 3=three-quarter angle showing both face and hair flow, 4=dynamic pose with hair in motion or being touched naturally. The photo should feel authentic like a friend took it, not overly professional. The lighting should be natural and flattering, emphasizing the hair's texture, shine, and length. Only return the final generated image.\" },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/png\",\n          \"data\": \"{{ $node['product_image_to_base64'].json.data }}\"\n        }\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/jpeg\",\n          \"data\": \"{{ $node['influencer_image_to_base_64'].json.data }}\"\n        }\n      }\n    ]\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        64
+      ],
+      "id": "98a6aef5-a2ab-41d9-9607-3934d4e3a93d",
+      "name": "generate_image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        64
+      ],
+      "id": "c452525e-40c5-4062-9028-68f515ab6968",
+      "name": "get_image"
+    },
+    {
+      "parameters": {
+        "name": "=AD Image #{{ $runIndex + 1 }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1",
+          "mode": "list",
+          "cachedResultName": "Zenshop Ad creative",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1296,
+        64
+      ],
+      "id": "4cc9697a-9dcd-4402-b4ad-25887ab540a6",
+      "name": "upload_image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "524da01b-f8b9-4c2c-9e28-319455903e4d",
+              "name": "=image_result",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        960,
+        64
+      ],
+      "id": "fb5a6507-dee6-44eb-b61d-bb19608c2cb7",
+      "name": "set_result"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        416,
+        64
+      ],
+      "id": "9a18abce-c3c9-45e3-a26f-57c2328e4032",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "product_image",
+              "type": "any"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -160,
+        48
+      ],
+      "id": "6ada8e55-3400-4227-9216-ddfaf392616a",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        208,
+        48
+      ],
+      "id": "7aa0c28d-7bd0-4fce-87be-8ad925be06da",
+      "name": "Loop Over Items"
+    }
+  ],
+  "connections": {
+    "list_influencer_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "influencer_image_to_base_64": {
+      "main": [
+        [
+          {
+            "node": "generate_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_image": {
+      "main": [
+        [
+          {
+            "node": "set_result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_image": {
+      "main": [
+        [
+          {
+            "node": "upload_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload_image": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_result": {
+      "main": [
+        [
+          {
+            "node": "get_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "influencer_image_to_base_64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "list_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "c3b7511a-3dd4-48b0-a130-112b9d668c01",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-17T10:59:30.507Z",
+      "updatedAt": "2025-10-17T10:59:30.507Z",
+      "role": "workflow:owner",
+      "workflowId": "snEUpgaRUTEVAjoU",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
