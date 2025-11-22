@@ -1,0 +1,346 @@
+{
+  "createdAt": "2025-09-19T10:43:59.795Z",
+  "updatedAt": "2025-09-19T12:05:42.000Z",
+  "id": "EeHtWo2bSS1yPzgb",
+  "name": "Whatsapp appointment booking",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "=# Persona & Tone \nYou are a helpful WhatsApp appointment chat assistant\n\n## Context\nWhatsApp users come to chat with you to book appointments\n\n## Task & Format\n* When a new chat starts, always check if the user already exists in the system by their WhatsApp number.\n   - If the user’s name and email are already stored, greet them personally by name and skip asking again. \n     Example: “Welcome back, Rajat! How can I assist you with your appointments today?”\n   - If the user’s details are not stored, ask for their name and email before proceeding.\n* When a new chat starts, also check if the user already has an existing booking in the calendar using get_all_events.\n   - If a booking exists, greet the user, remind them of their appointment, and ask if they want to keep, reschedule, or cancel.\n   - If no booking exists, proceed with the normal booking flow.\n* create_event to book an appointment in the calendar\n* get_all_events to get all appointments from the calendar to check appointment overlapping\n* notify the user with relevant details for their appointment\n* After confirming the booking, inform the user:  \n   “Your appointment is booked successfully. Please check your email calendar for booking confirmation.  \n   Is there anything else I can help you with?”\n* If the user replies “No” or indicates they don’t need more help, end the chat gracefully with a polite closing message  \n   (e.g., “Thank you for using our service. Have a wonderful day 👋”) \n* delete_event to cancel the appointment, confirm with user before deleting\n\n## Example\n* Welcome back, Rajat! I see you already have an appointment on  \n15th August 2025 to ‘meet Rajat’ from 1 pm to 2 pm.  \nWould you like to keep it, reschedule, or cancel?\n\n* If no booking is found:  \n“Hi, how can I assist you today? May I know your name and email to proceed with your appointment?”\n\n* Your appointment is booked successfully  \n15th August 2025 to ‘meet Rajat’ from 1 pm to 2 pm.  \nPlease check your email calendar for booking confirmation.  \nIs there anything else I can help you with?  \n\n* If user says “No”:  \n“Thank you for using our service. Have a wonderful day 👋”\n\n## Additional Context\n* The time now is {{ $now }}\n* Do not overlap appointments. Get all appointments to check for overlapping appointments and suggest to the user to choose another time\n* Do not assume anything; ask questions when you are unsure\n* Always store the user’s name and email with their WhatsApp number for future conversations, so you don’t need to ask again next time.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "31a1bd75-2cf6-42cf-ac6c-da10fe4e60a5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.messages[0].from }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        224
+      ],
+      "id": "00b87bb6-2f6d-4601-abfe-91d741c18908",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        224
+      ],
+      "id": "7465408d-115c-4624-ba79-a1c1e7b80347",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "sinisyssoft@gmail.com",
+          "mode": "list",
+          "cachedResultName": "sinisyssoft@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "attendees": [],
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        224
+      ],
+      "id": "ed67b5e3-f7d0-4341-a620-6acc4d5803b1",
+      "name": "create_event"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "sinisyssoft@gmail.com",
+          "mode": "list",
+          "cachedResultName": "sinisyssoft@gmail.com"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        192,
+        224
+      ],
+      "id": "8be4fc40-d459-40e2-ada3-26b9fd71b6c3",
+      "name": "get_all_events"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "sinisyssoft@gmail.com",
+          "mode": "list",
+          "cachedResultName": "sinisyssoft@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        224
+      ],
+      "id": "50857e3f-041d-4cad-97c8-89fd659ee7fc",
+      "name": "delete_event"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        256
+      ],
+      "id": "43114cd0-7a5e-4a18-8879-95774ef3954b",
+      "name": "WhatsApp Trigger",
+      "webhookId": "e6077b4c-50a1-42f9-99c0-8452847a0181"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "846916861830848",
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        528,
+        96
+      ],
+      "id": "c69aa858-7a3c-481e-a267-cad1b76b72f5",
+      "name": "Send message",
+      "webhookId": "ad6e38ca-69da-4f69-94f3-e1b8a175a621"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.messages[0].text.body }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "201617cb-7409-42b3-b926-9f4931e32ca2"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "beb29c09-379b-49f0-9549-8c7be07de3d8",
+                    "leftValue": "={{ $json.statuses[0].status }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -416,
+        256
+      ],
+      "id": "6907e1eb-b1ac-419c-bfc6-f7ff4abd3805",
+      "name": "Switch"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        64,
+        400
+      ],
+      "id": "8871bc1c-cbf3-47ae-9f54-adde70661863",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create_event": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_all_events": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delete_event": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "0b4e99bd-61bd-4569-8a7e-5297e4de5471",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-19T10:43:59.801Z",
+      "updatedAt": "2025-09-19T10:43:59.801Z",
+      "role": "workflow:owner",
+      "workflowId": "EeHtWo2bSS1yPzgb",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
