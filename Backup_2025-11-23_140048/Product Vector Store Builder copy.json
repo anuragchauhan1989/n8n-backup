@@ -1,0 +1,367 @@
+{
+  "createdAt": "2025-10-12T04:17:28.744Z",
+  "updatedAt": "2025-11-23T08:22:01.000Z",
+  "id": "r1FOiXUyVz49OTbu",
+  "name": "Product Vector Store Builder copy",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "0b1b3238-b213-42b1-ac54-ef1f47a9bc42",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc",
+          "mode": "list",
+          "cachedResultName": "Kiwi - Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1082143246,
+          "mode": "list",
+          "cachedResultName": "Packaging Material",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc/edit#gid=1082143246"
+        },
+        "options": {}
+      },
+      "id": "a513e2a6-b70d-43b7-909c-38d4e75b3532",
+      "name": "Fetch Packaging Materials",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        464,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc",
+          "mode": "list",
+          "cachedResultName": "Kiwi - Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "List of Items",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "13177862-a49d-4a5a-a7ad-17146635c03d",
+      "name": "Fetch Food Items",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        464,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc",
+          "mode": "list",
+          "cachedResultName": "Kiwi - Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 742096875,
+          "mode": "list",
+          "cachedResultName": "None Food Items",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yY6XaFP1YhHKEOthMCTUen-UHIM3BS064jG-ucl8Igc/edit#gid=742096875"
+        },
+        "options": {}
+      },
+      "id": "f37777f9-f2f8-4ed3-8ade-ad248e1044d9",
+      "name": "Fetch Decorative Items",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        464,
+        576
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "68ebc3a6-5bbe-47e0-8c9f-335d2850eca7",
+      "name": "Merge All Products",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        688,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const allProducts = $input.all();\n\nconst documents = allProducts.map(product => {\n  const data = product.json;\n  \n  let length = 0, width = 0, height = 0, volume = 0;\n  \n  if (data['Size (inch.)'] || data['Size (LxBxH)'] || data.Size) {\n    const sizeStr = (data['Size (inch.)'] || data['Size (LxBxH)'] || data.Size || '').toString();\n    const sizeMatch = sizeStr.match(/([0-9.]+)\\\\s*[x×]\\\\s*([0-9.]+)\\\\s*[x×]\\\\s*([0-9.]+)/i);\n    \n    if (sizeMatch) {\n      length = parseFloat(sizeMatch[1]);\n      width = parseFloat(sizeMatch[2]);\n      height = parseFloat(sizeMatch[3]);\n      volume = length * width * height;\n    }\n  }\n  \n  if (data.Volume) {\n    volume = parseFloat(data.Volume) || volume;\n  }\n  \n  const mrp = parseFloat(data.MRP || data['# MRP'] || 0);\n  const discounted35 = mrp * 0.65;\n  const discounted40 = mrp * 0.60;\n  const weight = data.Weight ? parseFloat(data.Weight.toString().replace(/[^0-9.]/g, '')) : 0;\n  \n  const text = `Product: ${data['Item Name'] || data.ItemName || 'Unknown'}\\nCategory: ${data.Category || 'General'}\\nMRP: Rs ${mrp}\\nPrice at 35% discount: Rs ${discounted35.toFixed(2)}\\nPrice at 40% discount: Rs ${discounted40.toFixed(2)}\\nSize: ${length}x${width}x${height} ${data['Size (inch.)'] ? 'inches' : 'cm'}\\nVolume: ${volume} cubic units\\nWeight: ${weight}g\\nType: ${data['Type Of Packaging'] || data.Category || ''}`.trim();\n\n  return {\n    json: {\n      pageContent: text,\n      metadata: {\n        name: data['Item Name'] || data.ItemName,\n        category: data.Category,\n        mrp: mrp,\n        price35: discounted35,\n        price40: discounted40,\n        length: length,\n        width: width,\n        height: height,\n        volume: volume,\n        weight: weight,\n        packagingType: data['Type Of Packaging'] || '',\n        isPackaging: data.Category === 'Packaging',\n        lastUpdated: new Date().toISOString()\n      }\n    }\n  };\n});\n\nreturn documents;"
+      },
+      "id": "8abbbd44-abaf-4a38-9fe6-a51622c3a772",
+      "name": "Prepare Product Documents",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const totalProducts = $input.all().length;\n\nreturn {\n  json: {\n    status: 'success',\n    message: 'Product index updated successfully',\n    totalProductsIndexed: totalProducts,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "a99f60c8-d29b-48d3-bb94-29570da6fa14",
+      "name": "Log Completion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "akragtest",
+          "mode": "list",
+          "cachedResultName": "akragtest"
+        },
+        "options": {
+          "pineconeNamespace": "NEWRAG"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1136,
+        384
+      ],
+      "id": "8f7570c6-213a-4265-af18-64e79537a0e7",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "aWTuoJ6ldBZ2gPsm",
+          "name": "PineconeApi account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        592
+      ],
+      "id": "e1f384b8-7614-45bd-9973-14c27a197338",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AddN13YCTv8VpGh7",
+          "name": "Google Gemini(PaLM) Api account -cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        592
+      ],
+      "id": "474468bb-49a5-491f-84ae-b3768e47724c",
+      "name": "Default Data Loader"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Packaging Materials",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Food Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Decorative Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Packaging Materials": {
+      "main": [
+        [
+          {
+            "node": "Merge All Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Food Items": {
+      "main": [
+        [
+          {
+            "node": "Merge All Products",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Fetch Decorative Items": {
+      "main": [
+        [
+          {
+            "node": "Merge All Products",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge All Products": {
+      "main": [
+        [
+          {
+            "node": "Prepare Product Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Product Documents": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Log Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": [
+        6
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "555418a8-037c-454b-9205-dbfeb84d2564",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-10-12T04:17:28.746Z",
+      "updatedAt": "2025-10-12T04:17:28.746Z",
+      "role": "workflow:owner",
+      "workflowId": "r1FOiXUyVz49OTbu",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
