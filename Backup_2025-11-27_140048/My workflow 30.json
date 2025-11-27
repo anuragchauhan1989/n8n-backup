@@ -1,0 +1,357 @@
+{
+  "createdAt": "2025-10-11T09:28:46.459Z",
+  "updatedAt": "2025-10-11T12:56:12.000Z",
+  "id": "L6sfOrXiZbNWgJnZ",
+  "name": "My workflow 30",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// COMPLETE FIXED Conversation Manager\nconst body = $input.item.json.body || $input.item.json;\nconst userMessage = body.message || '';\nconst currentStep = body.step || 0;\nconst sessionData = body.sessionData || {};\n\nconst questions = [\n  { id: 0, field: 'budget', question: 'What is your Budget per piece? (e.g., 1000/-)', type: 'number' },\n  { id: 1, field: 'quantity', question: 'What is your quantity? (e.g., 100pcs)', type: 'number' },\n  { id: 2, field: 'deadline', question: 'When do you need it? (e.g., 10th Oct)', type: 'text' },\n  { id: 3, field: 'hasReference', question: 'Do you have any reference image? (yes/no)', type: 'boolean' },\n  { id: 4, field: 'itemPreference', question: 'What items would you like? (e.g., 4 dry fruits, diya, candle, chips)', type: 'text' },\n  { id: 5, field: 'packagingPreference', question: 'Any packaging preference? (e.g., box type, eco-friendly)', type: 'text' }\n];\n\n// FIXED: Save current answer BEFORE incrementing step\nif (userMessage && currentStep < questions.length) {\n  const currentQuestion = questions[currentStep];\n  sessionData[currentQuestion.field] = userMessage;\n}\n\n// Calculate next step\nconst nextStep = currentStep + 1;\nconst isComplete = nextStep > questions.length;\n\n// Get next question (if conversation continues)\nconst nextQuestion = nextStep < questions.length ? questions[nextStep] : null;\n\n// Bulk discount detection - only when user answers quantity question\nlet specialMessage = null;\nif (currentStep === 1 && userMessage) {\n  const qty = parseInt(userMessage.replace(/[^0-9]/g, ''));\n  if (qty >= 200) {\n    specialMessage = '🎉 Great news! Orders of 200+ pieces get 40% off MRP!';\n  } else if (qty > 0 && qty < 200) {\n    specialMessage = '💡 Tip: Orders above 200 pieces get 40% discount. Below 200 pieces get 35% discount.';\n  }\n}\n\nreturn {\n  json: {\n    currentStep: currentStep,\n    nextStep: nextStep,\n    userMessage: userMessage,\n    sessionData: sessionData,\n    nextQuestion: nextQuestion,\n    specialMessage: specialMessage,\n    isComplete: isComplete,\n    shouldRunAI: isComplete, // CRITICAL: Only run AI when all questions answered\n    sessionId: body.sessionId || $execution.id,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "ccbf4420-66ee-4974-b420-02e91cdd72fd",
+      "name": "Conversation Manager",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1088,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI recommendations and extract structured data\nconst aiResponse = $('RAG: Smart Product + Packaging Selection').first().json;\nconst sessionData = $('Conversation Manager').item.json.sessionData;\n\nconst responseText = aiResponse.text || aiResponse.response || '';\n\n// Extract recommended box\nconst boxMatch = responseText.match(/Box:\\s*([^\\n]+)/i);\nconst sizeMatch = responseText.match(/Size:\\s*([0-9.]+)\\s*[x×]\\s*([0-9.]+)\\s*[x×]\\s*([0-9.]+)/i);\nconst packagingCostMatch = responseText.match(/Packaging:\\s*Rs\\s*([0-9,]+)/i);\n\nconst recommendedBox = {\n  name: boxMatch ? boxMatch[1].trim() : 'Medium Box',\n  length: sizeMatch ? parseFloat(sizeMatch[1]) : 30,\n  width: sizeMatch ? parseFloat(sizeMatch[2]) : 20,\n  height: sizeMatch ? parseFloat(sizeMatch[3]) : 15,\n  cost: packagingCostMatch ? parseInt(packagingCostMatch[1].replace(/,/g, '')) : 300\n};\n\nrecommendedBox.dimensions = `${recommendedBox.length}x${recommendedBox.width}x${recommendedBox.height}`;\n\nreturn {\n  json: {\n    aiFullResponse: responseText,\n    recommendedBox: recommendedBox,\n    sessionData: sessionData,\n    retrievedProducts: aiResponse.sourceDocuments?.length || 0\n  }\n};"
+      },
+      "id": "04cd962a-17ba-44b9-8561-c9e0f5dccbde",
+      "name": "Parse AI Recommendations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// COMPLETE FIXED Format Conversation Response\nconst convData = $('Conversation Manager').item.json;\n\n// Safely try to get AI data (only exists when shouldRunAI = true)\nlet aiData = null;\ntry {\n  const aiNode = $('Parse AI Recommendations').all();\n  if (aiNode && aiNode.length > 0) {\n    aiData = aiNode[0].json;\n  }\n} catch (error) {\n  // Node hasn't executed yet, aiData remains null\n}\n\nlet response = {\n  success: true,\n  conversationComplete: convData.isComplete,\n  currentStep: convData.nextStep,\n  sessionId: convData.sessionId,\n  sessionData: convData.sessionData\n};\n\n// CASE 1: Conversation complete with AI recommendations\nif (convData.isComplete && aiData?.aiFullResponse) {\n  response.message = \"Thank you for providing all the details!\\n\\n\" + \n                     \"Here are my recommendations:\\n\\n\" +\n                     aiData.aiFullResponse + \n                     \"\\n\\nWould you like to proceed with this recommendation or make any changes?\";\n  response.aiRecommendations = aiData.aiFullResponse;\n  response.packagingSuggestion = aiData.recommendedBox;\n  response.productsFound = aiData.retrievedProducts;\n  \n// CASE 2: Conversation complete but no AI data (error case)\n} else if (convData.isComplete) {\n  response.message = \"Thank you! I have collected all your requirements:\\n\\n\" +\n                     \"Budget: Rs \" + convData.sessionData.budget + \" per piece\\n\" +\n                     \"Quantity: \" + convData.sessionData.quantity + \" pieces\\n\" +\n                     \"Deadline: \" + convData.sessionData.deadline + \"\\n\" +\n                     \"Items: \" + convData.sessionData.itemPreference + \"\\n\" +\n                     \"Packaging: \" + convData.sessionData.packagingPreference + \"\\n\\n\" +\n                     \"Processing your hamper recommendations...\";\n  \n// CASE 3: Conversation in progress (steps 0-4)\n} else if (convData.nextQuestion) {\n  let message = \"\";\n  \n  if (convData.specialMessage) {\n    message += convData.specialMessage + \"\\n\\n\";\n  }\n  \n  message += convData.nextQuestion.question;\n  \n  response.message = message;\n  response.nextQuestion = convData.nextQuestion;\n  \n  if (convData.nextStep === 3) {\n    response.imageUploadEnabled = true;\n    response.message += \"\\n\\nYou can upload a reference image if you have one.\";\n  }\n  \n// CASE 4: Fallback\n} else {\n  response.message = 'Processing your request...';\n}\n\nreturn { json: response };"
+      },
+      "id": "0622d538-567f-4287-9764-7d54926f1dc5",
+      "name": "Format Conversation Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "c88afdc9-7012-4a22-a4ac-9dd56afcd335",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        176,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "session",
+              "name": "sessionData",
+              "value": "={{ $('Conversation Manager').item.json.sessionData }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "24891b29-df63-4e99-9858-0eb957d74fc7",
+      "name": "Pass Session Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -720,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hamper-chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c01fb83f-1118-4676-be82-8c3aae5b007c",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1280,
+        16
+      ],
+      "webhookId": "96af4488-f69e-4be0-89c8-2905e32ba98c"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{\n  'You are an expert gift hamper consultant. Analyze the customer requirements and recommend suitable products from the catalog.\\n\\n' +\n  '📋 Customer Requirements:\\n' +\n  '• Budget per piece: Rs ' + $json.sessionData.budget + '\\n' +\n  '• Quantity: ' + $json.sessionData.quantity + ' pieces\\n' +\n  '• Deadline: ' + $json.sessionData.deadline + '\\n' +\n  '• Has reference: ' + ($json.sessionData.hasReference || 'No') + '\\n' +\n  '• Item preferences: ' + $json.sessionData.itemPreference + '\\n' +\n  '• Packaging preference: ' + ($json.sessionData.packagingPreference || 'Standard') + '\\n\\n' +\n  '🎯 Please provide:\\n' +\n  '1. Product recommendations that fit within the budget\\n' +\n  '2. Suggested box type and dimensions\\n' +\n  '3. Packaging cost estimate\\n' +\n  '4. Total cost breakdown\\n\\n' +\n  '📦 Format your response as:\\n' +\n  'Box: [name]\\n' +\n  'Size: [L x W x H] cm\\n' +\n  'Packaging: Rs [cost]\\n' +\n  'Products: [list]\\n' +\n  'Total Cost: Rs [amount] per piece'\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        112
+      ],
+      "id": "0e19d397-9f8f-46cd-8b4d-7483dbd44074",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the product catalog for gift hamper items including dry fruits, sweets, candles, diyas, chocolates, and packaging boxes. Returns product names, prices, and specifications.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "raagchatbot",
+          "mode": "list",
+          "cachedResultName": "raagchatbot"
+        },
+        "options": {
+          "pineconeNamespace": "cragtest"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -432,
+        336
+      ],
+      "id": "c42bdf3b-ca89-4c5a-8510-07b95bec1ede",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "aWTuoJ6ldBZ2gPsm",
+          "name": "PineconeApi account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        512
+      ],
+      "id": "90675eb8-0b59-42c9-a91a-3d3fce20b406",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a68d964c-9474-4510-92c7-12ff76fd44ab",
+              "leftValue": "={{ $json.shouldRunAI }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -912,
+        16
+      ],
+      "id": "7a5509d7-a8c3-41bd-b9f1-607d06730628",
+      "name": "If"
+    }
+  ],
+  "connections": {
+    "Conversation Manager": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Format Conversation Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Conversation Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pass Session Data": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Conversation Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Message a model",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Format Conversation Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pass Session Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c4762676-7624-40e7-9ecd-22eed45cc30d",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-10-11T09:28:46.462Z",
+      "updatedAt": "2025-10-11T09:28:46.462Z",
+      "role": "workflow:owner",
+      "workflowId": "L6sfOrXiZbNWgJnZ",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
