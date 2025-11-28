@@ -1,0 +1,633 @@
+{
+  "createdAt": "2025-11-04T13:15:36.016Z",
+  "updatedAt": "2025-11-25T08:05:33.000Z",
+  "id": "cvwKvYo1fnLhw9HG",
+  "name": "Wlecome Experience Agent",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-form-submission",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "defab37a-5edd-4527-9e5c-8611422a284e",
+      "name": "Webhook - Lead Form Submission",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -96
+      ],
+      "webhookId": "lead-form-webhook"
+    },
+    {
+      "parameters": {},
+      "id": "3392139b-1004-46aa-8c8a-2f8b9e21d8f7",
+      "name": "Supabase - Insert Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -96
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "c4c1c686-bba5-40c5-95dd-849ff29f9b14",
+      "name": "Audit Log - Form Submitted",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -96
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  \"success\": true,\n  \"message\": \"Form submitted successfully\",\n  \"redirect_url\": \"https://yourapp.com/payment?email=\" + $json.email + \"&lead_id=\" + $('Supabase - Insert Lead').item.json.id\n}) }}",
+        "options": {}
+      },
+      "id": "cbcd8c0f-d298-4452-9ad8-faaca7cec48e",
+      "name": "Respond - Form Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payment-success",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "876b1387-f68b-441a-b6b7-7ac79a172487",
+      "name": "Webhook - Payment Success",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        144,
+        128
+      ],
+      "webhookId": "payment-success-webhook"
+    },
+    {
+      "parameters": {
+        "operation": "update"
+      },
+      "id": "b0c4b0d2-da5a-4152-9455-ad2a305e2f2f",
+      "name": "Supabase - Update Payment Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        368,
+        128
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert"
+      },
+      "id": "b939e553-77a4-48ae-b10a-f64159202c65",
+      "name": "Audit Log - Payment Completed",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        592,
+        128
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-api.com/subscriptions/assign",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "name": "subscription_id",
+              "value": "={{ $json.subscription_id }}"
+            },
+            {
+              "name": "plan_type",
+              "value": "={{ $json.plan_type || 'standard' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c666cdb8-ddba-4f82-824f-0bbf804f2d1c",
+      "name": "API - Assign Subscription",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        816,
+        128
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-api.com/users/create-account",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "subscription_id",
+              "value": "={{ $json.subscription_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "761463b2-38b3-4fa1-afcc-a6886c220bcf",
+      "name": "API - Create User Account",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1024,
+        128
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert"
+      },
+      "id": "bcaffc28-5a80-4eb8-a8ac-f22b3718ede0",
+      "name": "Audit Log - Account Created",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        112
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Q73MSqamXZ7oNsc2",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  \"success\": true,\n  \"message\": \"Account created successfully\",\n  \"show_popup\": true,\n  \"popup_message\": \"Please book your assessment call\",\n  \"assessment_booking_url\": \"https://yourapp.com/book-assessment?user_id=\" + $json.user_id\n}) }}",
+        "options": {}
+      },
+      "id": "8733a3eb-990b-4916-903c-a05d0ac81b56",
+      "name": "Respond - Show Assessment Popup",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "book-assessment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ede7be01-7ce3-4339-b5d1-7c6dacf40dee",
+      "name": "Webhook - Book Assessment",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        144,
+        352
+      ],
+      "webhookId": "assessment-booking-webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-api.com/sessions/create",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "name": "session_type",
+              "value": "assessment"
+            },
+            {
+              "name": "coach_id",
+              "value": "={{ $json.coach_id || 'auto-assign' }}"
+            },
+            {
+              "name": "scheduled_time",
+              "value": "={{ $json.scheduled_time }}"
+            },
+            {
+              "name": "form_data",
+              "value": "={{ JSON.stringify($json.form_data) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8be0c5b0-c337-4ec0-94a6-7898387aaa8c",
+      "name": "API - Create Assessment Session",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        368,
+        352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert"
+      },
+      "id": "7782182d-4335-4b60-a37f-944b7c2d61c9",
+      "name": "Audit Log - Assessment Booked",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        592,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id"
+            }
+          ]
+        }
+      },
+      "id": "c32aaaa2-89b3-45f9-977c-e09cf90c0b24",
+      "name": "Supabase - Get User Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        816,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id"
+            }
+          ]
+        }
+      },
+      "id": "5479747d-6ebe-4fd5-81d8-3a60dce477b0",
+      "name": "Supabase - Get Coach Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@yourcompany.com",
+        "toEmail": "={{ $('Supabase - Get User Details').item.json.email }}",
+        "subject": "Your Assessment Session is Confirmed!",
+        "options": {}
+      },
+      "id": "8d820a6d-bb11-46fc-8f8c-1cc191595c5a",
+      "name": "Email - Notify User",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        288
+      ],
+      "webhookId": "2c52ea70-014e-464f-b806-0dba76041998"
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@yourcompany.com",
+        "toEmail": "={{ $('Supabase - Get Coach Details').item.json.email }}",
+        "subject": "New Assessment Session Assigned",
+        "options": {}
+      },
+      "id": "2fdad337-4f41-461d-b352-7349e6bb9a43",
+      "name": "Email - Notify Coach",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        416
+      ],
+      "webhookId": "452e4b04-4678-4cfd-b666-0f9f8e4a101b"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  \"success\": true,\n  \"message\": \"Assessment session booked successfully\",\n  \"session_id\": $('API - Create Assessment Session').item.json.session_id,\n  \"session_url\": $('API - Create Assessment Session').item.json.session_url,\n  \"coach_name\": $('Supabase - Get Coach Details').item.json.name\n}) }}",
+        "options": {}
+      },
+      "id": "28f291c4-fd4a-4bc7-9940-0f842fda5d75",
+      "name": "Respond - Assessment Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.error }}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "baee8077-941a-4de4-815e-f03894222e3e",
+      "name": "IF - Check Errors",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -320
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Lead Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Insert Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Insert Lead": {
+      "main": [
+        [
+          {
+            "node": "Audit Log - Form Submitted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Log - Form Submitted": {
+      "main": [
+        [
+          {
+            "node": "Respond - Form Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Payment Success": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Update Payment Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Update Payment Status": {
+      "main": [
+        [
+          {
+            "node": "Audit Log - Payment Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Log - Payment Completed": {
+      "main": [
+        [
+          {
+            "node": "API - Assign Subscription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API - Assign Subscription": {
+      "main": [
+        [
+          {
+            "node": "API - Create User Account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API - Create User Account": {
+      "main": [
+        [
+          {
+            "node": "Audit Log - Account Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Log - Account Created": {
+      "main": [
+        [
+          {
+            "node": "Respond - Show Assessment Popup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Book Assessment": {
+      "main": [
+        [
+          {
+            "node": "API - Create Assessment Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API - Create Assessment Session": {
+      "main": [
+        [
+          {
+            "node": "Audit Log - Assessment Booked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Log - Assessment Booked": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get User Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get User Details": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get Coach Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Coach Details": {
+      "main": [
+        [
+          {
+            "node": "Email - Notify User",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email - Notify Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email - Notify User": {
+      "main": [
+        [
+          {
+            "node": "Respond - Assessment Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email - Notify Coach": {
+      "main": [
+        [
+          {
+            "node": "Respond - Assessment Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "c51bf986-c92a-4ae4-9e45-26000592b238",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-04T13:15:36.020Z",
+      "updatedAt": "2025-11-04T13:15:36.020Z",
+      "role": "workflow:owner",
+      "workflowId": "cvwKvYo1fnLhw9HG",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
