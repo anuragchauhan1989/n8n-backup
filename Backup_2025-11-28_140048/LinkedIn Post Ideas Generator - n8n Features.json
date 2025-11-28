@@ -1,0 +1,1009 @@
+{
+  "createdAt": "2025-09-27T01:28:00.622Z",
+  "updatedAt": "2025-10-13T08:11:42.000Z",
+  "id": "uqytC8OOfziFP4wC",
+  "name": "LinkedIn Post Ideas Generator - n8n Features",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://blog.n8n.io/rss/",
+        "options": {}
+      },
+      "id": "fetch-n8n-blog",
+      "name": "Fetch n8n Blog RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        400,
+        208
+      ],
+      "typeVersion": 4
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/repos/n8n-io/n8n/releases",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            },
+            {
+              "name": "User-Agent",
+              "value": "n8n-linkedin-bot"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-github-releases",
+      "name": "Fetch GitHub Releases",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        400,
+        400
+      ],
+      "typeVersion": 4
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse n8n blog RSS feed - handle HTTP Request response structure\nconst inputData = $input.all()[0];\nlet rssContent;\nconst posts = [];\n\n// The HTTP Request node returns data\nif (inputData.json && inputData.json.data) {\n  rssContent = inputData.json.data;\n  console.log('Found RSS data in inputData.json.data');\n} else if (typeof inputData.json === 'string') {\n  rssContent = inputData.json;\n  console.log('Found RSS data directly in inputData.json');\n} else {\n  console.log('Unexpected data structure:', Object.keys(inputData.json || {}));\n  rssContent = null;\n}\n\nif (rssContent && typeof rssContent === 'string') {\n  console.log('Processing XML string of length:', rssContent.length);\n  \n  // Extract RSS items using regex patterns\n  const itemPattern = /<item[^>]*>([\\s\\S]*?)<\\/item>/gi;\n  const items = rssContent.match(itemPattern) || [];\n  \n  console.log(`Found ${items.length} RSS items`);\n  \n  for (const item of items.slice(0, 10)) {\n    try {\n      // Extract individual fields\n      const titleMatch = item.match(/<title[^>]*><!\\[CDATA\\[([^\\]]+)\\]\\]><\\/title>/) || \n                        item.match(/<title[^>]*>([^<]+)<\\/title>/);\n      \n      const linkMatch = item.match(/<link[^>]*>([^<]+)<\\/link>/);\n      \n      const descMatch = item.match(/<description[^>]*><!\\[CDATA\\[([^\\]]+)\\]\\]><\\/description>/) || \n                       item.match(/<description[^>]*>([^<]+)<\\/description>/);\n      \n      const pubDateMatch = item.match(/<pubDate[^>]*>([^<]+)<\\/pubDate>/);\n      \n      const authorMatch = item.match(/<dc:creator[^>]*><!\\[CDATA\\[([^\\]]+)\\]\\]><\\/dc:creator>/) || \n                         item.match(/<dc:creator[^>]*>([^<]+)<\\/dc:creator>/) ||\n                         item.match(/<author[^>]*>([^<]+)<\\/author>/);\n      \n      const guidMatch = item.match(/<guid[^>]*>([^<]+)<\\/guid>/);\n      \n      if (titleMatch && linkMatch) {\n        const title = titleMatch[1] || 'Untitled Post';\n        const link = linkMatch[1] || '';\n        const description = descMatch ? descMatch[1] : '';\n        const pubDateStr = pubDateMatch ? pubDateMatch[1] : '';\n        const author = authorMatch ? authorMatch[1] : 'n8n Team';\n        const guid = guidMatch ? guidMatch[1] : link;\n        \n        // Parse date\n        let pubDate;\n        try {\n          pubDate = pubDateStr ? new Date(pubDateStr) : new Date();\n        } catch (e) {\n          pubDate = new Date();\n        }\n        \n        const hoursOld = (Date.now() - pubDate.getTime()) / (1000 * 60 * 60);\n        \n        // More lenient time filter - 90 days\n        if (hoursOld <= 2160) {\n          posts.push({\n            source: 'n8n-blog',\n            type: 'blog-post',\n            title: title.trim(),\n            url: link.trim(),\n            description: description ? description.substring(0, 400).replace(/<[^>]*>/g, '').trim() + '...' : '',\n            author: author.trim(),\n            published: pubDate.toISOString(),\n            guid: guid.trim(),\n            hoursOld: Math.round(hoursOld),\n            pubDateRaw: pubDateStr\n          });\n        }\n      }\n    } catch (error) {\n      console.log('Error parsing RSS item:', error.message);\n    }\n  }\n} else if (rssContent && typeof rssContent === 'object') {\n  // Handle pre-parsed XML as JSON object\n  console.log('Processing parsed JSON object');\n  \n  if (rssContent.rss && rssContent.rss.channel && rssContent.rss.channel.item) {\n    const items = Array.isArray(rssContent.rss.channel.item) ? rssContent.rss.channel.item : [rssContent.rss.channel.item];\n    \n    for (const item of items) {\n      const pubDate = item.pubDate ? new Date(item.pubDate) : new Date();\n      const hoursOld = (Date.now() - pubDate.getTime()) / (1000 * 60 * 60);\n      \n      if (hoursOld <= 2160) {\n        posts.push({\n          source: 'n8n-blog',\n          type: 'blog-post',\n          title: item.title || 'Untitled Post',\n          url: item.link || item.guid || '',\n          description: item.description ? item.description.substring(0, 400) + '...' : '',\n          author: item['dc:creator'] || item.author || 'n8n Team',\n          published: pubDate.toISOString(),\n          guid: item.guid || item.link,\n          hoursOld: Math.round(hoursOld)\n        });\n      }\n    }\n  }\n}\n\n// Debug logging\nconsole.log(`Input type: ${typeof inputData.json}`);\nconsole.log(`RSS Content type: ${typeof rssContent}`);\nconsole.log(`Posts found: ${posts.length}`);\nif (posts.length > 0) {\n  console.log('First post title:', posts[0].title);\n  console.log('First post URL:', posts[0].url);\n}\n\n// Sort by publication date (newest first)\nposts.sort((a, b) => new Date(b.published) - new Date(a.published));\n\n// Return the blog posts\nif (posts.length > 0) {\n  return posts.slice(0, 8).map(post => ({ json: post }));\n} else {\n  // Enhanced debug info\n  let debugInfo = {\n    inputType: typeof inputData.json,\n    hasJson: !!inputData.json,\n    keys: inputData.json ? Object.keys(inputData.json) : 'N/A',\n    dataType: inputData.json?.data ? typeof inputData.json.data : 'N/A',\n    dataLength: inputData.json?.data ? inputData.json.data.length : 'N/A',\n    dataPreview: inputData.json?.data ? inputData.json.data.substring(0, 200) + '...' : 'N/A'\n  };\n  \n  return [{ json: { \n    source: 'n8n-blog', \n    type: 'blog-post',\n    title: 'n8n Blog Content (Enhanced Debug)', \n    url: 'https://blog.n8n.io',\n    description: 'Latest updates from the n8n team',\n    published: new Date().toISOString(),\n    message: 'No recent blog posts found in RSS feed',\n    debug: debugInfo\n  }}];\n}"
+      },
+      "id": "parse-rss-content",
+      "name": "Parse RSS Content",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        608,
+        208
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse GitHub releases - clean and professional format for LinkedIn\nconst inputData = $input.all()[0];\nlet githubData;\nconst releases = [];\n\n// Check different possible data structures\nif (inputData.json && Array.isArray(inputData.json)) {\n  githubData = inputData.json;\n} else if (inputData.json && inputData.json.data && Array.isArray(inputData.json.data)) {\n  githubData = inputData.json.data;\n} else if (inputData.json && typeof inputData.json === 'object') {\n  githubData = [inputData.json];\n} else {\n  githubData = null;\n}\n\nif (githubData && Array.isArray(githubData)) {\n  for (const release of githubData) {\n    try {\n      // Parse release date\n      const publishedDate = release.published_at ? new Date(release.published_at) : \n                           (release.created_at ? new Date(release.created_at) : new Date());\n      const hoursOld = (Date.now() - publishedDate.getTime()) / (1000 * 60 * 60);\n      \n      // Only include releases from last 90 days, exclude drafts\n      if (hoursOld <= 2160 && !release.draft) {\n        const changelog = release.body || '';\n        \n        // Clean up the version tag\n        let cleanVersion = release.tag_name || release.name || 'Unknown';\n        cleanVersion = cleanVersion.replace(/^n8n@/, '').replace(/^v/, '');\n        \n        // Extract key features from changelog\n        let description = '';\n        if (changelog) {\n          // Extract features and bug fixes from changelog\n          const features = [];\n          const bugFixes = [];\n          \n          // Look for feature sections\n          const featureMatches = changelog.match(/### Features?[\\s\\S]*?(?=###|$)/gi);\n          if (featureMatches) {\n            const featureText = featureMatches[0];\n            const featureItems = featureText.match(/\\* \\*\\*([^:*]+)\\*\\*:?\\s*([^\\n]+)/g);\n            if (featureItems) {\n              featureItems.slice(0, 3).forEach(item => {\n                const match = item.match(/\\* \\*\\*([^:*]+)\\*\\*:?\\s*([^\\n]+)/);\n                if (match) {\n                  features.push(`${match[1]}: ${match[2].replace(/\\([^)]+\\)/g, '').trim()}`);\n                }\n              });\n            }\n          }\n          \n          // Look for bug fixes\n          const bugFixMatches = changelog.match(/### Bug Fixes?[\\s\\S]*?(?=###|$)/gi);\n          if (bugFixMatches) {\n            const bugFixText = bugFixMatches[0];\n            const bugFixItems = bugFixText.match(/\\* \\*\\*([^:*]+)\\*\\*:?\\s*([^\\n]+)/g);\n            if (bugFixItems) {\n              bugFixItems.slice(0, 2).forEach(item => {\n                const match = item.match(/\\* \\*\\*([^:*]+)\\*\\*:?\\s*([^\\n]+)/);\n                if (match) {\n                  bugFixes.push(`${match[1]}: ${match[2].replace(/\\([^)]+\\)/g, '').trim()}`);\n                }\n              });\n            }\n          }\n          \n          // Build clean description\n          let descParts = [];\n          if (features.length > 0) {\n            descParts.push(`🚀 New Features: ${features.join('; ')}`);\n          }\n          if (bugFixes.length > 0) {\n            descParts.push(`🐛 Bug Fixes: ${bugFixes.join('; ')}`);\n          }\n          \n          if (descParts.length > 0) {\n            description = descParts.join(' | ');\n          } else {\n            // Fallback to first meaningful line\n            const lines = changelog.split('\\n').filter(line => \n              line.trim() && \n              !line.startsWith('#') && \n              !line.startsWith('*') &&\n              line.length > 20\n            );\n            description = lines[0] ? lines[0].substring(0, 200) + '...' : 'Latest n8n release with improvements and fixes';\n          }\n        } else {\n          description = 'New n8n release available with latest improvements';\n        }\n        \n        // Clean and limit description\n        description = description.substring(0, 300);\n        if (description.length === 300) description += '...';\n        \n        releases.push({\n          source: 'github',\n          type: 'release',\n          title: `n8n v${cleanVersion} Released`,\n          version: cleanVersion,\n          url: release.html_url || `https://github.com/n8n-io/n8n/releases/tag/${release.tag_name}`,\n          description: description,\n          author: 'n8n Team',\n          published: publishedDate.toISOString(),\n          prerelease: release.prerelease || false,\n          assets_count: release.assets ? release.assets.length : 0,\n          download_count: release.assets ? release.assets.reduce((sum, asset) => sum + (asset.download_count || 0), 0) : 0,\n          hoursOld: Math.round(hoursOld),\n          releaseType: release.prerelease ? 'Pre-release' : 'Stable Release'\n        });\n      }\n    } catch (error) {\n      console.log('Error parsing GitHub release:', error.message);\n    }\n  }\n}\n\n// Sort by publication date (newest first)\nreleases.sort((a, b) => new Date(b.published) - new Date(a.published));\n\n// Return the releases\nif (releases.length > 0) {\n  return releases.slice(0, 5).map(release => ({ json: release }));\n} else {\n  return [{ json: { \n    source: 'github', \n    type: 'release',\n    title: 'n8n Latest Release', \n    url: 'https://github.com/n8n-io/n8n/releases',\n    description: 'Check out the latest n8n releases on GitHub',\n    published: new Date().toISOString(),\n    message: 'No recent releases found'\n  }}];\n}"
+      },
+      "id": "parse-github-releases",
+      "name": "Parse GitHub Releases",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        608,
+        400
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter and organize recent content from all sources\nconst allItems = $input.all();\nconst filteredContent = [];\nconst contentStats = {\n  blog: 0,\n  github: 0,\n  reddit: 0,\n  total: 0\n};\n\n// Process all merged content\nfor (const item of allItems) {\n  const content = item.json;\n  \n  // Skip debug/fallback items\n  if (content.message && (content.message.includes('No recent') || content.message.includes('Debug'))) {\n    continue;\n  }\n  \n  // Calculate recency score (higher = more recent/important)\n  let recencyScore = 0;\n  const hoursOld = content.hoursOld || 0;\n  \n  // Base recency score (newer = higher score)\n  if (hoursOld <= 24) recencyScore += 100;        // Last day\n  else if (hoursOld <= 168) recencyScore += 80;   // Last week \n  else if (hoursOld <= 720) recencyScore += 60;   // Last month\n  else recencyScore += 40;                        // Older but still relevant\n  \n  // Source-specific scoring\n  if (content.source === 'github') {\n    recencyScore += 30; // Prioritize releases\n    if (content.prerelease === false) recencyScore += 10; // Stable releases get bonus\n    contentStats.github++;\n  } else if (content.source === 'n8n-blog') {\n    recencyScore += 25; // Blog posts are important\n    contentStats.blog++;\n  } else if (content.source === 'reddit') {\n    recencyScore += 10; // Community content\n    if (content.score > 50) recencyScore += 15; // High engagement bonus\n    if (content.num_comments > 10) recencyScore += 10; // Discussion bonus\n    contentStats.reddit++;\n  }\n  \n  // Add processed content with score\n  filteredContent.push({\n    ...content,\n    recencyScore: recencyScore,\n    priority: recencyScore > 90 ? 'high' : recencyScore > 60 ? 'medium' : 'low'\n  });\n  \n  contentStats.total++;\n}\n\n// Sort by recency score (highest first)\nfilteredContent.sort((a, b) => b.recencyScore - a.recencyScore);\n\n// Take top 15 items for AI processing\nconst topContent = filteredContent.slice(0, 15);\n\n// Create summary of filtered content\nconst summary = {\n  totalSources: contentStats,\n  topContent: topContent.length,\n  highPriority: topContent.filter(c => c.priority === 'high').length,\n  mediumPriority: topContent.filter(c => c.priority === 'medium').length,\n  lowPriority: topContent.filter(c => c.priority === 'low').length,\n  dateRange: {\n    newest: topContent.length > 0 ? topContent[0].published : null,\n    oldest: topContent.length > 0 ? topContent[topContent.length - 1].published : null\n  }\n};\n\nconsole.log('Content filtering summary:', JSON.stringify(summary, null, 2));\n\n// Return filtered content items\nif (topContent.length > 0) {\n  return topContent.map(content => ({ json: content }));\n} else {\n  // Fallback if no content found\n  return [{ json: {\n    source: 'system',\n    type: 'fallback',\n    title: 'n8n Automation Platform Updates',\n    description: 'Stay updated with the latest n8n features, releases, and community discussions',\n    url: 'https://n8n.io',\n    published: new Date().toISOString(),\n    priority: 'medium',\n    recencyScore: 50\n  }}];\n}"
+      },
+      "id": "filter-recent-content",
+      "name": "Filter Recent Content",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1040,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate 5 specific LinkedIn post ideas based on content analysis\nconst allContent = $input.all();\nconst contentBySource = {\n  blog: [],\n  github: [],\n  reddit: [],\n  system: []\n};\n\n// Organize content by source\nfor (const item of allContent) {\n  const content = item.json;\n  \n  if (content.source === 'n8n-blog') {\n    contentBySource.blog.push(content);\n  } else if (content.source === 'github') {\n    contentBySource.github.push(content);\n  } else if (content.source === 'reddit') {\n    contentBySource.reddit.push(content);\n  } else {\n    contentBySource.system.push(content);\n  }\n}\n\n// Analyze content to create specific post ideas\nconst postIdeas = [];\n\n// POST IDEA 1: Latest Release (if available)\nif (contentBySource.github.length > 0) {\n  const latestRelease = contentBySource.github[0];\n  postIdeas.push({\n    type: 'release_announcement',\n    title: `🚀 n8n ${latestRelease.version} is Here!`,\n    angle: 'Product update with feature highlights',\n    keyPoints: [\n      `New version: ${latestRelease.version}`,\n      'Key features from changelog',\n      'Impact on automation workflows',\n      'Community excitement'\n    ],\n    content: latestRelease,\n    hashtags: ['#n8n', '#automation', '#release', '#workflow', '#productivity', '#devtools'],\n    cta: 'Download the latest version and supercharge your automations!'\n  });\n}\n\n// POST IDEA 2: Technical Tutorial/Tips\nif (contentBySource.blog.length > 0) {\n  const topBlogPost = contentBySource.blog[0];\n  postIdeas.push({\n    type: 'educational_content',\n    title: '💡 Pro Automation Tips from the n8n Community',\n    angle: 'Educational value with practical insights',\n    keyPoints: [\n      'Practical automation techniques',\n      'Real-world use cases',\n      'Time-saving strategies',\n      'Best practices sharing'\n    ],\n    content: topBlogPost,\n    hashtags: ['#automation', '#n8n', '#productivity', '#workflows', '#nocode', '#integration'],\n    cta: 'What automation challenge should we tackle next? Share in comments!'\n  });\n}\n\n// POST IDEA 3: Community Spotlight\nif (contentBySource.reddit.length > 0) {\n  const topDiscussion = contentBySource.reddit[0];\n  postIdeas.push({\n    type: 'community_spotlight',\n    title: '🌟 Amazing n8n Community Innovation',\n    angle: 'Community success story and engagement',\n    keyPoints: [\n      'Community-driven solutions',\n      'Creative automation use cases',\n      'Knowledge sharing culture',\n      'Open-source collaboration'\n    ],\n    content: topDiscussion,\n    hashtags: ['#n8n', '#community', '#opensource', '#automation', '#innovation', '#collaboration'],\n    cta: 'Join our vibrant community and share your automation wins!'\n  });\n}\n\n// POST IDEA 4: Industry Thought Leadership\npostIdeas.push({\n  type: 'thought_leadership',\n  title: '🔮 The Future of Business Automation is Fair-Code',\n  angle: 'Industry insights and n8n positioning',\n  keyPoints: [\n    'Fair-code vs traditional automation platforms',\n    'No vendor lock-in benefits',\n    'Self-hosting advantages',\n    'Future of automation trends'\n  ],\n  content: {\n    focus: 'industry_trends',\n    key_differentiators: ['Fair-code licensing', 'Self-hosted options', '400+ integrations', 'Visual workflow builder'],\n    market_position: 'Leading fair-code automation platform'\n  },\n  hashtags: ['#automation', '#faircode', '#integration', '#business', '#digitaltransformation', '#n8n'],\n  cta: 'Ready to break free from vendor lock-in? Discover n8n today!'\n});\n\n// POST IDEA 5: Use Case Deep Dive\npostIdeas.push({\n  type: 'use_case_example',\n  title: '⚡ From Manual to Automated: A Real Transformation Story',\n  angle: 'Practical application with measurable benefits',\n  keyPoints: [\n    'Before/after comparison',\n    'Specific workflow example',\n    'Time and cost savings',\n    'ROI demonstration'\n  ],\n  content: {\n    scenario: 'Customer onboarding automation',\n    before: 'Manual, time-consuming process',\n    after: 'Streamlined, automated workflow',\n    benefits: ['80% time reduction', 'Fewer errors', 'Better customer experience']\n  },\n  hashtags: ['#automation', '#efficiency', '#n8n', '#workflow', '#customerexperience', '#roi'],\n  cta: 'What manual process is slowing your team down? Let\\'s automate it!'\n});\n\n// Fill remaining slots if we don't have enough content\nwhile (postIdeas.length < 5) {\n  const fallbackIdeas = [\n    {\n      type: 'feature_highlight',\n      title: '🛠️ Hidden Gems: n8n Features You Might Have Missed',\n      angle: 'Feature education and discovery',\n      keyPoints: [\n        'Lesser-known powerful features',\n        'Advanced workflow techniques',\n        'Power-user tips',\n        'Maximizing platform value'\n      ],\n      content: {\n        features: ['Advanced expressions', 'Error handling', 'Webhook responses', 'Custom functions'],\n        benefits: 'Unlock the full potential of your automations'\n      },\n      hashtags: ['#n8n', '#automation', '#features', '#productivity', '#workflows', '#tips'],\n      cta: 'Which n8n feature has been your biggest game-changer?'\n    },\n    {\n      type: 'integration_spotlight',\n      title: '🔗 Integration Magic: Connecting Your Favorite Tools',\n      angle: 'Integration capabilities and ecosystem',\n      keyPoints: [\n        '400+ available integrations',\n        'Popular tool combinations',\n        'Custom integration options',\n        'Ecosystem growth'\n      ],\n      content: {\n        popular_integrations: ['Slack', 'Google Sheets', 'Airtable', 'OpenAI', 'GitHub'],\n        custom_options: 'HTTP requests, webhooks, custom nodes'\n      },\n      hashtags: ['#integration', '#n8n', '#automation', '#connectivity', '#productivity', '#tools'],\n      cta: 'What integration would make your workflow perfect? Tell us below!'\n    }\n  ];\n  \n  if (postIdeas.length < 5) {\n    postIdeas.push(fallbackIdeas[postIdeas.length - 3] || fallbackIdeas[0]);\n  }\n}\n\n// Create comprehensive content summary for AI\nconst contentSummary = {\n  totalItems: allContent.length,\n  recentReleases: contentBySource.github.length,\n  blogPosts: contentBySource.blog.length,\n  communityPosts: contentBySource.reddit.length,\n  highPriorityItems: allContent.filter(item => item.json.priority === 'high').length,\n  lastWeekContent: allContent.filter(item => item.json.hoursOld <= 168).length\n};\n\n// Brand context and guidelines\nconst brandGuidelines = {\n  brand: 'n8n - Fair-code automation platform',\n  tone: 'Professional yet approachable, technically accurate, community-focused',\n  keyMessages: [\n    'Fair-code licensing (no vendor lock-in)',\n    'Visual workflow builder',\n    '400+ integrations available',\n    'Self-hosted and cloud options',\n    'Strong developer community'\n  ],\n  targetAudience: [\n    'Software developers and engineers',\n    'Business automation specialists',\n    'DevOps and IT professionals',\n    'Small to medium business owners',\n    'No-code/low-code enthusiasts'\n  ],\n  contentStrategy: {\n    educate: 'Share knowledge and best practices',\n    engage: 'Build community and encourage interaction',\n    demonstrate: 'Show real value and ROI',\n    differentiate: 'Highlight fair-code advantages'\n  }\n};\n\nconsole.log('Generated Post Ideas Summary:');\nconsole.log(`- Total post ideas: ${postIdeas.length}`);\nconsole.log(`- Content-based ideas: ${postIdeas.filter(p => p.content && typeof p.content === 'object' && p.content.title).length}`);\nconsole.log(`- Fallback ideas: ${postIdeas.filter(p => p.content && !p.content.title).length}`);\n\n// Return structured post ideas for AI generation\nreturn [{\n  json: {\n    postIdeas: postIdeas,\n    contentSummary: contentSummary,\n    brandGuidelines: brandGuidelines,\n    instructions: {\n      format: 'Create 5 LinkedIn posts using the provided post ideas as frameworks',\n      requirements: [\n        '120-150 words per post',\n        'Engaging hook in first line',\n        '2-4 strategic emojis per post',\n        'Professional but conversational tone',\n        'Include specific benefits and value',\n        'Clear call-to-action',\n        'Use provided hashtag suggestions'\n      ],\n      structure: 'Follow EXACT format: POST X: Title/Content/Hashtags/CTA'\n    },\n    timestamp: new Date().toISOString()\n  }\n}];\n"
+      },
+      "id": "prepare-ai-prompt",
+      "name": "Prepare AI Prompt",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1200,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an expert LinkedIn content creator specializing in B2B automation and developer tools. You create engaging, professional posts that balance technical accuracy with business value. Your posts drive engagement and showcase thought leadership."
+            },
+            {
+              "content": "=Create 5 engaging LinkedIn posts about n8n automation platform based on this content:\n\n${$json.content}\n\nUse this content to create varied, engaging posts. Follow this EXACT format for each post:\n\nPOST 1:\nTitle: [Catchy, benefit-focused title]\nContent: [Engaging 120-150 word post with emojis and compelling hook]\nHashtags: [5-7 relevant hashtags]\nCTA: [Clear, specific call-to-action]\n\nPOST 2:\n[Same format]\n\nPOST 3:\n[Same format]\n\nPOST 4:\n[Same format]\n\nPOST 5:\n[Same format]\n\nGuidelines:\n- Start each post with an engaging hook or question\n- Include specific benefits and value propositions\n- Use emojis strategically (2-4 per post)\n- Make posts scannable with line breaks\n- Target developers, business users, and automation enthusiasts\n- Vary post types: feature highlights, use cases, community insights, thought leadership\n- Keep tone professional but conversational\n- Include concrete examples when possible"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.7
+        },
+        "requestOptions": {}
+      },
+      "id": "generate-post-ideas",
+      "name": "Generate LinkedIn Post Ideas",
+      "type": "n8n-nodes-base.openAi",
+      "position": [
+        1408,
+        304
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format and structure AI-generated LinkedIn posts\nconst aiResponse = $input.all()[0].json;\nlet posts = [];\n\n// Define your fixed URLs\nconst youtubeLink = \"https://www.youtube.com/@cognigenai?sub_confirmation=1\";\nconst skoolLink = \"https://www.skool.com/cognigenai-automation-club-1441\";\n\n// Extract posts from AI response\nlet aiContent = '';\nif (aiResponse.choices && aiResponse.choices[0] && aiResponse.choices[0].message) {\n  aiContent = aiResponse.choices[0].message.content;\n} else if (aiResponse.message && aiResponse.message.content) {\n  aiContent = aiResponse.message.content;\n} else if (typeof aiResponse === 'string') {\n  aiContent = aiResponse;\n} else {\n  aiContent = JSON.stringify(aiResponse);\n}\n\nconsole.log('AI Response length:', aiContent.length);\n\n// Parse individual posts from AI response\nconst postPattern = /POST\\s+(\\d+):\\s*([\\s\\S]*?)(?=POST\\s+\\d+:|$)/gi;\nconst matches = aiContent.match(postPattern) || [];\n\nconsole.log(`Found ${matches.length} post matches`);\n\nfor (let i = 0; i < matches.length; i++) {\n  const postText = matches[i];\n  \n  try {\n    // Extract components using patterns\n    const titleMatch = postText.match(/Title:\\s*([^\\n]+)/i);\n    const contentMatch = postText.match(/Content:\\s*([\\s\\S]*?)(?=Hashtags:|CTA:|$)/i);\n    const hashtagsMatch = postText.match(/Hashtags:\\s*([^\\n]+)/i);\n    const ctaMatch = postText.match(/CTA:\\s*([^\\n]+)/i);\n    \n    // Clean and format extracted content\n    const title = titleMatch ? titleMatch[1].trim() : `LinkedIn Post #${i + 1}`;\n    let content = contentMatch ? contentMatch[1].trim() : '';\n    const hashtags = hashtagsMatch ? hashtagsMatch[1].trim() : '#n8n #automation #workflow #productivity';\n    const cta = ctaMatch ? ctaMatch[1].trim() : 'Learn more about n8n automation!';\n    \n    // Clean up content formatting\n    content = content\n      .replace(/^Content:\\s*/i, '')\n      .replace(/\\s*Hashtags:\\s*.*$/s, '')\n      .replace(/\\s*CTA:\\s*.*$/s, '')\n      .trim();\n    \n    // Append YouTube & Skool links at the bottom\n    const linkSection = `\\n\\n👇 Follow us on YouTube for automation tutorials:\\n${youtubeLink}\\n\\n💬 Join our automation community on Skool:\\n${skoolLink}`;\n\n    // Create formatted post\n    const formattedPost = {\n      postNumber: i + 1,\n      title: title,\n      content: content,\n      hashtags: hashtags.split(/\\s+/).filter(tag => tag.startsWith('#')),\n      cta: cta,\n      fullPost: `${content}\\n\\n${hashtags}\\n\\n${cta}${linkSection}`,\n      wordCount: content.split(/\\s+/).length,\n      charCount: content.length,\n      created: new Date().toISOString()\n    };\n    \n    posts.push(formattedPost);\n    \n  } catch (error) {\n    console.log(`Error parsing post ${i + 1}:`, error.message);\n    \n    // Fallback post if parsing fails\n    posts.push({\n      postNumber: i + 1,\n      title: `n8n Automation Update #${i + 1}`,\n      content: 'Discover the power of n8n automation platform. Streamline your workflows, connect your tools, and boost productivity with our fair-code automation solution.',\n      hashtags: ['#n8n', '#automation', '#workflow', '#productivity', '#nocode'],\n      cta: 'Start automating with n8n today!',\n      fullPost: `Discover the power of n8n automation platform. Streamline your workflows, connect your tools, and boost productivity with our fair-code automation solution.\\n\\n#n8n #automation #workflow #productivity #nocode\\n\\nStart automating with n8n today!\\n\\n👇 Follow us on YouTube for automation tutorials:\\n${youtubeLink}\\n\\n💬 Join our automation community on Skool:\\n${skoolLink}`,\n      wordCount: 22,\n      charCount: 147,\n      created: new Date().toISOString(),\n      error: 'Parsing failed, using fallback content'\n    });\n  }\n}\n\n// If no posts were parsed, create fallback posts\nif (posts.length === 0) {\n  const linkSection = `\\n\\n👇 Follow us on YouTube for automation tutorials:\\n${youtubeLink}\\n\\n💬 Join our automation community on Skool:\\n${skoolLink}`;\n\n  posts = [\n    {\n      postNumber: 1,\n      title: 'Transform Your Workflow with n8n',\n      content: '🚀 Ready to revolutionize your business processes? n8n\\'s fair-code automation platform empowers teams to build powerful workflows without vendor lock-in. Connect 400+ apps, automate repetitive tasks, and focus on what matters most. Join thousands of developers and businesses already automating smarter! 💡',\n      hashtags: ['#n8n', '#automation', '#workflow', '#productivity', '#opensource'],\n      cta: 'Start your automation journey → n8n.io',\n      fullPost: `🚀 Ready to revolutionize your business processes? n8n's fair-code automation platform empowers teams to build powerful workflows without vendor lock-in. Connect 400+ apps, automate repetitive tasks, and focus on what matters most. Join thousands of developers and businesses already automating smarter! 💡\\n\\n#n8n #automation #workflow #productivity #opensource\\n\\nStart your automation journey → n8n.io${linkSection}`,\n      wordCount: 41,\n      charCount: 341,\n      created: new Date().toISOString(),\n      fallback: true\n    }\n  ];\n}\n\n// Create summary\nconst summary = {\n  totalPosts: posts.length,\n  avgWordCount: Math.round(posts.reduce((sum, post) => sum + post.wordCount, 0) / posts.length),\n  avgCharCount: Math.round(posts.reduce((sum, post) => sum + post.charCount, 0) / posts.length),\n  uniqueHashtags: [...new Set(posts.flatMap(post => post.hashtags))].length,\n  generatedAt: new Date().toISOString()\n};\n\nconsole.log('Post formatting summary:', JSON.stringify(summary, null, 2));\n\n// Return formatted posts\nreturn posts.map(post => ({ json: post }));\n"
+      },
+      "id": "format-post-ideas",
+      "name": "Format Post Ideas",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1680,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/search.json?q=n8n+automation+workflow&sort=new&limit=25&t=week",
+        "options": {}
+      },
+      "id": "fetch-reddit-news",
+      "name": "Fetch Reddit News",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        400,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Reddit search API response for n8n content\nconst redditData = $input.all()[0].json.data;\nconst posts = [];\n\nif (redditData && redditData.children) {\n  for (const post of redditData.children) {\n    const postData = post.data;\n    \n    // Filter for n8n-related posts with some engagement\n    const hoursOld = (Date.now() - postData.created_utc * 1000) / (1000 * 60 * 60);\n    const score = postData.score || 0;\n    const title = postData.title?.toLowerCase() || '';\n    \n    // Check if post is n8n related and has decent engagement\n    const isN8nRelated = title.includes('n8n') || \n                        title.includes('automation') || \n                        title.includes('workflow') || \n                        title.includes('no-code') || \n                        title.includes('low-code');\n    \n    if (hoursOld <= 168 && score >= 1 && !postData.stickied && isN8nRelated) { // 7 days, score >= 1\n      posts.push({\n        source: 'reddit',\n        type: 'discussion',\n        title: postData.title,\n        url: postData.url,\n        permalink: `https://reddit.com${postData.permalink}`,\n        subreddit: postData.subreddit,\n        score: score,\n        num_comments: postData.num_comments || 0,\n        created: new Date(postData.created_utc * 1000).toISOString(),\n        description: postData.selftext ? postData.selftext.substring(0, 300) + '...' : (postData.title || ''),\n        author: postData.author,\n        flair: postData.link_flair_text || '',\n        domain: postData.domain || 'reddit.com'\n      });\n    }\n  }\n}\n\n// Sort by score and recent activity\nposts.sort((a, b) => {\n  const scoreA = a.score + (a.num_comments * 0.5);\n  const scoreB = b.score + (b.num_comments * 0.5);\n  return scoreB - scoreA;\n});\n\n// Return top 10 n8n related posts\nreturn posts.slice(0, 10).map(post => ({ json: post }));\n\n// If no posts found, return empty array to avoid breaking the workflow\nif (posts.length === 0) {\n  return [{ json: { source: 'reddit', message: 'No n8n related posts found this week' } }];\n}"
+      },
+      "id": "parse-reddit-posts",
+      "name": "Parse Reddit Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        864,
+        288
+      ],
+      "id": "cfad5bce-6d0b-42de-98a9-fd44d8960ed3",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1920,
+        304
+      ],
+      "id": "cbd117e2-fa7b-4ef5-a142-7ba5c94810c1",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3424b6be-534a-44be-8757-7f9726d75298",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "Ready to post",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        720,
+        960
+      ],
+      "id": "89900ba0-fe50-4666-8b37-60128215c5a3",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1hKU0KLtV4VLmpaSEAe5U7z2ygCVYQyvGMbm6DsaYq9I",
+          "mode": "list",
+          "cachedResultName": "Linkedin Post Ideas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hKU0KLtV4VLmpaSEAe5U7z2ygCVYQyvGMbm6DsaYq9I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hKU0KLtV4VLmpaSEAe5U7z2ygCVYQyvGMbm6DsaYq9I/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        448,
+        960
+      ],
+      "id": "7f7e1ec5-4aea-4b8d-96c2-673efc9c406b",
+      "name": "Get Rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "postAs": "organization",
+        "organization": "108402968",
+        "text": "={{ $json.fullpost }}",
+        "additionalFields": {}
+      },
+      "id": "post-to-linkedin",
+      "name": "Post to LinkedIn (Optional)",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        960
+      ],
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "5L42H8ZJFVu2qfGn",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1hKU0KLtV4VLmpaSEAe5U7z2ygCVYQyvGMbm6DsaYq9I",
+          "mode": "list",
+          "cachedResultName": "Linkedin Post Ideas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hKU0KLtV4VLmpaSEAe5U7z2ygCVYQyvGMbm6DsaYq9I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hKU0KLtV4VLmpaSEAe5U7z2ygCVYQyvGMbm6DsaYq9I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Get Rows').item.json.row_number }}",
+            "status": "Posted",
+            "posted date": "={{ $now.format('yyyy-MM-dd hh:mm:ss') }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "post number",
+              "displayName": "post number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "hashtags",
+              "displayName": "hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "cta",
+              "displayName": "cta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "fullpost",
+              "displayName": "fullpost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "post generated time",
+              "displayName": "post generated time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "posted date",
+              "displayName": "posted date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        960
+      ],
+      "id": "9c3c49de-b89e-4ae8-a56b-ef367c42bc0e",
+      "name": "Update data in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Weekly Content Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        96,
+        304
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        960
+      ],
+      "id": "0313a3aa-bba8-4cbe-b9d6-17d2f62a8482",
+      "name": "Daily Post on Linkedin Page"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4",
+          "mode": "list",
+          "cachedResultName": "Master Social Media Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "My Content Idea": "={{ $json.fullPost }}",
+            "Post Generated Date": "={{ $now.format('yyyy-MM-dd hh:mm:ss') }}",
+            "Control Column": "Generate Content"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "My Content Idea",
+              "displayName": "My Content Idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Facebook Post Content",
+              "displayName": "Facebook Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Instagram Post Content",
+              "displayName": "Instagram Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Linkedin Post Content",
+              "displayName": "Linkedin Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Image Link",
+              "displayName": "Image Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Control Column",
+              "displayName": "Control Column",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Post Generated Date",
+              "displayName": "Post Generated Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Posting Done",
+              "displayName": "Posting Done",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2272,
+        336
+      ],
+      "id": "94b302e5-42d3-41b6-af83-55772c26274b",
+      "name": "Append Master Social Media Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1hKU0KLtV4VLmpaSEAe5U7z2ygCVYQyvGMbm6DsaYq9I",
+          "mode": "list",
+          "cachedResultName": "Linkedin Post Ideas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hKU0KLtV4VLmpaSEAe5U7z2ygCVYQyvGMbm6DsaYq9I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hKU0KLtV4VLmpaSEAe5U7z2ygCVYQyvGMbm6DsaYq9I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "post number": "={{ $json.postNumber }}",
+            "title": "={{ $json.title }}",
+            "content": "={{ $json.content }}",
+            "cta": "={{ $json.cta }}",
+            "hashtags": "={{ $json.hashtags }}",
+            "fullpost": "={{ $json.fullPost }}",
+            "post generated time": "={{ $now.format('yyyy-MM-dd hh:mm:ss') }}",
+            "status": "Ready for review"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "post number",
+              "displayName": "post number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "hashtags",
+              "displayName": "hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "cta",
+              "displayName": "cta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fullpost",
+              "displayName": "fullpost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "post generated time",
+              "displayName": "post generated time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "posted date",
+              "displayName": "posted date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "save-to-google-sheets",
+      "name": "Append Linkedin Post Ideas Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        2272,
+        592
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Format Post Ideas": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse RSS Content": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate LinkedIn Post Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch n8n Blog RSS": {
+      "main": [
+        [
+          {
+            "node": "Parse RSS Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch GitHub Releases": {
+      "main": [
+        [
+          {
+            "node": "Parse GitHub Releases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Recent Content": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse GitHub Releases": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Generate LinkedIn Post Ideas": {
+      "main": [
+        [
+          {
+            "node": "Format Post Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Reddit News": {
+      "main": [
+        [
+          {
+            "node": "Parse Reddit Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reddit Posts": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Filter Recent Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Append Master Social Media Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append Linkedin Post Ideas Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Post to LinkedIn (Optional)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to LinkedIn (Optional)": {
+      "main": [
+        [
+          {
+            "node": "Update data in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Content Check": {
+      "main": [
+        [
+          {
+            "node": "Fetch n8n Blog RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch GitHub Releases",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Reddit News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Post on Linkedin Page": {
+      "main": [
+        [
+          {
+            "node": "Get Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Master Social Media Sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Linkedin Post Ideas Sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "staticData": {
+    "node:Weekly Content Check": {
+      "recurrenceRules": []
+    },
+    "node:Daily Post on Linkedin Page": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "fc914c7e-2ae8-4af2-8655-9470c88b0193",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "createdAt": "2025-09-27T01:28:00.625Z",
+      "updatedAt": "2025-09-27T01:28:00.625Z",
+      "role": "workflow:owner",
+      "workflowId": "uqytC8OOfziFP4wC",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
