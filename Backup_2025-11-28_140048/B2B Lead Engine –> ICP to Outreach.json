@@ -1,0 +1,135 @@
+{
+  "createdAt": "2025-11-25T17:43:00.400Z",
+  "updatedAt": "2025-11-25T18:25:42.000Z",
+  "id": "0DIAVL5tDDZNaDY3",
+  "name": "B2B Lead Engine –> ICP to Outreach",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        -16
+      ],
+      "id": "416e0c17-4341-4135-abda-52258408e502",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc833c68-08cf-404a-bffd-fb5afb055004",
+              "name": "geography",
+              "value": "[\"US\",\"EU\"]",
+              "type": "string"
+            },
+            {
+              "id": "8f06958e-ace4-4f38-95bd-1e181408b204",
+              "name": "industries",
+              "value": "[\"SaaS\",\"Agencies\",\"Finance\"]",
+              "type": "string"
+            },
+            {
+              "id": "272e258e-d1e6-43b4-87ac-fc9e2dcfd69d",
+              "name": "size_min",
+              "value": "20",
+              "type": "string"
+            },
+            {
+              "id": "093aad4b-d58f-42a9-b96b-993330216544",
+              "name": "size_max",
+              "value": "500",
+              "type": "string"
+            },
+            {
+              "id": "5bfae2fe-504d-4697-92ff-54a65b0620a5",
+              "name": "signals",
+              "value": "[\"hiring devs\",\"remote hiring\"]",
+              "type": "string"
+            },
+            {
+              "id": "e6feb722-0b53-4e51-a135-404ba9b56e6a",
+              "name": "roles",
+              "value": "[\"CEO\",\"CTO\",\"COO\",\"HR\"]",
+              "type": "string"
+            },
+            {
+              "id": "31f737b4-bea2-4cb0-9853-628fb0e1a8e2",
+              "name": "tier_rules",
+              "value": "{   \"A\": { \"min\": 100, \"max\": 500 },   \"B\": { \"min\": 50, \"max\": 99 },   \"C\": { \"min\": 20, \"max\": 49 } }",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -16
+      ],
+      "id": "67f65694-7cb5-4444-9309-05bb9d406ccd",
+      "name": "Set (ICP Filters)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build ICP Query from incoming Set node\n// Input: item[0].json contains fields from 'ICP Filters' node\nreturn items.map(item => {\n  const parseIfString = v => {\n    if (typeof v === 'string') {\n      try { return JSON.parse(v); } catch(e){ \n        // fallback: comma-split trimmed strings\n        return v.split(',').map(s=>s.trim()).filter(Boolean);\n      }\n    }\n    return v;\n  };\n\n  const geography = parseIfString(item.json.geography || []);\n  const industries = parseIfString(item.json.industries || []);\n  const signals = parseIfString(item.json.signals || []);\n  const roles = parseIfString(item.json.roles || []);\n  const tier_rules = parseIfString(item.json.tier_rules || {});\n  const extra = parseIfString(item.json.extra_filters || {});\n\n  const query = {\n    geography,            // [\"US\",\"EU\"]\n    industries,           // [\"SaaS\",\"Agencies\",\"Finance\"]\n    employee_size: {\n      min: Number(item.json.size_min || 0),\n      max: Number(item.json.size_max || 100000)\n    },\n    signals,              // [\"hiring devs\",\"remote hiring\"]\n    roles,                // [\"CEO\",\"CTO\",\"COO\",\"HR\"]\n    tier_rules,           // rules for tagging A/B/C\n    extra_filters: extra, // flexible place for future fields\n    // Helper flags for downstream nodes\n    __meta: {\n      createdAt: new Date().toISOString(),\n      source: 'ICP Filters Node'\n    }\n  };\n\n  return {\n    json: {\n      query\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        -16
+      ],
+      "id": "7ffe4989-552a-4cf0-bc70-f2acf59a5c51",
+      "name": "Function (Build Query object)"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set (ICP Filters)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set (ICP Filters)": {
+      "main": [
+        [
+          {
+            "node": "Function (Build Query object)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "cc3926c1-c8af-461a-b702-f534eff6254b",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-25T17:43:00.420Z",
+      "updatedAt": "2025-11-25T17:43:00.420Z",
+      "role": "workflow:owner",
+      "workflowId": "0DIAVL5tDDZNaDY3",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
