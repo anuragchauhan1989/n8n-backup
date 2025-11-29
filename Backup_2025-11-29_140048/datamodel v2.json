@@ -1,0 +1,366 @@
+{
+  "createdAt": "2025-11-03T14:55:14.164Z",
+  "updatedAt": "2025-11-04T14:36:21.000Z",
+  "id": "coRoApFK2O8wpn3U",
+  "name": "datamodel v2",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-excel",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "eba450b0-c5f5-43ec-98b2-5a5834d05853",
+      "name": "Webhook - Upload Excel Files",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1328,
+        208
+      ],
+      "webhookId": "katana-mapper"
+    },
+    {
+      "parameters": {
+        "options": {
+          "headerRow": true,
+          "includeEmptyCells": false
+        }
+      },
+      "id": "c4091f08-bd53-402b-be34-ec8d2b90dc05",
+      "name": "Read Excel Files",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [
+        -1104,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and combine all Excel data into master sheet\nconst items = $input.all();\nconst masterData = [];\nconst headers = new Set();\n\n// First pass: collect all unique headers\nfor (const item of items) {\n  if (item.json) {\n    Object.keys(item.json).forEach(key => headers.add(key));\n  }\n}\n\nconst headerArray = Array.from(headers);\n\n// Second pass: normalize and combine data\nfor (const item of items) {\n  const row = {};\n  \n  // Initialize all columns with empty values\n  headerArray.forEach(header => {\n    row[header] = '';\n  });\n  \n  // Fill in available data\n  if (item.json) {\n    Object.keys(item.json).forEach(key => {\n      row[key] = item.json[key] || '';\n    });\n  }\n  \n  // Add source file information\n  row['_source_file'] = item.binary?.data?.fileName || 'unknown';\n  row['_row_index'] = masterData.length + 1;\n  \n  masterData.push(row);\n}\n\n// Return combined data with metadata\nreturn [\n  {\n    json: {\n      masterData: masterData,\n      totalRows: masterData.length,\n      columns: headerArray,\n      timestamp: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "id": "af5d81c5-594b-43f0-947f-a55414f7d2ac",
+      "name": "Combine Excel Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate master data for required fields\nconst data = $input.item.json;\nconst masterData = data.masterData;\nconst columns = data.columns;\n\n// Define validation rules\nconst validationResults = {\n  isValid: true,\n  errors: [],\n  warnings: [],\n  findings: {}\n};\n\n// 1. Check for unique identifier\nconst potentialIdColumns = columns.filter(col => \n  col.toLowerCase().includes('id') || \n  col.toLowerCase().includes('sku') ||\n  col.toLowerCase().includes('code') ||\n  col.toLowerCase() === 'productid'\n);\n\nif (potentialIdColumns.length === 0) {\n  validationResults.isValid = false;\n  validationResults.errors.push('No unique identifier column found (ID, SKU, Code, etc.)');\n} else {\n  // Check which column has unique values\n  let uniqueIdColumn = null;\n  \n  for (const col of potentialIdColumns) {\n    const values = masterData.map(row => row[col]);\n    const uniqueValues = new Set(values.filter(v => v !== '' && v !== null && v !== undefined));\n    \n    if (uniqueValues.size === masterData.length && masterData.length > 0) {\n      uniqueIdColumn = col;\n      break;\n    }\n  }\n  \n  if (uniqueIdColumn) {\n    validationResults.findings.uniqueIdentifier = uniqueIdColumn;\n  } else {\n    validationResults.warnings.push('Potential ID columns found but none have truly unique values: ' + potentialIdColumns.join(', '));\n    validationResults.findings.uniqueIdentifier = potentialIdColumns[0]; // Use first one as fallback\n  }\n}\n\n// 2. Check for product name\nconst potentialNameColumns = columns.filter(col => \n  col.toLowerCase().includes('name') || \n  col.toLowerCase().includes('product') ||\n  col.toLowerCase().includes('title') ||\n  col.toLowerCase().includes('description')\n);\n\nif (potentialNameColumns.length === 0) {\n  validationResults.isValid = false;\n  validationResults.errors.push('No product name column found');\n} else {\n  // Check which column has the most filled values\n  let bestNameColumn = null;\n  let maxFilled = 0;\n  \n  for (const col of potentialNameColumns) {\n    const filledCount = masterData.filter(row => \n      row[col] !== '' && row[col] !== null && row[col] !== undefined\n    ).length;\n    \n    if (filledCount > maxFilled) {\n      maxFilled = filledCount;\n      bestNameColumn = col;\n    }\n  }\n  \n  if (maxFilled === 0) {\n    validationResults.isValid = false;\n    validationResults.errors.push('Product name column found but has no values');\n  } else {\n    validationResults.findings.productName = bestNameColumn;\n  }\n}\n\n// 3. Analyze data completeness\nconst completeness = {};\ncolumns.forEach(col => {\n  const filledCount = masterData.filter(row => \n    row[col] !== '' && row[col] !== null && row[col] !== undefined\n  ).length;\n  completeness[col] = {\n    filled: filledCount,\n    empty: masterData.length - filledCount,\n    percentage: ((filledCount / masterData.length) * 100).toFixed(2)\n  };\n});\n\nvalidationResults.findings.dataCompleteness = completeness;\nvalidationResults.findings.totalProducts = masterData.length;\n\nreturn [\n  {\n    json: {\n      ...data,\n      validation: validationResults\n    }\n  }\n];"
+      },
+      "id": "fbf7929a-9a17-4f5b-96bf-24480bcb3141",
+      "name": "Validate Required Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "validation-check",
+              "leftValue": "={{ $json.validation.isValid }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "eef56832-dc5f-4e4d-a541-072b5220e26b",
+      "name": "Check Validation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Map master data to Katana data model\nconst data = $input.item.json;\nconst masterData = data.masterData;\nconst validation = data.validation;\n\n// Define Katana data model structure\nconst katanaDataModel = {\n  basic: {\n    requiredFields: ['Product ID', 'Product Name', 'Category'],\n    optionalFields: ['Description', 'Brand', 'Status']\n  },\n  specifications: {\n    requiredFields: [],\n    optionalFields: [\n      'Weight', 'Dimensions', 'Color', 'Size', 'Material',\n      'Warranty', 'Country of Origin', 'Barcode', 'UPC'\n    ]\n  },\n  pricing: {\n    requiredFields: ['Unit Price'],\n    optionalFields: ['Cost Price', 'Retail Price', 'Wholesale Price', 'Currency']\n  },\n  inventory: {\n    requiredFields: [],\n    optionalFields: [\n      'Stock Level', 'Reorder Point', 'Lead Time',\n      'Supplier', 'Location', 'Warehouse'\n    ]\n  }\n};\n\n// Create mapping configuration\nconst columnMapping = {};\nconst sourceColumns = data.columns;\n\n// Helper function to find best match\nfunction findBestMatch(targetField, sourceColumns) {\n  const targetLower = targetField.toLowerCase();\n  const targetWords = targetLower.split(/\\s+/);\n  \n  let bestMatch = null;\n  let bestScore = 0;\n  \n  for (const sourceCol of sourceColumns) {\n    const sourceLower = sourceCol.toLowerCase();\n    let score = 0;\n    \n    // Exact match\n    if (sourceLower === targetLower) {\n      return sourceCol;\n    }\n    \n    // Word matching\n    targetWords.forEach(word => {\n      if (sourceLower.includes(word)) {\n        score += 2;\n      }\n    });\n    \n    // Partial matching\n    if (targetLower.includes(sourceLower) || sourceLower.includes(targetLower)) {\n      score += 1;\n    }\n    \n    if (score > bestScore) {\n      bestScore = score;\n      bestMatch = sourceCol;\n    }\n  }\n  \n  return bestScore > 0 ? bestMatch : null;\n}\n\n// Map all fields from Katana model\nfor (const [section, fields] of Object.entries(katanaDataModel)) {\n  columnMapping[section] = {};\n  \n  // Map required fields\n  fields.requiredFields.forEach(targetField => {\n    const match = findBestMatch(targetField, sourceColumns);\n    columnMapping[section][targetField] = {\n      sourceColumn: match,\n      isRequired: true,\n      isMapped: match !== null\n    };\n  });\n  \n  // Map optional fields\n  fields.optionalFields.forEach(targetField => {\n    const match = findBestMatch(targetField, sourceColumns);\n    columnMapping[section][targetField] = {\n      sourceColumn: match,\n      isRequired: false,\n      isMapped: match !== null\n    };\n  });\n}\n\n// Use validation findings for key fields\nif (validation.findings.uniqueIdentifier) {\n  columnMapping.basic['Product ID'].sourceColumn = validation.findings.uniqueIdentifier;\n  columnMapping.basic['Product ID'].isMapped = true;\n}\n\nif (validation.findings.productName) {\n  columnMapping.basic['Product Name'].sourceColumn = validation.findings.productName;\n  columnMapping.basic['Product Name'].isMapped = true;\n}\n\n// Transform data to Katana format\nconst katanaProducts = masterData.map(row => {\n  const product = {\n    basic: {},\n    specifications: {},\n    pricing: {},\n    inventory: {},\n    metadata: {\n      sourceFile: row._source_file,\n      sourceRowIndex: row._row_index,\n      importTimestamp: new Date().toISOString()\n    }\n  };\n  \n  // Map each section\n  for (const [section, fields] of Object.entries(columnMapping)) {\n    for (const [targetField, mapping] of Object.entries(fields)) {\n      if (mapping.isMapped && mapping.sourceColumn) {\n        const value = row[mapping.sourceColumn];\n        product[section][targetField] = value !== undefined && value !== null && value !== '' \n          ? value \n          : null;\n      } else {\n        product[section][targetField] = null;\n      }\n    }\n  }\n  \n  return product;\n});\n\n// Calculate mapping statistics\nconst mappingStats = {\n  totalFields: 0,\n  mappedFields: 0,\n  unmappedFields: 0,\n  requiredFieldsMapped: 0,\n  requiredFieldsTotal: 0\n};\n\nfor (const [section, fields] of Object.entries(columnMapping)) {\n  for (const [field, mapping] of Object.entries(fields)) {\n    mappingStats.totalFields++;\n    if (mapping.isMapped) {\n      mappingStats.mappedFields++;\n    } else {\n      mappingStats.unmappedFields++;\n    }\n    \n    if (mapping.isRequired) {\n      mappingStats.requiredFieldsTotal++;\n      if (mapping.isMapped) {\n        mappingStats.requiredFieldsMapped++;\n      }\n    }\n  }\n}\n\nmappingStats.mappingCompleteness = ((mappingStats.mappedFields / mappingStats.totalFields) * 100).toFixed(2) + '%';\nmappingStats.requiredFieldsCompleteness = ((mappingStats.requiredFieldsMapped / mappingStats.requiredFieldsTotal) * 100).toFixed(2) + '%';\n\nreturn [\n  {\n    json: {\n      katanaProducts: katanaProducts,\n      columnMapping: columnMapping,\n      mappingStats: mappingStats,\n      totalProducts: katanaProducts.length,\n      sourceData: {\n        totalRows: data.totalRows,\n        columns: data.columns\n      },\n      validation: validation\n    }\n  }\n];"
+      },
+      "id": "df7badf2-1689-4429-af11-f5c35c71f1ce",
+      "name": "Map to Katana Data Model",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare data for Excel export with separate tabs\nconst data = $input.item.json;\nconst katanaProducts = data.katanaProducts;\n\n// Flatten products for Excel export - Basic tab\nconst basicData = katanaProducts.map((product, index) => ({\n  'Row': index + 1,\n  'Product ID': product.basic['Product ID'],\n  'Product Name': product.basic['Product Name'],\n  'Category': product.basic['Category'],\n  'Description': product.basic['Description'],\n  'Brand': product.basic['Brand'],\n  'Status': product.basic['Status'],\n  'Source File': product.metadata.sourceFile\n}));\n\nreturn basicData.map(row => ({ json: row }));"
+      },
+      "id": "f367f2ea-720b-4065-b9c8-d3f13424064a",
+      "name": "Prepare Basic Tab",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "fileFormat": "xlsx",
+        "options": {
+          "fileName": "Katana_Import_Basic.xlsx",
+          "sheetName": "Basic Info"
+        }
+      },
+      "id": "7f07bda4-03d9-4c24-a0b8-ddae400285e7",
+      "name": "Export Basic Tab",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare specifications tab\nconst data = $input.item.json;\nconst katanaProducts = data.katanaProducts;\n\nconst specsData = katanaProducts.map((product, index) => ({\n  'Row': index + 1,\n  'Product ID': product.basic['Product ID'],\n  'Product Name': product.basic['Product Name'],\n  'Weight': product.specifications['Weight'],\n  'Dimensions': product.specifications['Dimensions'],\n  'Color': product.specifications['Color'],\n  'Size': product.specifications['Size'],\n  'Material': product.specifications['Material'],\n  'Warranty': product.specifications['Warranty'],\n  'Country of Origin': product.specifications['Country of Origin'],\n  'Barcode': product.specifications['Barcode'],\n  'UPC': product.specifications['UPC']\n}));\n\nreturn specsData.map(row => ({ json: row }));"
+      },
+      "id": "4d9a05b2-4012-45fb-bc1b-85eccb686e6f",
+      "name": "Prepare Specifications Tab",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "fileFormat": "xlsx",
+        "options": {
+          "fileName": "Katana_Import_Specifications.xlsx",
+          "sheetName": "Specifications"
+        }
+      },
+      "id": "1000190e-2bf0-4c1f-9356-61b8dcd0bd50",
+      "name": "Export Specifications Tab",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [
+        224,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create mapping report\nconst data = $input.item.json;\n\nconst report = {\n  summary: {\n    totalProducts: data.totalProducts,\n    mappingCompleteness: data.mappingStats.mappingCompleteness,\n    requiredFieldsStatus: data.mappingStats.requiredFieldsCompleteness,\n    timestamp: new Date().toISOString()\n  },\n  fieldMapping: data.columnMapping,\n  unmappedFields: [],\n  warnings: data.validation.warnings || [],\n  dataQuality: data.validation.findings.dataCompleteness\n};\n\n// Collect unmapped fields\nfor (const [section, fields] of Object.entries(data.columnMapping)) {\n  for (const [field, mapping] of Object.entries(fields)) {\n    if (!mapping.isMapped) {\n      report.unmappedFields.push({\n        section: section,\n        field: field,\n        required: mapping.isRequired\n      });\n    }\n  }\n}\n\nreturn [\n  {\n    json: {\n      success: true,\n      mappingReport: report,\n      readyForImport: data.mappingStats.requiredFieldsCompleteness === '100.00%',\n      totalProducts: data.totalProducts,\n      files: {\n        basic: 'Katana_Import_Basic.xlsx',\n        specifications: 'Katana_Import_Specifications.xlsx'\n      },\n      message: 'Data successfully mapped to Katana data model. Check the exported files for import.'\n    }\n  }\n];"
+      },
+      "id": "5890bf11-0b2a-4461-8d56-76b2e5d31663",
+      "name": "Create Final Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "0f91f22c-01fd-4c08-a391-3c456d23fedf",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"error\": \"Validation failed\", \"details\": $json.validation } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "91a86202-f4e7-457d-8035-80cb353857b1",
+      "name": "Validation Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -224,
+        304
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Upload Excel Files": {
+      "main": [
+        [
+          {
+            "node": "Read Excel Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Excel Files": {
+      "main": [
+        [
+          {
+            "node": "Combine Excel Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Excel Data": {
+      "main": [
+        [
+          {
+            "node": "Validate Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Required Fields": {
+      "main": [
+        [
+          {
+            "node": "Check Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Validation": {
+      "main": [
+        [
+          {
+            "node": "Map to Katana Data Model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map to Katana Data Model": {
+      "main": [
+        [
+          {
+            "node": "Prepare Basic Tab",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Specifications Tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Basic Tab": {
+      "main": [
+        [
+          {
+            "node": "Export Basic Tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Export Basic Tab": {
+      "main": [
+        [
+          {
+            "node": "Create Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Specifications Tab": {
+      "main": [
+        [
+          {
+            "node": "Export Specifications Tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Final Response": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "e7c7b003-5d81-4168-8e76-9e499dc0359f",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-03T14:55:14.173Z",
+      "updatedAt": "2025-11-03T14:55:14.173Z",
+      "role": "workflow:owner",
+      "workflowId": "coRoApFK2O8wpn3U",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
