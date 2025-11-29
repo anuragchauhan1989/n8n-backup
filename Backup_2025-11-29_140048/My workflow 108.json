@@ -1,0 +1,785 @@
+{
+  "createdAt": "2025-10-21T07:38:57.580Z",
+  "updatedAt": "2025-10-24T13:43:00.000Z",
+  "id": "k52ILGJ2xKczmi5H",
+  "name": "My workflow 108",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa",
+            "mode": "list",
+            "cachedResultName": "ZenshopInfluencer",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1088,
+        448
+      ],
+      "id": "cbee4017-8350-4065-b18e-afe88abbd9ef",
+      "name": "list_influencer_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        32,
+        80
+      ],
+      "id": "0c60105c-1b1a-458c-8e1c-b0a8446e13db",
+      "name": "product_image_to_base64"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        384
+      ],
+      "id": "c2d97cbb-12ba-4f2a-9aee-5275b6b0fa0d",
+      "name": "influencer_image_to_base_64"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        384
+      ],
+      "id": "a94e85a8-9c6f-4f3c-bae8-62330a2b8341",
+      "name": "generate_image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cAWTpPjxWun8tUIM",
+          "name": "Header Auth account - google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        384
+      ],
+      "id": "17b26a4c-b00d-4004-98d1-cfd5b7a85605",
+      "name": "get_image",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "name": "=AD Creative Image #{{ $runIndex + 1 }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1",
+          "mode": "list",
+          "cachedResultName": "Zenshop Ad creative",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        704,
+        384
+      ],
+      "id": "9211c23d-0240-4040-9f10-b5ec2c825ff8",
+      "name": "upload_image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "524da01b-f8b9-4c2c-9e28-319455903e4d",
+              "name": "=image_result",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}",
+              "type": "string"
+            },
+            {
+              "id": "2a5cc16b-5030-4ff1-ba82-fb53d684a430",
+              "name": "currentImageCount",
+              "value": "={{ $('Build Prompt').item.json.currentImageCount }}",
+              "type": "number"
+            },
+            {
+              "id": "7a31c940-6f91-447e-8f09-49df4d01ff85",
+              "name": "TotalImageCount",
+              "value": "={{ $('When Executed by Another Workflow').item.json.TotalImageCount }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        256,
+        384
+      ],
+      "id": "d10fd3df-d721-41c2-985d-0445ef6fd506",
+      "name": "set_result"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3",
+            "mode": "list",
+            "cachedResultName": "ZenshopProd",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -864,
+        160
+      ],
+      "id": "e2ba8dad-0832-4bf0-ad98-6ebac4911bf3",
+      "name": "List_Product_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "product_image",
+              "type": "any"
+            },
+            {
+              "name": "product_name"
+            },
+            {
+              "name": "TotalImageCount",
+              "type": "number"
+            },
+            {
+              "name": "ImageType"
+            },
+            {
+              "name": "currentlyGenerated",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1312,
+        448
+      ],
+      "id": "0c418a77-0e30-4e2a-8514-066ddb12d8dc",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -864,
+        448
+      ],
+      "id": "cf890611-0d64-49ae-8896-a2ccc6d40aed",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get current count from parent workflow\nconst currentCount = parseInt($('When Executed by Another Workflow').item.json.currentlyGenerated || 0);\n\n// Get form values from workflow input\nconst totalImagesToGenerate = parseInt($('When Executed by Another Workflow').item.json.TotalImageCount);\nconst imageType = $('When Executed by Another Workflow').item.json.ImageType;\n\n// Check if we've reached the limit BEFORE generating\nif (currentCount > totalImagesToGenerate) {\n  // Stop execution gracefully by returning null\n  return null;\n}\n\nconsole.log(\"current count:\", currentCount);\nconsole.log(\"totalimagecount:\", totalImagesToGenerate);\n// Fetching the base64 data for the product image from the previous node's output\nconst productImage = $('When Executed by Another Workflow').item.json.product_image;\n// Fetching the base64 data for the influencer image from the previous node's output\nconst influencerImage = $node['influencer_image_to_base_64'].json.data;\n\nlet promptText;\n\nif (imageType === 'Before/After Image') {\n  promptText = 'Image 1 is the HAIR EXTENSION PRODUCT. Image 2 is the INFLUENCER/MODEL. Create a professional before/after split-screen comparison image. LEFT SIDE (BEFORE): Use the person from image 2 with their natural hair. RIGHT SIDE (AFTER): Show the EXACT SAME person wearing the EXACT hair extensions from image 1.\\n\\nCRITICAL PRODUCT ACCURACY REQUIREMENTS:\\n- The hair extensions MUST be IDENTICAL to image 1: exact color, exact texture, exact length, exact style\\n- DO NOT modify, reinterpret, or stylize the product - replicate it PRECISELY\\n- Match every detail: color tone, highlights, wave pattern, thickness, shine level\\n- The extensions should look like the ACTUAL product from image 1 is on the person from image 2\\n- NO artistic interpretation - this is product documentation\\n\\nPOSE REQUIREMENTS (CRITICAL):\\n- BOTH BEFORE and AFTER: Person MUST face directly forward toward camera\\n- BOTH sides: Straight-on front view, shoulders square to camera\\n- BOTH sides: Eyes looking directly at camera\\n- BOTH sides: Neutral to slight smile, professional portrait pose\\n- NO side angles, NO three-quarter views, NO back views\\n- Hair should be visible from front view (can cascade over shoulders)\\n- Same exact pose and angle on both BEFORE and AFTER sides\\n\\nOTHER REQUIREMENTS:\\n- Split canvas 50/50 vertically with thin white divider\\n- Add BEFORE (top left) and AFTER (top right) in elegant serif font\\n- BEFORE: person with natural shorter hair, front facing\\n- AFTER: same person, same face, same outfit, same front-facing pose, EXACT product from image 1\\n- Same background and lighting on both sides - soft, neutral backdrop\\n- Add small rectangular branding at bottom center: \"ZEN HAIR EXTENSIONS\" (black text on white background, English only)\\n- Professional beauty photography quality\\n\\nOutput only the final composite image.';\n} else {\n  const angleVariation = currentCount % 5;\n  const taglineIndex = currentCount % 6;\n  \n  const taglines = [\n    { arabic: 'سحر فوري، بلا جهد', transliteration: 'Effortless Glamour, Instantly' },\n    { arabic: 'شعرك المثالي، كل يوم', transliteration: 'Your Best Hair, Every Day' },\n    { arabic: 'طول. كثافة. ثقة', transliteration: 'Length. Volume. Confidence' },\n    { arabic: 'تحول في ثوانٍ', transliteration: 'Transform in Seconds' },\n    { arabic: 'شعر فاخر، بسهولة تامة', transliteration: 'Luxurious Hair, Made Easy' },\n    { arabic: 'سحر بلا حدود', transliteration: 'Glamour Without Limits' }\n  ];\n  \n  const angles = [\n    'front view facing camera with hair framing the face, confident smile',\n    'side profile view showing the full hair length and volume cascading down',\n    'back view showcasing the complete length, texture and flow of the hair',\n    'three-quarter angle showing both face and hair flowing naturally over shoulder',\n    'dynamic pose with hair in gentle motion, hand naturally touching or running through hair'\n  ];\n  \n  const selectedTagline = taglines[taglineIndex];\n  \n  promptText = 'Image 1 is the HAIR EXTENSION PRODUCT. Image 2 is the INFLUENCER/MODEL. Create a realistic lifestyle photograph showing the person from image 2 wearing the EXACT hair extensions from image 1.\\n\\nCRITICAL PRODUCT ACCURACY REQUIREMENTS:\\n- The hair extensions MUST be PIXEL-PERFECT replicas of image 1\\n- EXACT color match - including undertones, highlights, and color depth from image 1\\n- EXACT texture match - wave pattern, curl type, straightness from image 1\\n- EXACT length match - do not shorten or lengthen from image 1\\n- EXACT thickness/volume match from image 1\\n- EXACT shine/gloss level from image 1\\n- This is PRODUCT PHOTOGRAPHY - accuracy is more important than artistic beauty\\n- The person should look like they are wearing the ACTUAL physical product from image 1\\n- NO modifications, NO reinterpretation, NO stylization of the product\\n\\nSETTING:\\n- Elegant outdoor or upscale indoor location\\n- Person looks confident and naturally glamorous\\n- Hair clearly visible and well-lit\\n- Camera angle: ' + angles[angleVariation] + '\\n- Natural golden hour or soft diffused lighting\\n- Premium lifestyle aesthetic\\n\\nPERSON:\\n- Use exact facial features, skin tone, ethnicity from image 2\\n- Professional but authentic lifestyle feel\\n\\nARABIC TEXT OVERLAY (TOP CENTER) - CRITICAL:\\n- Display this ARABIC text prominently: \"' + selectedTagline.arabic + '\"\\n- Font: Elegant Arabic calligraphy font (like Diwani or modern Arabic display font)\\n- Style: White or light cream colored text with subtle shadow for readability\\n- Text MUST be RIGHT-TO-LEFT Arabic script\\n- Ensure proper Arabic character formation and letter joining\\n- Center-aligned, large and clearly readable\\n- Premium, sophisticated look matching luxury advertisement\\n- Place at top center of image with good contrast against background\\n- NO English text in the main tagline area\\n- ONLY add \"ZEN HAIR EXTENSIONS\" in small English text at bottom if space permits\\n- NO other watermarks or labels\\n\\nIMPORTANT: The Arabic text must be INTEGRATED into the image naturally, not looking like a separate overlay. It should feel like part of the advertisement design.\\n\\nOutput only the final image with Arabic tagline.';\n}\n\nconst requestBody = {\n  contents: [\n    {\n      parts: [\n        {\n          text: promptText\n        },\n        {\n          inline_data: {\n            mime_type: \"image/jpeg\",\n            data: productImage\n          }\n        },\n        {\n          inline_data: {\n            mime_type: \"image/jpeg\",\n            data: influencerImage\n          }\n        }\n      ]\n    }\n  ]\n};\n\nreturn {\n  json: {\n    requestBody: JSON.stringify(requestBody),\n    currentImageCount: currentCount + 1,\n    totalImages: totalImagesToGenerate,\n    imageType: imageType,\n    currentlyGenerated: currentCount + 1\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        384
+      ],
+      "id": "9bbcc8dc-35e5-4261-ac7a-61736677d52f",
+      "name": "Build Prompt"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -192,
+        80
+      ],
+      "id": "668927cc-040e-417a-919d-ff3dfbf7a646",
+      "name": "Download Product Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -640,
+        384
+      ],
+      "id": "72a6c450-ee43-4878-8b2e-a0315ce10b9a",
+      "name": "Download Influencer Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Input Form",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "No. of Images",
+              "placeholder": "5",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Image type ",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Before/After Image"
+                  },
+                  {
+                    "option": "Free Lifestyle Image"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -1312,
+        160
+      ],
+      "id": "87698007-e51f-4e55-a5e8-26e25c072ab5",
+      "name": "On form submission",
+      "webhookId": "ba6d353f-8fd0-458c-8b27-44ce1f477da6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check if this is being called from the loop (has updated counter)\nconst hasUpdatedCounter = $input.item.json.currentlyGenerated !== undefined && \n                          $input.item.json.currentlyGenerated > 0;\n\nif (hasUpdatedCounter) {\n  // This is a loop iteration - use the updated counter\n  return {\n    json: {\n      totalImagesToGenerate: $input.item.json.totalImagesToGenerate,\n      imageType: $input.item.json.imageType,\n      currentlyGenerated: $input.item.json.currentlyGenerated\n    }\n  };\n} else {\n  // This is the initial form submission\n  const formData = $input.item.json;\n  const numImages = formData['No. of Images'];\n  const imageType = formData['Image type '];\n  \n  return {\n    json: {\n      totalImagesToGenerate: parseInt(numImages),\n      imageType: imageType,\n      currentlyGenerated: 0\n    }\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1088,
+        160
+      ],
+      "id": "3f235d68-168b-4925-b318-70e96646ebad",
+      "name": "Store Form Values"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "k52ILGJ2xKczmi5H",
+          "mode": "list",
+          "cachedResultName": "My workflow 108"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "product_image": "={{ $json.data }}",
+            "product_name": "={{ $('Download Product Image').item.json.name }}",
+            "TotalImageCount": "={{ $('Store Form Values').item.json.totalImagesToGenerate }}",
+            "ImageType": "={{ $('Store Form Values').item.json.imageType }}",
+            "currentlyGenerated": "="
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "product_image",
+              "displayName": "product_image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "TotalImageCount",
+              "displayName": "TotalImageCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "ImageType",
+              "displayName": "ImageType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "currentlyGenerated",
+              "displayName": "currentlyGenerated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        80
+      ],
+      "id": "97e8f194-dc91-495f-876d-767dc360fcd2",
+      "name": "Call 'My workflow 108'"
+    },
+    {
+      "parameters": {
+        "jsCode": "// The subworkflow now returns the updated counter through the \"Return Updated Counter\" node\n// Extract it from the last item returned by the subworkflow\nconst allItems = $input.all();\n\n// Find the item with updatedCounter from \"Return Updated Counter\" node\nlet updatedCounter = 0;\nfor (const item of allItems) {\n  if (item.json.updatedCounter !== undefined) {\n    updatedCounter = item.json.updatedCounter;\n    break;\n  }\n}\n\nconsole.log(\"updated Counter:\", updatedCounter);\n// Get values from Store Form Values\nconst totalImages = $('Store Form Values').item.json.totalImagesToGenerate;\nconst imageType = $('Store Form Values').item.json.imageType;\n\n// Return the updated values for the next iteration\nreturn {\n  json: {\n    currentlyGenerated: updatedCounter,\n    totalImagesToGenerate: totalImages,\n    imageType: imageType\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        160
+      ],
+      "id": "c7549e85-cd79-44ca-b3bb-ab7f7096f9ed",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bfdf071e-a75e-43ab-9afa-d34823540e35",
+              "leftValue": "={{ $('Store Form Values').item.json.currentlyGenerated }}",
+              "rightValue": "={{ $('Store Form Values').item.json.totalImagesToGenerate }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -416,
+        80
+      ],
+      "id": "a4579fca-c0da-4f3f-97c1-c079e23cf135",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -640,
+        160
+      ],
+      "id": "e4a3fbcf-233a-484b-9ada-06cde27b5e45",
+      "name": "Loop Over Product"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "counter-return",
+              "name": "updatedCounter",
+              "value": "={{ $('set_result').item.json.currentImageCount }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "return-counter-12345",
+      "name": "Return Updated Counter",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        928,
+        384
+      ]
+    }
+  ],
+  "connections": {
+    "list_influencer_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "influencer_image_to_base_64": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_image": {
+      "main": [
+        [
+          {
+            "node": "set_result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_image": {
+      "main": [
+        [
+          {
+            "node": "upload_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_result": {
+      "main": [
+        [
+          {
+            "node": "get_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List_Product_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "list_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download Influencer Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "generate_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "product_image_to_base64": {
+      "main": [
+        [
+          {
+            "node": "Call 'My workflow 108'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Product Image": {
+      "main": [
+        [
+          {
+            "node": "product_image_to_base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Influencer Image": {
+      "main": [
+        [
+          {
+            "node": "influencer_image_to_base_64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Store Form Values",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Form Values": {
+      "main": [
+        [
+          {
+            "node": "List_Product_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'My workflow 108'": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Download Product Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Product": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload_image": {
+      "main": [
+        [
+          {
+            "node": "Return Updated Counter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return Updated Counter": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "global": {
+      "imagesGenerated": 1,
+      "totalImagesCreated": 0
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "ce7eaef9-0ef2-4bb1-aac2-b0c43c4e5bf1",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-21T07:38:57.584Z",
+      "updatedAt": "2025-10-21T07:38:57.584Z",
+      "role": "workflow:owner",
+      "workflowId": "k52ILGJ2xKczmi5H",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
