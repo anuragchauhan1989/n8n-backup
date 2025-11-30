@@ -1,0 +1,594 @@
+{
+  "createdAt": "2025-11-07T04:31:47.946Z",
+  "updatedAt": "2025-11-21T04:31:20.000Z",
+  "id": "P6dId9i4oFtPchwX",
+  "name": "Automation Test Workflow - Anurag",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk",
+          "mode": "list",
+          "cachedResultName": "Test Data Source",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9e18db0e-abbc-4500-93c8-630b4ceb44f7",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "uHdaH2QDMcY8ICJf",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1633b0b5-87dc-4b1c-874b-11cc87ae96b3",
+              "leftValue": "={{ $json.Name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "19c37e2b-4a93-4686-b621-e495cda8d4eb",
+              "leftValue": "={{ $json.Email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "fa7e1259-aadd-4923-9596-02cef812aeaf",
+              "leftValue": "={{ $json['transaction Id'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3db724e2-9728-4e6d-b9c2-a36ad3cf1eac",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09B18Z2NQY",
+          "mode": "list",
+          "cachedResultName": "all-cognigenai"
+        },
+        "message": "Please review the data to approve or reject.",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Status",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approve"
+                  },
+                  {
+                    "option": "Reject"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Details",
+              "placeholder": "provide details",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "responseFormDescription": "=Check this data--> Name: {{ $json.Name }}, Emai: {{ $json.Email }} and TransactionId: {{ $json[\"transaction Id\"] }}"
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "d238a832-5249-4e4b-98cc-18ea43cb996c",
+      "name": "Send message and wait for response",
+      "webhookId": "89b9459c-60eb-458e-947f-4ab357af114a",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09B18Z2NQY",
+          "mode": "list",
+          "cachedResultName": "all-cognigenai"
+        },
+        "text": "={{ $json.message }}, Kindly check it.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "8b89705b-16d1-4aff-879c-dfdc7a0b0d26",
+      "name": "Notify for rejection",
+      "webhookId": "2277bff4-fd83-444b-9cb3-945985af32ac",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.cognigenai.in/webhook/external-api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        -192
+      ],
+      "id": "49067cad-49e4-4976-b76c-1b30f8197666",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "external-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        448
+      ],
+      "id": "13d8d1ef-d5a6-4290-92a1-433e7286c7fc",
+      "name": "Webhook",
+      "webhookId": "c812b823-31e9-4024-b728-6264f6d6cafc"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        208,
+        448
+      ],
+      "id": "cfc69eac-5fc4-4b74-978b-2e7050246499",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk",
+          "mode": "list",
+          "cachedResultName": "Test Data Source",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1524249259,
+          "mode": "list",
+          "cachedResultName": "Log Success/Failure",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk/edit#gid=1524249259"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "message": "={{ $json.data.Status === 'Reject' ? $json.data.Details : \"\" }}\n\n{{ JSON.stringify($('Google Sheets Trigger').item.json) }}"
+          },
+          "matchingColumns": [
+            "message"
+          ],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "54939455-0396-44c5-9767-2807fd3d722c",
+      "name": "Log Rejection",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk",
+          "mode": "list",
+          "cachedResultName": "Test Data Source",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1524249259,
+          "mode": "list",
+          "cachedResultName": "Log Success/Failure",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk/edit#gid=1524249259"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "message": "={{ $json.body.Status === 'Approve' ? $json.body.Details : \"\" }}\n\n{{ JSON.stringify($('Google Sheets Trigger').item.json) }}"
+          },
+          "matchingColumns": [
+            "message"
+          ],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        -192
+      ],
+      "id": "723f3e24-acfc-4da3-89aa-96004fdc3221",
+      "name": "Log Success",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09B18Z2NQY",
+          "mode": "list",
+          "cachedResultName": "all-cognigenai"
+        },
+        "text": "=Congratulations {{ $json.message }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1456,
+        -192
+      ],
+      "id": "5b1d0cbf-37c6-4c62-8634-e210f99435d7",
+      "name": "Notify Summary",
+      "webhookId": "c775eeee-d926-4a6a-a30c-ea1d3af3a287",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f7ea0936-068f-4e7a-b14a-4182f6ac07d6",
+              "leftValue": "={{ $json.data.Status }}",
+              "rightValue": "Approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "fab50e4e-e5bc-4c25-b0d9-e7351d08f695",
+      "name": "Check Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// input data\nconst inputData = $input.all();\n\nconst results = []\n\n// function to check required fields\nconst reuiredFields = ['Name', 'Email', 'transaction Id'];\n\n\n// process each record\n\nfor ( const item of inputData ) {\n  const data = item.json;\n  const missingFields = [];\n\n  for ( const field of reuiredFields ) {\n    if ( !data[field] || data[field].trim === '' ) {\n        missingFields.push(field);\n    }\n  }\n\nif ( missingFields.length > 0 ) {\n    const message = `Missing required fields: ${missingFields.join(', ')}`;\n    results.push({\n      json: {\n        status: 'error',\n        message: message,\n      }\n    });\n} else {\n    results.push({\n      json: {\n        status: 'success',\n        data: data,\n      }\n    });\n}\n\n}\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        96
+      ],
+      "id": "be58cfa0-4b11-4795-99d2-ed7b8204f15f",
+      "name": "Report the missing field"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09B18Z2NQY",
+          "mode": "list",
+          "cachedResultName": "all-cognigenai"
+        },
+        "text": "={{ $json.message }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        96
+      ],
+      "id": "33eaa655-23b0-4300-a5e6-22f1e8dd90b8",
+      "name": "Notify for missing field",
+      "webhookId": "ee46648c-c068-49df-9cd0-4fa1cb6eeb21",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report the missing field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "Check Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Rejection": {
+      "main": [
+        [
+          {
+            "node": "Notify for rejection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Success": {
+      "main": [
+        [
+          {
+            "node": "Notify Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Rejection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report the missing field": {
+      "main": [
+        [
+          {
+            "node": "Notify for missing field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Google Sheets Trigger": {
+      "documentId": "121Hb6s3kN4lTWqDBH2Elwr98DivFa_ETqJLkKwYGAtk",
+      "sheetId": 0,
+      "lastIndexChecked": 2
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "b2ed6a65-b3bd-466e-aff9-fb12ce54796a",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "createdAt": "2025-11-07T04:31:47.954Z",
+      "updatedAt": "2025-11-07T04:31:47.954Z",
+      "role": "workflow:owner",
+      "workflowId": "P6dId9i4oFtPchwX",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
