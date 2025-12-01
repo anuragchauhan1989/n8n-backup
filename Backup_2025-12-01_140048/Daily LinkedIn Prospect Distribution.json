@@ -1,0 +1,889 @@
+{
+  "createdAt": "2025-10-14T06:14:47.374Z",
+  "updatedAt": "2025-10-14T08:25:23.000Z",
+  "id": "nrKON28WYAF6Y2MJ",
+  "name": "Daily LinkedIn Prospect Distribution",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 13
+            }
+          ]
+        }
+      },
+      "id": "de92d210-6819-47e2-aedc-4ea89754f0bc",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appSyRFfQAU9hVeAP",
+          "mode": "list",
+          "cachedResultName": "LinkedIn"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblHka3dAzfcJHXiX",
+          "mode": "list",
+          "cachedResultName": "LinkedIn"
+        },
+        "filterByFormula": "={Active} = 1",
+        "options": {}
+      },
+      "id": "linkedin-accounts-node",
+      "name": "Get Active LinkedIn Accounts",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all active LinkedIn accounts\nconst accounts = $input.all();\n\n// Calculate total daily limit\nlet totalDailyLimit = 0;\nconst accountDetails = [];\n\nfor (const account of accounts) {\n  const dailyLimit = account.json[\"Daily Limit\"] || 0;\n  totalDailyLimit += dailyLimit;\n  \n  accountDetails.push({\n    id: account.json.id,\n    name: account.json[\"Account Name\"],\n    dailyLimit: dailyLimit,\n    linkedinAccountUrl: account.json.URL\n  });\n}\n\n// Return summary for next node\nreturn [{\n  json: {\n    totalDailyLimit: totalDailyLimit,\n    accounts: accountDetails,\n    accountCount: accountDetails.length\n  }\n}];"
+      },
+      "id": "calculate-distribution",
+      "name": "Calculate Distribution",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appSyRFfQAU9hVeAP",
+          "mode": "list",
+          "cachedResultName": "LinkedIn"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl8ZJluLpJEqtxlx",
+          "mode": "list",
+          "cachedResultName": "Employees"
+        },
+        "filterByFormula": "={Assigned} = 0",
+        "options": {}
+      },
+      "id": "get-unassigned-employees",
+      "name": "Get Unassigned Ready Employees",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        704,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get distribution info from previous node\nconst distributionNode = $('Calculate Distribution').first();\nconst accounts = distributionNode.json.accounts;\n\n// Get all employees\nconst employees = $input.all();\n\nconst distributedEmployees = [];\nlet employeeIndex = 0;\n\n// Distribute employees to each account based on daily limit\nfor (const account of accounts) {\n  const dailyLimit = account.dailyLimit;\n  \n  for (let i = 0; i < dailyLimit && employeeIndex < employees.length; i++) {\n    const employee = employees[employeeIndex].json;\n    \n    distributedEmployees.push({\n      json: {\n        // Employee data\n        employeeId: employee.id,\n        Company_Name: employee.Company_Name,\n        Employee_Full_Name: employee.Employee_Full_Name,\n        Employee_First_Name: employee.Employee_First_Name,\n        Employee_Last_Name: employee.Employee_Last_Name,\n        Employee_Email: employee.Employee_Email,\n        Employee_LinkedIn_URL: employee.Employee_LinkedIn_URL,\n        Employee_Job_Title: employee.Employee_Job_Title,\n        Employee_Role_Seniority: employee.Employee_Role_Seniority,\n        Employee_Country_Apollo: employee.Employee_Country_Apollo,\n        Company_ID_Apollo: employee.Company_ID_Apollo,\n        Employee_ID_Apollo: employee.Employee_ID_Apollo,\n        // Assignment info\n        assignedAccount: account.name,\n        assignedAccountId: account.id,\n        assignedAccountUrl: account.linkedinAccountUrl\n      }\n    });\n    \n    employeeIndex++;\n  }\n}\n\nreturn distributedEmployees;"
+      },
+      "id": "distribute-employees",
+      "name": "Distribute Employees to Accounts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "loop-employees",
+      "name": "Loop Over Distributed Employees",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1232,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "list",
+          "value": "appSyRFfQAU9hVeAP",
+          "cachedResultName": "LinkedIn"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tblv3Eqz4W1fJFWO6",
+          "cachedResultName": "Prospects"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full Name": "={{ $json.Employee_Full_Name }}",
+            "First Name": "={{ $json.Employee_First_Name }}",
+            "Last Name": "={{ $json.Employee_Last_Name }}",
+            "Email": "={{ $json.Employee_Email }}",
+            "Company Name": "={{ $json.Company_Name }}",
+            "Job Title": "={{ $json.Employee_Job_Title }}",
+            "Employee Role Seniority": "={{ $json.Employee_Role_Seniority }}",
+            "Country": "={{ $json.Employee_Country_Apollo }}",
+            "LinkedIn URL": "={{ $json.Employee_LinkedIn_URL }}",
+            "Company ID Apollo": "={{ $json.Company_ID_Apollo }}",
+            "Employee ID Apollo": "={{ $json.Employee_ID_Apollo }}",
+            "User": "={{ $json.assignedAccount }}",
+            "Connection Sent": false,
+            "Connection Accepted": false,
+            "Offer Sent": false,
+            "Offer Accepted": false
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Create Date",
+              "displayName": "Create Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "User",
+              "displayName": "User",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last Name",
+              "displayName": "Last Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee Role Seniority",
+              "displayName": "Employee Role Seniority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "LinkedIn URL",
+              "displayName": "LinkedIn URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "LinkedIn Profile",
+              "displayName": "LinkedIn Profile",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection Status",
+              "displayName": "Connection Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Connection Request Text",
+              "displayName": "Connection Request Text",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Connection Sent",
+              "displayName": "Connection Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection Sent Date",
+              "displayName": "Connection Sent Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Connection Sent By",
+              "displayName": "Connection Sent By",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Connection Accepted",
+              "displayName": "Connection Accepted",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Connection Accepted Date",
+              "displayName": "Connection Accepted Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Connection Accepted By",
+              "displayName": "Connection Accepted By",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Message Thread URL",
+              "displayName": "Message Thread URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Offer Status",
+              "displayName": "Offer Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Offer Date",
+              "displayName": "Offer Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Offer Text",
+              "displayName": "Offer Text",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Offer Sent",
+              "displayName": "Offer Sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Offer Sent Date",
+              "displayName": "Offer Sent Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Offer Sent By",
+              "displayName": "Offer Sent By",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Offer Accepted",
+              "displayName": "Offer Accepted",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Offer Accepted Date",
+              "displayName": "Offer Accepted Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Offer Accetpted By",
+              "displayName": "Offer Accetpted By",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Company ID Apollo",
+              "displayName": "Company ID Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee ID Apollo",
+              "displayName": "Employee ID Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "7dec3ae0-5737-4e7e-a2b2-db509722249e",
+      "name": "Add to Prospects Table",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1488,
+        208
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appSyRFfQAU9hVeAP",
+          "mode": "list",
+          "cachedResultName": "LinkedIn"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl8ZJluLpJEqtxlx",
+          "mode": "list",
+          "cachedResultName": "Employees"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.employeeId }}",
+            "Assigned": true
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true
+            },
+            {
+              "id": "Company_Name",
+              "displayName": "Company_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee_Full_Name",
+              "displayName": "Employee_Full_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee_First_Name",
+              "displayName": "Employee_First_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee_Last_Name",
+              "displayName": "Employee_Last_Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee_Email",
+              "displayName": "Employee_Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee_LinkedIn_URL",
+              "displayName": "Employee_LinkedIn_URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee_Job_Title",
+              "displayName": "Employee_Job_Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee_Role_Seniority",
+              "displayName": "Employee_Role_Seniority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee_Country_Apollo",
+              "displayName": "Employee_Country_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date_Created",
+              "displayName": "Date_Created",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Company_ID_Apollo",
+              "displayName": "Company_ID_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employee_ID_Apollo",
+              "displayName": "Employee_ID_Apollo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Assigned",
+              "displayName": "Assigned",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date Assigned",
+              "displayName": "Date Assigned",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "mark-assigned",
+      "name": "Mark Employee as Assigned",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1728,
+        208
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Active LinkedIn Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active LinkedIn Accounts": {
+      "main": [
+        [
+          {
+            "node": "Calculate Distribution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Distribution": {
+      "main": [
+        [
+          {
+            "node": "Get Unassigned Ready Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Unassigned Ready Employees": {
+      "main": [
+        [
+          {
+            "node": "Distribute Employees to Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Distribute Employees to Accounts": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Distributed Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Distributed Employees": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Add to Prospects Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add to Prospects Table": {
+      "main": [
+        [
+          {
+            "node": "Mark Employee as Assigned",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Employee as Assigned": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Distributed Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2025-09-26T13:00:19.006+10:00",
+          "Readable date": "September 26th 2025, 1:00:19 pm",
+          "Readable time": "1:00:19 pm",
+          "Day of week": "Friday",
+          "Year": "2025",
+          "Month": "September",
+          "Day of month": "26",
+          "Hour": "13",
+          "Minute": "00",
+          "Second": "19",
+          "Timezone": "Australia/Sydney (UTC+10:00)"
+        }
+      }
+    ]
+  },
+  "versionId": "3972563b-bf77-436d-affe-c4ababd3cccf",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-14T06:14:47.380Z",
+      "updatedAt": "2025-10-14T06:14:47.380Z",
+      "role": "workflow:owner",
+      "workflowId": "nrKON28WYAF6Y2MJ",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-10-14T06:14:45.369Z",
+      "updatedAt": "2025-10-14T06:14:45.369Z",
+      "id": "XAy8G8Xz9fes7e4g",
+      "name": "production"
+    }
+  ]
+}
