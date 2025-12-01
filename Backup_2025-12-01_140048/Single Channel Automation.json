@@ -1,0 +1,466 @@
+{
+  "createdAt": "2025-11-30T16:05:53.760Z",
+  "updatedAt": "2025-12-01T07:23:40.000Z",
+  "id": "xh8KEx4S2beEVDTS",
+  "name": "Single Channel Automation",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg",
+          "mode": "list",
+          "cachedResultName": "Single Channel Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit#gid=0"
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -208,
+        -64
+      ],
+      "id": "732607b1-15c8-4fa5-bafe-4c69c71735a6",
+      "name": "Get Next Pending Row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MJLr4bfH53ymveir",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $json;\n\nif (!row.prompt || !row.language || !row.target_duration_sec) {\n  return [\n    {\n      json: {\n        valid: false,\n        error: \"Invalid input\",\n        row_number: row.row_number\n      }\n    }\n  ];\n}\n\nreturn [\n  {\n    json: {\n      valid: true,\n      row_number: row.row_number\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        -64
+      ],
+      "id": "1cf8d772-faac-410c-813f-97eea7c20040",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6a273fcd-d948-4f8d-a494-ea92b49ad26e",
+              "leftValue": "={{$json.valid}}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        -64
+      ],
+      "id": "fab21aa3-8273-4d68-96e2-cbe013d11943",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg",
+          "mode": "list",
+          "cachedResultName": "Single Channel Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "status": "ERROR"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "language",
+              "displayName": "language",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "target_duration_sec",
+              "displayName": "target_duration_sec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        288,
+        96
+      ],
+      "id": "76c5cbb8-52fe-4b75-b17a-266a8af7c0c1",
+      "name": "Log Error",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MJLr4bfH53ymveir",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Create a YouTube narration script.\n\nTopic: {{ $('Get Next Pending Row').item.json.prompt }}\nLanguage: {{ $('Get Next Pending Row').item.json.language }}\nTarget Duration (seconds): {{ $('Get Next Pending Row').item.json.target_duration_sec }}\n\nReturn JSON with:\n{\n  \"fullNarration\": \"<complete narration text>\",\n  \"segments\": [\n    {\n      \"title\": \"short title\",\n      \"visualPrompt\": \"what AI image model should generate\",\n      \"duration\": 5\n    }\n  ]\n}\n\nRules:\n- No commentary.\n- No markdown.\n- Duration per segment must sum close to target_duration_sec.\n- 5 to 8 segments maximum.\n- Narration must be smooth and engaging.\n"
+            },
+            {
+              "content": "You generate video narration scripts with clean JSON output. \nNo timestamps. No camera directions. No scene headers. \nReturn only valid JSON.",
+              "role": "system"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        320,
+        -160
+      ],
+      "id": "b29579ea-e135-46e5-8838-347b40a16ea5",
+      "name": "Generate Script",
+      "credentials": {
+        "openAiApi": {
+          "id": "QFYgJdhaYnKLqfAu",
+          "name": "mostrevbenton Youtube Automation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.message.content;\n\nlet data;\n\ntry {\n  data = JSON.parse(raw);\n} catch (e) {\n  return [\n    {\n      json: {\n        success: false,\n        error: \"Invalid JSON from LLM\",\n        details: e.message\n      }\n    }\n  ];\n}\n\nreturn [\n  {\n    json: {\n      success: true,\n      fullNarration: data.fullNarration,\n      segments: data.segments\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -160
+      ],
+      "id": "299b0670-811f-476e-b572-d5f8b6169e52",
+      "name": "Parse Script JSON"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        -64
+      ],
+      "id": "16903c36-fdd3-4864-812c-2ba8f9a9804d",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/KMT1qWxUa6OW8WYxMiYN",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xi-api-key",
+              "value": "sk_c0d484113ac6a14c54f356880bc4b9fe2ea2d8dc1051547e"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "audio/mpeg"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{$json.fullNarration}}\",\n  \"model_id\": \"eleven_multilingual_v2\",\n  \"voice_settings\": {\n    \"stability\": 0.6,\n    \"similarity_boost\": 0.8\n  }\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "audio"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        -160
+      ],
+      "id": "ffb502b3-7b00-4672-84d4-b281d20d71c8",
+      "name": "Generate TTS Audio"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-image-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-image-preview (Nano Banana)"
+        },
+        "prompt": "a cute cat rolling on a ball",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        272
+      ],
+      "id": "57446e3e-bd05-4fcd-b4f7-7d1fa7dec52d",
+      "name": "Generate an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RtaGCJigYviPRsKW",
+          "name": "mostrevbenton Youtube Automation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "nature"
+            },
+            {
+              "name": "per_page",
+              "value": "10"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "JW2SpJk71bUJn9slRJQgyITGcc1Bj65XXZ7sSQfoEvSYKNgThIikLXbl"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        432,
+        272
+      ],
+      "id": "c474504d-1eab-4269-985e-74f4d7d7607a",
+      "name": "HTTP Request"
+    }
+  ],
+  "connections": {
+    "Get Next Pending Row": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Generate Script",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Script": {
+      "main": [
+        [
+          {
+            "node": "Parse Script JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Next Pending Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Script JSON": {
+      "main": [
+        [
+          {
+            "node": "Generate TTS Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "45aceb3a-6f9a-4d25-867e-bf8863a44779",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-30T16:05:53.765Z",
+      "updatedAt": "2025-11-30T16:05:53.765Z",
+      "role": "workflow:owner",
+      "workflowId": "xh8KEx4S2beEVDTS",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
