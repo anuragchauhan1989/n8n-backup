@@ -1,0 +1,405 @@
+{
+  "createdAt": "2025-12-01T07:31:38.167Z",
+  "updatedAt": "2025-12-01T07:35:54.000Z",
+  "id": "6waZmzrNiwEveQs7",
+  "name": "My workflow 126",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg",
+          "mode": "list",
+          "cachedResultName": "Single Channel Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "status",
+              "lookupValue": "PENDING"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -528,
+        96
+      ],
+      "id": "8afd852d-4059-4da4-94cd-6ad71fd23bce",
+      "name": "Get Next Pending Row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MJLr4bfH53ymveir",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $json;\n\nif (!row.prompt || !row.language || !row.target_duration_sec) {\n  return [\n    {\n      json: {\n        valid: false,\n        error: \"Invalid input\",\n        row_number: row.row_number\n      }\n    }\n  ];\n}\n\nreturn [\n  {\n    json: {\n      valid: true,\n      row_number: row.row_number\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        96
+      ],
+      "id": "5129e80c-a0dc-4119-8852-d15a1be08d0d",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6a273fcd-d948-4f8d-a494-ea92b49ad26e",
+              "leftValue": "={{$json.valid}}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        96
+      ],
+      "id": "a05033e6-af42-489c-8898-2cddd899a80c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg",
+          "mode": "list",
+          "cachedResultName": "Single Channel Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "status": "ERROR"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "language",
+              "displayName": "language",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "target_duration_sec",
+              "displayName": "target_duration_sec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -32,
+        256
+      ],
+      "id": "a66a3d9f-daae-42c9-8a1c-d79027a597a2",
+      "name": "Log Error",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MJLr4bfH53ymveir",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Create a YouTube narration script.\n\nTopic: {{ $('Get Next Pending Row').item.json.prompt }}\nLanguage: {{ $('Get Next Pending Row').item.json.language }}\nTarget Duration (seconds): {{ $('Get Next Pending Row').item.json.target_duration_sec }}\n\nReturn JSON with:\n{\n  \"fullNarration\": \"<complete narration text>\",\n  \"segments\": [\n    {\n      \"title\": \"short title\",\n      \"visualPrompt\": \"what AI image model should generate\",\n      \"duration\": 5\n    }\n  ]\n}\n\nRules:\n- No commentary.\n- No markdown.\n- Duration per segment must sum close to target_duration_sec.\n- 3 to 5 segments maximum.\n- Narration must be smooth and engaging.\n- CRITICAL: The fullNarration text MUST be under 95 characters total (extremely concise). This is a hard limit.\n- Keep narration brief but impactful - like a short tagline or hook.\n"
+            },
+            {
+              "content": "=You generate video narration scripts with clean JSON output. \nNo timestamps. No camera directions. No scene headers. \nReturn only valid JSON.\nIMPORTANT: Keep fullNarration under 95 characters - be extremely concise.",
+              "role": "system"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3af395cd-9f7c-4392-809e-b54ee33db212",
+      "name": "Generate Script",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.message.content;\n\nlet data;\n\ntry {\n  data = JSON.parse(raw);\n} catch (e) {\n  return [\n    {\n      json: {\n        success: false,\n        error: \"Invalid JSON from LLM\",\n        details: e.message\n      }\n    }\n  ];\n}\n\nreturn [\n  {\n    json: {\n      success: true,\n      fullNarration: data.fullNarration,\n      segments: data.segments\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        0
+      ],
+      "id": "a51b8d99-2876-49c6-8ef8-6c5961304169",
+      "name": "Parse Script JSON"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        96
+      ],
+      "id": "fc4f3296-4a92-497b-8caf-373feed12735",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/FGY2WhTYpPnrIDTdsKH5",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xi-api-key",
+              "value": "sk_33eb95717e30a39b03a9190c484640a73c5fc1f092155d53"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "audio/mpeg"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{$json.fullNarration}}\",\n  \"model_id\": \"eleven_multilingual_v2\",\n  \"voice_settings\": {\n    \"stability\": 0.6,\n    \"similarity_boost\": 0.8\n  }\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "audio"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "c93efe6d-252e-417f-a68a-68b7b22c9fe1",
+      "name": "Generate TTS Audio"
+    }
+  ],
+  "connections": {
+    "Get Next Pending Row": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Generate Script",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Script": {
+      "main": [
+        [
+          {
+            "node": "Parse Script JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Next Pending Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Script JSON": {
+      "main": [
+        [
+          {
+            "node": "Generate TTS Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "1a481236-59a4-42ca-a824-a14807f9bd27",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-12-01T07:31:38.175Z",
+      "updatedAt": "2025-12-01T07:31:38.175Z",
+      "role": "workflow:owner",
+      "workflowId": "6waZmzrNiwEveQs7",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
