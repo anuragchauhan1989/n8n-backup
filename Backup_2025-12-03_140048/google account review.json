@@ -1,0 +1,1686 @@
+{
+  "createdAt": "2025-10-13T12:21:49.512Z",
+  "updatedAt": "2025-10-21T06:26:26.000Z",
+  "id": "1XqB8BgsAbuVDQUN",
+  "name": "google account review",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Review text: “{{ $json.comment }}”\nStar rating: {{ $json.starRating }}\nReviewer name: {{ $json.reviewerDisplayName }}\n",
+        "options": {
+          "systemMessage": "=You are a review reply assistant for 'Lendly', here to draft warm, clear, and helpful replies to Google reviews left for Lendly.\n\n**Your single job:** Given a review object containing  \n- `{review_text}`  \n- `{reviewer_name}` (may be an alias such as “freightliner86” or “A Google User”)    \n- `{review_rating}` (1-5 stars)  \n- `{review_date}`  \n\nreturn one friendly, brand-voiced reply string.\n\nNever mention you’re an AI.\n\n---\n\n### Revision Handling\n\nYou may sometimes receive two extra fields: Previous draft and Manager feedback.\n\nIf both fields are empty: this is the first draft. Write a reply normally using the rules in this prompt.\n\nIf both fields are filled: this is a rewrite request. Do not write from scratch. Instead:\n\nStart with the Previous draft as your base.\n\nRead the Manager feedback carefully.\n\nRevise the reply so it keeps the brand voice and rules, but also directly applies the manager’s feedback.\n\nEnsure the final output is a single polished reply string only, not commentary or explanation.\n\n---\n\n### Reply Variation & Memory\n\nBefore crafting your reply, review the previous replies in your memory to ensure variety and freshness.\n\nVary your opening phrases - rotate between \"Hi [name], thanks so much\", \"Thanks for the review [name]\", \"[Name], we're thrilled\", \"Your kind words made our day [name]\", etc.\nMix up your acknowledgments - don't always use the same phrases for praise or complaints\nDiversify your closing styles - alternate between \"Thanks, the Lendly team\", \"- the Lendly Team\", \"- the Lendly team\", etc.\nChange your enthusiasm expressions - rotate \"thrilled\", \"delighted\", \"so happy\", \"makes us smile\", etc.\nAvoid repetitive transition words - if you used \"exactly\" in the last reply, try \"precisely\", \"just what\", \"that's why\", etc.\nLooking at previous replies determine whether emojis should be used or not. Not every reply should use emojis.\n\nEach reply should feel like it was personally crafted, not generated from a template. Draw from the full range of your voice options to keep responses feeling genuine and human.\n\n\n---\n\n### Brand Voice Cheat-Sheet \n**Human-Centred & Empathetic** – talk “person to person,” acknowledge feelings.  \n**Clear & Simple** – no jargon; use everyday words; break ideas into plain sentences.  \n**Genuinely Helpful** – guide, reassure, and, when needed, explain next steps.  \n**Refreshingly Straightforward** – no fluff, no hidden disclaimers.  \n**Optimistic & Encouraging** – highlight savings and celebrate smart choices.\n\n\nAvoid: corporate clichés, pressure tactics, or unexplained terms like “novated lease,” “FBT,” “salary sacrifice.”\n\n---\n\n### Name-Handling Rule  \n- **Real-looking name** – greet the reviewer by first name.  \n  *Examples: “Sam Carter”, “Maria López”, “Jean-Luc Picard”*  \n- **Alias or generic** – skip the name and greet generally (“Hi,” or “Thanks so much for...”).  \n  *Examples: “freightliner86”, “bluedog_89”, “A Google User”, “longnamethatsjustnumbers1234”*\n\n---\n\n### Emoji Touch  \n- Where it feels natural, finish with **1-2 small emojis** that reinforce the mood or topic (e.g. 😊 🙌 🚗 💸 😇).  \n- Use them sparingly and not in every reply; they should add warmth, not clutter.\n- don not use any emojies in negative or nuetral reviews as they may be perceived as pasive agressive or sarcastic.\n\n---\n\n### Reply Logic\n\n1. **Greet & thank**  \n   - Positive review (4-5★): Cheerfully thank the writer by name (if available).  \n   - Neutral/negative (1-3★): Acknowledge their experience, express genuine regret the process wasn’t perfect.\n\n2. **Address specifics**  \n   - Reference one detail from the review to prove you listened.  \n   - For praise: reinforce the benefit they mentioned.  \n   - For critique: briefly apologise, clarify or correct, and invite a quick resolution (provide a real contact path such as “reach us at hello@lendly.com.au” or “give us a call on 1300 LENDLY”).\n   - Never offer “tips to save more” or suggest a “quick follow-up.”\n   - It’s fine to mention “tell your friends” in a light, non-pushy way.\n  - If review text is blank: Keep reply short and simple, e.g.:\"Hi Isha, thanks so much for the five-star rating. We’re delighted you had a great experience with Lendly.\"\"\n\n3. **Reassure & guide**  \n   - Offer next steps: more savings tips, ongoing support, invite future contact or referrals, or a promise to investigate. \n   - Keep tone upbeat and encouraging.\n\n4. **Close warmly**  \n   - Sign off with “Thanks, the Lendly team” (no individual names).  \n   - Stay under 90 words where possible; short, punchy sentences read best on mobile.\n\nOnly offer up our email and phone number if someone had a really bad experience - not on positive reviews.\n\n\n---\n\nFormatting rule that must NEVER be broken: Under no circumstances are you to use em dashes (—) or en dashes (–) in your replies. Hyphens (-) are fine. If you need to separate thoughts, use commas, colons, parentheses, or ellipses. This rule is absolute and overrides all other style choices.\n\n---\n\n### Output Format\nReturn **only** the reply text (no extra notes, no markdown). Example outputs:\n\nHi Alex, thanks so much for the kind words. We're thrilled you saved on your new Ranger! Call us anytime if friends need a hand - the Lendly team 🚗\n\nPriya, your review absolutely made our day! Helping customers drive away with extra cash in their pocket is precisely why we do what we do. Enjoy every mile ahead! Cheers, the Lendly team\n\nHi there. We're genuinely sorry your quote experience took longer than expected. That's definitely not the smooth service we strive for. I've escalated your request and someone will call you as soon as possible. Thanks for your patience. - the Lendly team\n\nThanks for taking the time to review us, Ella! Hearing that our team resolved your insurance query in just one call is music to our ears. Keep those questions coming, we love helping you save 😊 Thanks, the Lendly team\n\nGrace, we're absolutely delighted those pre-tax payments are freeing up extra money each month! That's the whole point of what we do. Keep enjoying those savings, and don't hesitate to reach out anytime. The Lendly team\n\nWhat a fantastic review! So happy to hear the whole process was seamless for you. We're here whenever you or your mates need help getting behind the wheel for less 🙌 - the Lendly team\n\n\nFollow this template each time, adapting naturally to the review’s tone and content."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        320
+      ],
+      "id": "cc27ddaa-398f-4e5a-8da6-de78a716ae1e",
+      "name": "Review Writing Agent"
+    },
+    {
+      "parameters": {
+        "resource": "review",
+        "operation": "reply",
+        "account": {
+          "__rl": true,
+          "value": "accounts/116545851101517434562",
+          "mode": "list",
+          "cachedResultName": "Remy Gaskell"
+        },
+        "location": {
+          "__rl": true,
+          "value": "locations/2886037407121254131",
+          "mode": "list",
+          "cachedResultName": "locations/2886037407121254131"
+        },
+        "review": {
+          "__rl": true,
+          "value": "={{$json.reviewId}}",
+          "mode": "id"
+        },
+        "reply": "={{ $('Save Draft').item.json.draft }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.googleBusinessProfile",
+      "typeVersion": 1,
+      "position": [
+        3328,
+        288
+      ],
+      "id": "f0998e88-b8f9-4d0b-9d58-9219b9515ce2",
+      "name": "Reply to review",
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "hvbFvgH58ujjob7I",
+          "name": "Google Business Profile account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "={{ $('Edit Fields').item.json.Email }}",
+        "subject": "New Google Review",
+        "message": "=<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"background:#ffffff;padding:0;\">\n  <tr>\n    <td align=\"center\">\n      <!-- Card -->\n      <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\"\n             style=\"background:#ffffff;border-radius:8px;overflow:hidden;\n                    max-width:600px;width:100%;\n                    font-family:'Open Sans',Arial,sans-serif;\">\n        <!-- Body -->\n        <tr>\n          <td style=\"padding:60px 32px;color:#111827;font-size:16px;line-height:1.5;\">\n            <!-- Review heading -->\n            <p style=\"margin:0 0 16px 0;font-weight:600;font-size:14px;\n                      letter-spacing:0.5px;color:#374151;\">\n              Review:\n            </p>\n            <!-- Review box with stars + comment -->\n            <div style=\"margin:0 0 24px 0;background:#F7F7F7;\n                        padding:16px;border-radius:4px;\">\n              <!-- Stars -->\n              <p style=\"margin:0 0 12px 0;line-height:1;\">\n                <span style=\"font-size:18px;color:#FFD124;\">\n                  {{ '★★★★★'.slice(0, { ONE:1, TWO:2, THREE:3, FOUR:4, FIVE:5 }[$('Search records1').item.json['Star Rating']] || 0) }}\n                </span>\n              </p>\n              <!-- Customer review text -->\n              <p style=\"margin:0;font-style:italic;\">\n                {{ $('Search records1').item.json.Comment }}\n              </p>\n            </div>\n            <!-- Draft reply heading -->\n            <p style=\"margin:0 0 8px 0;font-weight:600;text-transform:uppercase;\n                      font-size:14px;letter-spacing:0.5px;color:#374151;\">\n              Draft Reply:\n            </p>\n            <!-- Draft reply box -->\n            <p style=\"margin:0 0 24px 0;background:#ffffff;border:1px solid #E5E7EB;\n                      border-radius:4px;padding:16px;\">\n              {{ $('Save Draft').item.json.draft }}\n            </p>\n            <!-- Helper text -->\n            <p style=\"margin:0;color:#6B7280;font-size:14px;\">\n              Click <strong>Respond</strong> below to publish, or add edits.\n            </p>\n          </td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n</table>",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Action",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Publish"
+                  },
+                  {
+                    "option": "Manual Reply"
+                  },
+                  {
+                    "option": "Ignore (Don't Reply)"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2640,
+        320
+      ],
+      "id": "6fe2c813-0052-491a-bbc2-da5f750e77a9",
+      "name": "Send to Manager",
+      "webhookId": "1eec5653-1389-41c8-a76c-2f2c2f2ac047",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "iLetl7zyDEFQe6Mc",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data.Action }}",
+                    "rightValue": "Publish",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "23756605-9aec-480e-b920-469e655bb657"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4eeb9491-ad56-4434-9267-54bed994fb9a",
+                    "leftValue": "={{ $json.data.Action }}",
+                    "rightValue": "Manual Reply",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "78b69bac-3200-4de5-9906-a8f77660234c",
+                    "leftValue": "={{ $json.data.Action }}",
+                    "rightValue": "Ignore (Don't Reply)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2848,
+        304
+      ],
+      "id": "709ca438-e6c4-42a1-b9c4-1e4d8ee1dcc6",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "reviewReplies"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1536,
+        544
+      ],
+      "id": "bcf288df-ec5d-4f13-9dec-a226175f827c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d5456998-df1f-46e6-89c5-db2fa3eb50a7",
+              "name": "comment",
+              "value": "={{ $json.Comment || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "09a21c99-a489-4f41-a45c-d87f21fed2a5",
+              "name": "=starRating",
+              "value": "={{ $json[\"Star Rating\"] || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "be577f99-7658-4f9a-8d6c-cfc5d2f0345f",
+              "name": "reviewerDisplayName",
+              "value": "={{ $json[\"Display Name\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1216,
+        320
+      ],
+      "id": "65db2c79-bd2f-442b-bef5-ba6c6858ded8",
+      "name": "Prepare Values",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4e9d3de6-6371-4103-89ae-adb80f70a87f",
+              "name": "draft",
+              "value": "={{ $json.output || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1744,
+        320
+      ],
+      "id": "176d4c5c-7c26-4499-92f6-86454f70a276",
+      "name": "Save Draft"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appeSs9tysGPGRNNF",
+          "mode": "list",
+          "cachedResultName": "Instagram Reel Scraper",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblO5J7aQUpwt8Hiy",
+          "mode": "list",
+          "cachedResultName": "User View",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF/tblO5J7aQUpwt8Hiy"
+        },
+        "filterByFormula": "=({Active} = 'checked')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1968,
+        320
+      ],
+      "id": "25520293-6094-42cd-a8a7-737d23393b8d",
+      "name": "Search records",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1ab5b0b-a2a2-47cd-af4c-6b5c16733df7",
+              "name": "manual_reply_to_post",
+              "value": "={{ $json.data['Manual Reply'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        432
+      ],
+      "id": "cb052172-a1be-40ea-b7e7-7d2ded6a051b",
+      "name": "Set Manual Reply"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1ab5b0b-a2a2-47cd-af4c-6b5c16733df7",
+              "name": "reply_to_post",
+              "value": "={{ $('Save Draft').item.json.draft }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3104,
+        288
+      ],
+      "id": "92650822-4fd1-4a0a-893d-d93d0e01ab9e",
+      "name": "Set AI Reply"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0031715f-2198-4fcf-a601-c4060a4ab626",
+              "leftValue": "={{ $json.reviewReply.comment }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        496,
+        320
+      ],
+      "id": "c04e52cf-4065-481d-a5d0-54d170b25b34",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appeSs9tysGPGRNNF",
+          "mode": "list",
+          "cachedResultName": "Instagram Reel Scraper",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblx5d6Hhz6V5zNQB",
+          "mode": "list",
+          "cachedResultName": "Google Review",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF/tblx5d6Hhz6V5zNQB"
+        },
+        "filterByFormula": "=({Review ID} = '{{ $json[\"Review ID\"] }}')\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        944,
+        320
+      ],
+      "id": "35e170ed-55c3-4713-9789-59d91c098bb7",
+      "name": "Search records2",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "app6WaShKX2OlX0mS",
+          "mode": "list",
+          "cachedResultName": "Google Reviews",
+          "cachedResultUrl": "https://airtable.com/app6WaShKX2OlX0mS"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl0hOv9eA4EKhnLU",
+          "mode": "list",
+          "cachedResultName": "Reviews",
+          "cachedResultUrl": "https://airtable.com/app6WaShKX2OlX0mS/tbl0hOv9eA4EKhnLU"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Review ID": "={{ $json.reviewId }}",
+            "Create Date": "={{ $json.createTime ? new Date($json.createTime).toISOString() : '' }}\n",
+            "Display Name": "={{ $json.reviewer.displayName }}",
+            "Profile Photo URL": "={{ $json.reviewer.profilePhotoUrl }}",
+            "Star Rating": "={{ $json.starRating }}",
+            "Comment": "={{ $json.comment }}",
+            "Reply Date": "={{ $json.reviewReply && $json.reviewReply.updateTime ? new Date($json.reviewReply.updateTime).toISOString() : null }}\n",
+            "Agent Reply": "={{ $json.reviewReply.comment }}",
+            "Reply Name": "={{ $json.name }}",
+            "Review Reply": "={{ $json.reviewReply.comment }}",
+            "Reply Status": "New"
+          },
+          "matchingColumns": [
+            "Review ID"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Review ID",
+              "displayName": "Review ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Create Date",
+              "displayName": "Create Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Display Name",
+              "displayName": "Display Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Profile Photo URL",
+              "displayName": "Profile Photo URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Star Rating",
+              "displayName": "Star Rating",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comment",
+              "displayName": "Comment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reply Date",
+              "displayName": "Reply Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Agent Reply",
+              "displayName": "Agent Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Manual Reply",
+              "displayName": "Manual Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reply Status",
+              "displayName": "Reply Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "In Progress",
+                  "value": "In Progress"
+                },
+                {
+                  "name": "Published",
+                  "value": "Published"
+                },
+                {
+                  "name": "Do Not Reply",
+                  "value": "Do Not Reply"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Review Reply",
+              "displayName": "Review Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reply Name",
+              "displayName": "Reply Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        992,
+        48
+      ],
+      "id": "92da166c-5b18-4fef-bbb4-43dd675be9c6",
+      "name": "Create or update a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c2caa2f8-46ff-43fd-b7ce-fc9c407ada75",
+              "leftValue": "={{ $json.reviewReply.updateTime }}",
+              "rightValue": "",
+              "operator": {
+                "type": "dateTime",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        80
+      ],
+      "id": "c6c9395e-c8b5-4e31-84c9-71992b9c1b34",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "resource": "review",
+        "operation": "getAll",
+        "account": {
+          "__rl": true,
+          "value": "accounts/116545851101517434562",
+          "mode": "list",
+          "cachedResultName": "Remy Gaskell"
+        },
+        "location": {
+          "__rl": true,
+          "value": "locations/2886037407121254131",
+          "mode": "list",
+          "cachedResultName": "locations/2886037407121254131"
+        },
+        "returnAll": true,
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.googleBusinessProfile",
+      "typeVersion": 1,
+      "position": [
+        288,
+        80
+      ],
+      "id": "41cc3b02-0d31-4e4e-a727-0ec457a80c1c",
+      "name": "Get many reviews",
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "hvbFvgH58ujjob7I",
+          "name": "Google Business Profile account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "52dff34c-50b4-47db-8b94-44d45c58356b",
+              "leftValue": "={{ $json.reviewReply.comment }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        64
+      ],
+      "id": "821a178d-dd65-4d4f-8a68-3248afbbaf40",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "content": "Check if new reviews came and store it inside airtable wih New Status",
+        "height": 240,
+        "width": 1216,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "d321ceef-d5f6-46d8-a304-cf6e9f475ccf",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        80
+      ],
+      "id": "3d8b9f84-20ae-4656-9bf9-17e2c6d118e0",
+      "name": "Daily Cron - 07:00 AEST"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": "=0 8 * * 1-5",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        320
+      ],
+      "id": "cd471e2e-ca64-4622-9dba-e850e26971c9",
+      "name": "M-F Daily Cron - 08:00 AEST"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 544,
+        "width": 3744,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        272
+      ],
+      "typeVersion": 1,
+      "id": "c980b2a6-121d-4e88-bbfa-4cd436441f95",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        736,
+        304
+      ],
+      "id": "767fb4bf-0500-4c83-8208-116c315e352d",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appeSs9tysGPGRNNF",
+          "mode": "list",
+          "cachedResultName": "Instagram Reel Scraper",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblx5d6Hhz6V5zNQB",
+          "mode": "list",
+          "cachedResultName": "Google Review",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF/tblx5d6Hhz6V5zNQB"
+        },
+        "filterByFormula": "({Reply Status} = 'New')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        320
+      ],
+      "id": "3087ad63-db4e-4b77-a0d0-0b3a6a615610",
+      "name": "Search records1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c33de1d6-c9e9-406e-83f7-e5f4fe827211",
+              "name": "Email",
+              "value": "={{ $json.Email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2160,
+        320
+      ],
+      "id": "2717d9fa-e2e9-48f4-9457-48bfccb69700",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appeSs9tysGPGRNNF",
+          "mode": "list",
+          "cachedResultName": "Instagram Reel Scraper",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblx5d6Hhz6V5zNQB",
+          "mode": "list",
+          "cachedResultName": "Google Review",
+          "cachedResultUrl": "https://airtable.com/appeSs9tysGPGRNNF/tblx5d6Hhz6V5zNQB"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Review ID": "={{ $('Search records2').item.json[\"Review ID\"] }}",
+            "Reply Status": "In Progress",
+            "Agent Reply": "={{ $('Review Writing Agent').item.json.output }}"
+          },
+          "matchingColumns": [
+            "Review ID"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Review ID",
+              "displayName": "Review ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Create Date",
+              "displayName": "Create Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Display Name",
+              "displayName": "Display Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Profile Photo URL",
+              "displayName": "Profile Photo URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Star Rating",
+              "displayName": "Star Rating",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "FIVE",
+                  "value": "FIVE"
+                },
+                {
+                  "name": "ONE",
+                  "value": "ONE"
+                },
+                {
+                  "name": "FOUR",
+                  "value": "FOUR"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Comment",
+              "displayName": "Comment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Reply Date",
+              "displayName": "Reply Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Agent Reply",
+              "displayName": "Agent Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Manual Reply",
+              "displayName": "Manual Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Reply Status",
+              "displayName": "Reply Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Published",
+                  "value": "Published"
+                },
+                {
+                  "name": "In Progress",
+                  "value": "In Progress"
+                },
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Dp",
+                  "value": "Dp"
+                },
+                {
+                  "name": "Do Not Update",
+                  "value": "Do Not Update"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Review Reply",
+              "displayName": "Review Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Reply Name",
+              "displayName": "Reply Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        2368,
+        320
+      ],
+      "id": "ca53994f-432a-4ed5-a36a-403236d83e8b",
+      "name": "Update record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        592
+      ],
+      "id": "55e9db7d-2a9d-4111-b05d-05ae817568ad",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appeSs9tysGPGRNNF",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblx5d6Hhz6V5zNQB",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Review ID": "={{ $('Search records2').item.json['Review ID'] }}",
+            "Reply Status": "Published",
+            "Reply Date": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [
+            "Review ID"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Review ID",
+              "displayName": "Review ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Create Date",
+              "displayName": "Create Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Display Name",
+              "displayName": "Display Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Profile Photo URL",
+              "displayName": "Profile Photo URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Star Rating",
+              "displayName": "Star Rating",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "FIVE",
+                  "value": "FIVE"
+                },
+                {
+                  "name": "ONE",
+                  "value": "ONE"
+                },
+                {
+                  "name": "FOUR",
+                  "value": "FOUR"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comment",
+              "displayName": "Comment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reply Date",
+              "displayName": "Reply Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Agent Reply",
+              "displayName": "Agent Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Manual Reply",
+              "displayName": "Manual Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reply Status",
+              "displayName": "Reply Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Published",
+                  "value": "Published"
+                },
+                {
+                  "name": "In Progress",
+                  "value": "In Progress"
+                },
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Dp",
+                  "value": "Dp"
+                },
+                {
+                  "name": "Do Not Update",
+                  "value": "Do Not Update"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Review Reply",
+              "displayName": "Review Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reply Name",
+              "displayName": "Reply Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "airtable-mark-published",
+      "name": "Mark as Published",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        3552,
+        288
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appeSs9tysGPGRNNF",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblx5d6Hhz6V5zNQB",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Review ID": "={{ $('Search records2').item.json['Review ID'] }}",
+            "Reply Status": "Do Not Reply"
+          },
+          "matchingColumns": [
+            "Review ID"
+          ]
+        },
+        "options": {}
+      },
+      "id": "airtable-mark-do-not-reply",
+      "name": "Mark as Do Not Reply",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        3152,
+        640
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Review Writing Agent": {
+      "main": [
+        [
+          {
+            "node": "Save Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Manager": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Set AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Manual Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark as Do Not Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Review Writing Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Values": {
+      "main": [
+        [
+          {
+            "node": "Review Writing Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Manual Reply": {
+      "main": [
+        [
+          {
+            "node": "Reply to review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set AI Reply": {
+      "main": [
+        [
+          {
+            "node": "Reply to review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records2": {
+      "main": [
+        [
+          {
+            "node": "Prepare Values",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many reviews": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Create or update a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Cron - 07:00 AEST": {
+      "main": [
+        [
+          {
+            "node": "Get many reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "M-F Daily Cron - 08:00 AEST": {
+      "main": [
+        [
+          {
+            "node": "Search records1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Search records2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Update record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update record": {
+      "main": [
+        [
+          {
+            "node": "Send to Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Review Writing Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to review": {
+      "main": [
+        [
+          {
+            "node": "Mark as Published",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Draft": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "8f2e22d6-f483-4725-8788-8f7d3ad8fc1d",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-13T12:21:49.515Z",
+      "updatedAt": "2025-10-13T12:21:49.515Z",
+      "role": "workflow:owner",
+      "workflowId": "1XqB8BgsAbuVDQUN",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
