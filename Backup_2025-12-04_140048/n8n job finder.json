@@ -1,0 +1,1090 @@
+{
+  "createdAt": "2025-10-31T04:13:34.573Z",
+  "updatedAt": "2025-11-07T19:02:58.000Z",
+  "id": "omRfSs1S5EME2r9T",
+  "name": "n8n job finder",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        400
+      ],
+      "id": "cce57127-9913-4c91-915f-c979bfdc0e8e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site:linkedin.com/posts (\n    \"hiring n8n\" OR \n    \"n8n developer\" OR \n    \"n8n automation\" OR \n    \"n8n expert\" OR \n    \"n8n specialist\" OR \n    \"n8n freelancer\" OR \n    \"n8n consultant\" OR \n    \"workflow automation\" OR \n    \"looking for n8n\" OR \n    \"need n8n\" OR \n    \"n8n professional\" OR \n    \"n8n engineer\" OR \n    \"seeking n8n\" OR \n    \"hiring workflow automation\" OR \n    \"automation specialist\" OR \n    \"integration developer\" OR \n    \"low-code developer\" OR \n    \"no-code automation\" OR \n    \"API integration specialist\" OR \n    \"workflow engineer\" OR \n    \"automation engineer n8n\" OR \n    \"remote n8n\" OR \n    \"contract n8n\" OR \n    \"full-time n8n\""
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "e2d9882c-d79a-4a96-b08b-b6fe96c2c4be",
+      "name": "Linkedin Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        384,
+        240
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enhanced normalization with deduplication and date sorting\n\nconst allLeadsList = [];\nconst seenLinks = new Set(); // Track unique links to avoid duplicates\n\n// Helper function to parse relative dates and convert to timestamp\nfunction parseRelativeDate(dateString) {\n    if (!dateString || dateString === 'Date not available') {\n        return new Date(0); // Very old date for items without dates\n    }\n    \n    const now = new Date();\n    const lowerDate = dateString.toLowerCase();\n    \n    // Handle \"X hours ago\" or \"X hour ago\"\n    if (lowerDate.includes('hour')) {\n        const hours = parseInt(lowerDate.match(/\\d+/)?.[0] || 24);\n        return new Date(now - hours * 60 * 60 * 1000);\n    }\n    \n    // Handle \"X days ago\" or \"X day ago\"\n    if (lowerDate.includes('day')) {\n        const days = parseInt(lowerDate.match(/\\d+/)?.[0] || 30);\n        return new Date(now - days * 24 * 60 * 60 * 1000);\n    }\n    \n    // Handle \"X weeks ago\" or \"X week ago\"\n    if (lowerDate.includes('week')) {\n        const weeks = parseInt(lowerDate.match(/\\d+/)?.[0] || 4);\n        return new Date(now - weeks * 7 * 24 * 60 * 60 * 1000);\n    }\n    \n    // Handle \"X months ago\" or \"X month ago\"\n    if (lowerDate.includes('month')) {\n        const months = parseInt(lowerDate.match(/\\d+/)?.[0] || 6);\n        return new Date(now - months * 30 * 24 * 60 * 60 * 1000);\n    }\n    \n    // Try to parse as actual date\n    const parsedDate = new Date(dateString);\n    if (!isNaN(parsedDate.getTime())) {\n        return parsedDate;\n    }\n    \n    return new Date(0); // Default to very old date if parsing fails\n}\n\n// Process all items from all merged scrapers\nfor (const item of $input.all()) {\n    const rawData = item.json;\n\n    // Access the 'organic' array, which holds the actual search results\n    const organicResults = rawData.organic;\n\n    if (Array.isArray(organicResults)) {\n        // Iterate over each individual lead object\n        for (const lead of organicResults) {\n            \n            // Skip if this link has already been processed (remove duplicates)\n            if (seenLinks.has(lead.link)) {\n                continue;\n            }\n            \n            // Only process if required fields exist\n            if (lead.title && lead.link && lead.snippet) {\n                \n                // Mark this link as seen\n                seenLinks.add(lead.link);\n                \n                // Parse the date for sorting\n                const parsedDate = parseRelativeDate(lead.date || 'Date not available');\n                \n                // Add to our results list\n                allLeadsList.push({\n                    Title: lead.title,\n                    Link: lead.link,\n                    Snippet: lead.snippet,\n                    Date_String: lead.date || 'Date not available',\n                    Parsed_Date: parsedDate,\n                    Timestamp: parsedDate.getTime() // For easier sorting\n                });\n            }\n        }\n    }\n}\n\n// Sort by date - NEWEST FIRST (latest to oldest)\nallLeadsList.sort((a, b) => b.Timestamp - a.Timestamp);\n\n// Remove the Timestamp field before stringifying (keep it clean)\nconst cleanedLeads = allLeadsList.map(lead => ({\n    Title: lead.Title,\n    Link: lead.Link,\n    Snippet: lead.Snippet,\n    Date_String: lead.Date_String\n}));\n\n// Stringify the sorted and cleaned list\nconst stringifiedLeads = JSON.stringify(cleanedLeads, null, 2); \n\nreturn [\n    {\n        json: {\n            all_leads_data: stringifiedLeads,\n            total_leads: cleanedLeads.length,\n            latest_post_date: allLeadsList[0]?.Date_String || 'No posts found',\n            oldest_post_date: allLeadsList[allLeadsList.length - 1]?.Date_String || 'No posts found'\n        }\n    }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        160
+      ],
+      "id": "5bbdc4b2-544d-4131-a22a-dc5c375e34c8",
+      "name": "Normalize Search Results"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=INPUT LEAD DATA (JSON ARRAY): \n{{ $json.all_leads_data }}\n\nToday's Date: {{ $now.toFormat('yyyy-MM-dd') }}\n\nCONTEXT:\nYou are processing LinkedIn job post leads scraped from linkedin.com/posts. Each lead contains job opportunities related to n8n, workflow automation, and integration development.\n\nTASK:\nAnalyze each lead and extract the following information into a structured JSON array. Only include leads that are actually hiring or looking for developers/freelancers/consultants.\n\nREQUIRED OUTPUT FORMAT (JSON ARRAY):\nFor each qualified lead, create an object with these exact fields:\n\n- **Title**: The job post title (from 'Title' field)\n- **Details**: A cleaned summary of the job description (from 'Snippet' field - remove any extra formatting, URLs, or promotional text)\n- **Platform**: Always set to \"LinkedIn\"\n- **Post Url**: The original LinkedIn post URL (from 'Link' field - keep it exactly as provided)\n- **Platform Url**: Extract the LinkedIn profile URL from the post link. \n  * If the link is \"linkedin.com/posts/john-doe-123_hiring-post-12345678\", extract \"linkedin.com/in/john-doe-123\"\n  * The profile URL pattern is: linkedin.com/in/[username]\n  * Extract the username portion before the underscore in the posts URL\n- **Handle**: Extract the person's name or username from the Title or post URL (the readable name, not the ID)\n- **Budget**: Set to null (not available in LinkedIn posts)\n- **Contact Info**: Set to null (will be enriched later)\n- **Date Posted**: Map from 'Date_String' field\n\nFILTERING RULES:\n1. **Only include posts where someone is actively hiring, recruiting, or looking for help**\n2. Exclude posts that are:\n   - Self-promotions without hiring intent\n   - Course advertisements\n   - Tool announcements\n   - General tips or tutorials\n   - Spam or unrelated content\n3. Look for keywords like: \"hiring\", \"looking for\", \"need\", \"seeking\", \"opportunity\", \"position\", \"job\", \"freelancer\", \"consultant\", \"help wanted\", \"join our team\"\n\nOUTPUT REQUIREMENTS:\n- Return ONLY valid JSON array\n- No markdown formatting, no code blocks, no explanatory text\n- Each lead must be a complete object with all fields\n- Use null for unavailable fields, never omit fields\n- **Post Url** must be the exact original URL from input\n- **Platform Url** must be the extracted profile URL",
+        "options": {
+          "systemMessage": "You are a specialized LinkedIn Job Lead Extraction AI with expertise in identifying genuine hiring opportunities from social media posts.\n\nCORE RESPONSIBILITIES:\n1. Parse LinkedIn post data and identify REAL job opportunities\n2. Preserve original post URLs and extract profile URLs separately\n3. Filter out non-hiring content (promotions, ads, tips, spam)\n4. Structure data into clean, consistent JSON format\n\nLINKEDIN URL HANDLING:\n- **Post Url**: Keep the original post URL exactly as provided in the 'Link' field\n- **Platform Url**: Extract the profile URL from the post URL\n- LinkedIn post URLs follow this pattern: linkedin.com/posts/[username]_[post-id]\n- Extract profile URL as: linkedin.com/in/[username]\n- Example: \n  * Input Post URL: \"https://www.linkedin.com/posts/sarah-johnson-456_n8n-automation-hiring-987654321\"\n  * Output Post Url: \"https://www.linkedin.com/posts/sarah-johnson-456_n8n-automation-hiring-987654321\" (unchanged)\n  * Output Platform Url: \"linkedin.com/in/sarah-johnson-456\" (extracted)\n\nQUALITY STANDARDS:\n- Be strict about what qualifies as a \"hiring\" post\n- When in doubt about hiring intent, examine the Snippet for explicit hiring language\n- Prioritize recent posts (check Date_String)\n- Extract clean, professional details without promotional fluff\n- Maintain data accuracy - don't invent information\n- NEVER modify or lose the original post URL\n\nCRITICAL:\n- Output ONLY the JSON array\n- Never include ```json``` markers or any text outside the array\n- Every object must have all specified fields (including both Post Url and Platform Url)\n- Use proper JSON syntax with double quotes\n- Return an empty array [] if no valid hiring posts found"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        160
+      ],
+      "id": "fc98af60-e498-4b54-966a-22550f345efd",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        32
+      ],
+      "id": "fa3d397f-cb72-49c4-ac84-6d379dde0052",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        896,
+        512
+      ],
+      "id": "871dd517-e2ba-43b8-a245-c3545e696a90",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1600,
+        672
+      ],
+      "id": "a59eef02-c542-4988-b3c5-dd59ae7a687d",
+      "name": "Wait",
+      "webhookId": "ec217a2a-d352-4fe1-99cb-b9cc25c1f163"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg",
+          "mode": "list",
+          "cachedResultName": "n8n work leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "title": "={{ $('Loop Over Items').item.json.title }}",
+            "details": "={{ $('Loop Over Items').item.json.details }}",
+            "platform": "={{ $('Loop Over Items').item.json.platform }}",
+            "handle": "={{ $('Loop Over Items').item.json.handle }}",
+            "date_posted": "={{ $('Loop Over Items').item.json.date_posted }}",
+            "post_url": "={{ $('Loop Over Items').item.json.post_url }}",
+            "Account_url": "={{ $('Loop Over Items').item.json.account_url }}",
+            "contact": "={{ $('Loop Over Items').item.json.contact }}",
+            "Budget": "={{ $('Loop Over Items').item.json.budget }}",
+            "Cold Email Message ": "={{ $json.output }}"
+          },
+          "matchingColumns": [
+            "post_url"
+          ],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "post_url",
+              "displayName": "post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Account_url",
+              "displayName": "Account_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "handle",
+              "displayName": "handle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Cold Email Message ",
+              "displayName": "Cold Email Message ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date_posted",
+              "displayName": "date_posted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Outreach email Sent",
+              "displayName": "Outreach email Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1392,
+        528
+      ],
+      "id": "1dcced2d-f837-4da1-a213-9e7ce6d4b803",
+      "name": "Append Lead Data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code Node to parse AI agent output and format for Google Sheets\n\nconst inputData = $input.all();\nlet allRecords = [];\n\nfor (const item of inputData) {\n  try {\n    let outputText = item.json.output;\n    \n    // Remove markdown code block markers if present\n    if (outputText.includes('```json')) {\n      outputText = outputText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '');\n    }\n    \n    // Parse the JSON string\n    const parsedData = JSON.parse(outputText.trim());\n    \n    // Process each record in the parsed array\n    for (const record of parsedData) {\n      const formattedRecord = {\n        title: record.Title || '',\n        details: record.Details || '',\n        platform: record.Platform || '',\n        post_url: record['Post Url'] || '',\n        account_url: record['Platform Url'] || '',\n        contact: record['Contact Info'] || '',\n        budget: record.Budget || '',\n        handle: record.Handle || '',\n        date_posted: record['Date Posted'] || ''\n      };\n      \n      allRecords.push(formattedRecord);\n    }\n    \n  } catch (error) {\n    console.error('Error parsing item:', error.message);\n  }\n}\n\nreturn allRecords.map(record => ({ json: record }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        160
+      ],
+      "id": "80e2f812-8bd3-40db-ab6e-f3b1a3dd228b",
+      "name": "Parse JSON"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        688,
+        1072
+      ],
+      "id": "cee532a4-6ad4-4a30-ab87-64d444dd00db",
+      "name": "Loop Items"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorId": {
+          "__rl": true,
+          "value": "VhxlqQXRwhW8H5hNV",
+          "mode": "list",
+          "cachedResultName": "Linkedin Profile Details Scraper + EMAIL (No Cookies Required) (apimaestro/linkedin-profile-detail)",
+          "cachedResultUrl": "https://console.apify.com/actors/VhxlqQXRwhW8H5hNV/input"
+        },
+        "customBody": "={\n    \"includeEmail\": true,\n    \"username\": \"{{ $json.Account_url }}\"\n}",
+        "memory": "={{ 1024 }}"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        928,
+        1088
+      ],
+      "id": "ef42af0b-b2f3-4a84-99b6-f9bbf9169e1b",
+      "name": "Run an Actor and get dataset",
+      "credentials": {
+        "apifyApi": {
+          "id": "4Xogg6oFsGNGcj6X",
+          "name": "Apify account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg",
+          "mode": "list",
+          "cachedResultName": "n8n work leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_j8eYAmLBClXUUhpaxCkauB1JME7X8tcZl_FmzAMIHE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.basic_info.email }}",
+            "Account_url": "={{ $('Loop Items').item.json.Account_url }}"
+          },
+          "matchingColumns": [
+            "Account_url"
+          ],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "post_url",
+              "displayName": "post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Account_url",
+              "displayName": "Account_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "handle",
+              "displayName": "handle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cold Email Message ",
+              "displayName": "Cold Email Message ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "date_posted",
+              "displayName": "date_posted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Outreach email Sent",
+              "displayName": "Outreach email Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        1088
+      ],
+      "id": "8339b259-0dfb-458c-aba2-0b52f7a2a90c",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Linkedin Job Posts Details Scraper             ",
+        "height": 912,
+        "width": 1888,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "ee75f3ae-35f2-42ac-8d30-5bd4ce849f3c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# FInds email of linkedin Job Posts Leads",
+        "height": 368,
+        "width": 992,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        320,
+        960
+      ],
+      "typeVersion": 1,
+      "id": "fd79c5db-0b83-4f4a-9b28-ab6bbe60557c",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg",
+          "mode": "list",
+          "cachedResultName": "n8n work leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        448,
+        1072
+      ],
+      "id": "f12f1296-3b4f-40ed-8ac0-37e4bba2aa67",
+      "name": "Check Updates or Added",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "uHdaH2QDMcY8ICJf",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "==site:linkedin.com/posts (\n    \"hiring n8n\" OR \n    \"n8n developer needed\" OR \n    \"n8n automation expert\" OR \n    \"n8n specialist required\" OR \n    \"n8n freelancer wanted\" OR \n    \"n8n consultant opportunity\" OR\n    \"n8n job opening\" OR\n    \"n8n position available\" OR\n    \"n8n developer job\" OR\n    \"n8n automation job\"\n)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "c34ed51e-e322-46c5-ac17-349d1ac4145e",
+      "name": "Direct N8N Keywords",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        384,
+        80
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={\n  \"nodes\": [\n    {\n      \"parameters\": {\n        \"method\": \"POST\",\n        \"url\": \"https://google.serper.dev/search\",\n        \"sendHeaders\": true,\n        \"headerParameters\": {\n          \"parameters\": [\n            {\n              \"name\": \"X-API-KEY\",\n              \"value\": \"7c41f959a151d6c5f4ddab119389b780b0224573\"\n            }\n          ]\n        },\n        \"sendBody\": true,\n        \"bodyParameters\": {\n          \"parameters\": [\n            {\n              \"name\": \"q\",\n              \"value\": \"==site:linkedin.com/posts (\\n    \\\"Make.com developer\\\" OR\\n    \\\"Integromat developer\\\" OR\\n    \\\"automation platform\\\" OR\\n    \\\"webhook integration\\\" OR\\n    \\\"REST API integration\\\" OR\\n    \\\"cloud automation\\\" OR\\n    \\\"business automation developer\\\" OR\\n    \\\"integration platform developer\\\" OR\\n    \\\"workflow orchestration\\\" OR\\n    \\\"automation architect\\\"\\n)\"\n            }\n          ]\n        },\n        \"options\": {\n          \"timeout\": 30000\n        }\n      },\n      \"id\": \"f2649fa5-4c92-49af-8bfe-346e1215e263\",\n      \"name\": \"Linkedin Scraper2\",\n      \"type\": \"n8n-nodes-base.httpRequest\",\n      \"typeVersion\": 4,\n      \"position\": [\n        0,\n        688\n      ],\n      \"onError\": \"continueErrorOutput\"\n    }\n  ],\n  \"connections\": {},\n  \"pinData\": {},\n  \"meta\": {\n    \"instanceId\": \"ee388fc0c35478cb0a74b319e1aa283053a548b883a06dc9a086ae33fbee2948\"\n  }\n}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "3b30a0d9-fcb0-4035-ac5f-18c9a6692ce9",
+      "name": "Job Type Keywords",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        384,
+        752
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "==site:linkedin.com/posts (\n    \"Make.com developer\" OR\n    \"Integromat developer\" OR\n    \"automation platform\" OR\n    \"webhook integration\" OR\n    \"REST API integration\" OR\n    \"cloud automation\" OR\n    \"business automation developer\" OR\n    \"integration platform developer\" OR\n    \"workflow orchestration\" OR\n    \"automation architect\"\n)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "36a154be-16bb-4060-9fa0-b021395b10f7",
+      "name": "Technology Stack Keywords",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        384,
+        576
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "==site:linkedin.com/posts (\n    \"workflow automation developer\" OR \n    \"automation engineer hiring\" OR \n    \"iPaaS developer\" OR \n    \"integration specialist\" OR \n    \"API automation expert\" OR\n    \"low-code developer\" OR\n    \"no-code automation\" OR\n    \"workflow engineer\" OR\n    \"process automation specialist\" OR\n    \"Zapier alternative developer\"\n)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "966b0f17-d41c-4471-a509-53540892803f",
+      "name": "Workflow & Automation Keywords",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        384,
+        400
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        688,
+        336
+      ],
+      "id": "c950f332-e655-453f-b8a0-45f5283646ac",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        688
+      ],
+      "id": "e4d7494e-34f9-4145-89a6-cb64538ca85d",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=INPUT LEAD DATA:\nTitle: {{ $json.title }}\nDetails: {{ $json.details }}\nPlatform: {{ $json.platform }}\nPost_url: {{ $json.post_url }}\nAccount_url: {{ $json.account_url }}\nContact:{{ $json.contact }}\nBudget:{{ $json.budget }}\nHandle:{{ $json.handle }}\nDate Posted: {{ $json.date_posted }}\n\nIn some case feilds like Contact, Budget can be empty then also still perform your work.\n\n\nCONTEXT:\nYou are writing a personalized cold outreach email to someone who posted a job opportunity on LinkedIn. This person is looking for n8n automation expertise.\n\nYOUR PROFILE (Use this to personalize):\n- You are an experienced n8n automation specialist\n- You have expertise in workflow automation, API integrations, and no-code solutions\n- You've helped businesses save time and reduce costs through smart automation\n- You work with tools like n8n, Make.com, Zapier, APIs, webhooks, and various integrations\n\nTASK:\nWrite a short, personalized, conversational cold email that:\n1. References their specific post/need naturally\n2. Shows you understand their problem\n3. Briefly mentions relevant experience (1-2 sentences max)\n4. Asks one simple question to start a conversation\n5. Sounds like a human reaching out to help, not a salesperson\n\nEMAIL REQUIREMENTS:\n- Keep it under 100 words (excluding signature)\n- No buzzwords or corporate jargon\n- No \"I hope this email finds you well\" or similar clichés\n- No \"reaching out\" or \"I came across your post\"\n- Write like you're texting a colleague\n- One paragraph or two short paragraphs max\n- End with a simple question, not a call-to-action\n- Sound genuinely interested in their project\n\nOUTPUT FORMAT:\nReturn ONLY the email body text. No subject line, no JSON, no markers.\nDo not include [Your Name] or signature - just the email content. ",
+        "options": {
+          "systemMessage": "You are a cold email copywriting expert specializing in B2B outreach for technical freelancers and consultants.\n\nWRITING STYLE RULES:\n- Write like a human having a conversation, not a sales robot\n- Use contractions (I've, you're, that's) to sound natural\n- Keep sentences short and punchy\n- Show personality without being unprofessional\n- Be direct and honest, not salesy\n\nFORBIDDEN PHRASES (Never use these):\n❌ \"I hope this email finds you well\"\n❌ \"I came across your post\"\n❌ \"I'm reaching out because\"\n❌ \"I'd love to hop on a call\"\n❌ \"Let me know if you're interested\"\n❌ \"Looking forward to hearing from you\"\n❌ \"Best regards\" or \"Kind regards\"\n❌ \"I wanted to touch base\"\n❌ \"Circle back\"\n❌ \"Synergy\" or \"leverage\"\n❌ \"Game-changer\" or \"cutting-edge\"\n\nGOOD OPENING PATTERNS:\n✅ Start with their name or jump straight into the topic\n✅ Reference something specific from their post\n✅ Lead with value or understanding\n✅ Ask a relevant question\n✅ Make an observation about their need\n\nEMAIL STRUCTURE:\n1. Opening: Get straight to the point, reference their post naturally\n2. Credibility: One brief sentence about relevant experience (use specifics, not generalities)\n3. Value hint: What you could help with (be specific to their need)\n4. Question: End with a simple, easy-to-answer question\n\nPERSONALIZATION:\n- Use the Handle (person's name) if available\n- Reference specific keywords from their Details/Title\n- Match their tone (casual if they're casual, professional if they're formal)\n- Mention the specific tool or problem they mentioned (n8n, automation, integration, etc.)\n\nTONE EXAMPLES:\nBad: \"I am writing to express my interest in your automation requirements.\"\nGood: \"Saw you're looking for n8n help. I've built similar workflows for SaaS companies.\"\n\nBad: \"I would be delighted to leverage my expertise to provide value.\"\nGood: \"I've done this exact setup before - happy to share what worked.\"\n\nOUTPUT REQUIREMENTS:\n- Return ONLY the email body\n- No subject line\n- No signature block\n- No [Your Name] placeholders\n- Just the core message text\n- Keep it conversational and brief"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        528
+      ],
+      "id": "2b8f81c0-1a7b-48a2-87ec-ea168ef2dda9",
+      "name": "Write Cold Email"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Linkedin Scraper",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Workflow & Automation Keywords",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Technology Stack Keywords",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Direct N8N Keywords",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Job Type Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin Scraper": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Normalize Search Results": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Write Cold Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Run an Actor and get dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run an Actor and get dataset": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Updates or Added": {
+      "main": [
+        [
+          {
+            "node": "Loop Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Direct N8N Keywords": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow & Automation Keywords": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Technology Stack Keywords": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Job Type Keywords": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Normalize Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write Cold Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Cold Email": {
+      "main": [
+        [
+          {
+            "node": "Append Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    },
+    "node:Check Updates or Added": {
+      "documentId": "11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg",
+      "sheetId": 0,
+      "lastRevision": 179,
+      "lastRevisionLink": "https://docs.google.com/spreadsheets/export?id=11dYN6Ayno_WOUwxcuVRLVMPSDJhf33NThHi9SXyeeDg&revision=179&exportFormat=xlsx"
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "75d098be-4df6-4dcb-9cb4-2cbf3980afe6",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "createdAt": "2025-10-31T04:13:34.579Z",
+      "updatedAt": "2025-10-31T04:13:34.579Z",
+      "role": "workflow:owner",
+      "workflowId": "omRfSs1S5EME2r9T",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
