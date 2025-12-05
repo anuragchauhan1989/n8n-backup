@@ -1,0 +1,948 @@
+{
+  "createdAt": "2025-11-07T06:09:55.040Z",
+  "updatedAt": "2025-11-23T08:19:18.000Z",
+  "id": "Wj4VcZ1BN670XySo",
+  "name": "My workflow 119",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "form": "w33FCgM7yqus"
+      },
+      "type": "n8n-nodes-fillout.filloutTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        224
+      ],
+      "id": "67b99fd4-f470-44d4-a79c-4bfd385d9794",
+      "name": "Fillout Trigger",
+      "webhookId": "03956f03-0f98-441d-80b6-23e5d0e6529e"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b212bf61-15cd-4c07-b1bc-c33518b460cc",
+              "leftValue": "={{ $json.data.items[0].id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -688,
+        224
+      ],
+      "id": "66ea3dd6-d58a-4236-9045-b38b78f0fec8",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.folk.app/v1/notes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "={{ $('Generate Note2').item.json.output[1].content[0].text }}"
+            },
+            {
+              "name": "entity.id",
+              "value": "={{ $('Search User ID').item.json.data.items[0].id }}"
+            },
+            {
+              "name": "visibility",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        320
+      ],
+      "id": "5ed158d0-2e4c-4310-affc-8b77c8ed31ed",
+      "name": "Add Note",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "url": "=https://api.folk.app/v1/people?filter[emails][eq]={{ $json.questions['8Etk'].value }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -912,
+        224
+      ],
+      "id": "ef5f602d-ec8b-4b3a-9f5b-94cbe2ee8951",
+      "name": "Search User"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.folk.app/v1/notes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "visibility",
+              "value": "public"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.output }}"
+            },
+            {
+              "name": "entity.id",
+              "value": "={{ $('Search User').item.json.data.items[0].id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        112,
+        128
+      ],
+      "id": "01dc6241-25c5-4094-aa0d-6bd1e1b6d620",
+      "name": "Add Note1",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.folk.app/v1/people",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"firstName\": \"{{ String($('Fillout Trigger').item.json.questions.xpbS.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n  \"lastName\": \"{{ String($('Fillout Trigger').item.json.questions['4ma5'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n  \"emails\": [\"{{ String($('Fillout Trigger').item.json.questions['8Etk'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\"],\n  \"phones\": [\"{{ String($('Fillout Trigger').item.json.questions.dk67.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\"],\n  \"groups\": [\n    { \"id\": \"grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f\" }\n  ],\n  \"customFieldValues\": {\n    \"grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f\": {\n      \"Why do you want to become an entrepreneur?\": \"{{ String($('Fillout Trigger').item.json.questions['3jkv'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Why now, and what has stopped you starting a business already?\": \"{{ String($('Fillout Trigger').item.json.questions.mFMG.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What are your strongest skills / specific things you want to be doing in the early stages of your new business?\": \"{{ String($('Fillout Trigger').item.json.questions['9po8'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What are your main skill gaps where you'll need help?\": \"{{ String($('Fillout Trigger').item.json.questions['5HJE'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Which industry do you want to build a business in, and why?\": \"{{ String($('Fillout Trigger').item.json.questions.qG1G.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Do you have any notable connections, insights, expertise or advantages in this industry? Tell us more about that.\": \"{{ String($('Fillout Trigger').item.json.questions.hN3D.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What trends or shifts in your industry are you most excited about? Why?\": \"{{ String($('Fillout Trigger').item.json.questions.rJ3u.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What is the specific problem in your industry that you want to solve?\": \"{{ String($('Fillout Trigger').item.json.questions.tZ42.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Who is experiencing this problem?\": \"{{ String($('Fillout Trigger').item.json.questions['7wHz'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How are people getting around this problem at the moment?\": \"{{ String($('Fillout Trigger').item.json.questions.hKVV.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Will solving this problem save people time or money (or both)? How much time or money?\": \"{{ String($('Fillout Trigger').item.json.questions.qFLN.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Approximately how many people are affected by this problem?\": \"{{ String($('Fillout Trigger').item.json.questions.mymB.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Do you already an idea in mind for what could solve this problem?\": \"{{ String($('Fillout Trigger').item.json.questions['9CiT'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How do you think you'll get your first 1 - 10 customers?\": \"{{ String($('Fillout Trigger').item.json.questions.dNQ5.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How much do you think people will pay for this? And why do you think that number?\": \"{{ String($('Fillout Trigger').item.json.questions.chXn.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Who is your main competition, and what are they getting wrong?\": \"{{ String($('Fillout Trigger').item.json.questions.wFSJ.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How many hours / days a week are you able to commit to working on your business now while still part time?\": \"{{ String($('Fillout Trigger').item.json.questions['8iZG'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What does success look like for you?\": \"{{ String($('Fillout Trigger').item.json.questions.mRvX.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"If things go well, would you be comfortable raising external capital for your business?\": \"{{ String($('Fillout Trigger').item.json.questions['9iJC'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Are there people in your network you could pitch to for some early startup funding?\": \"{{ String($('Fillout Trigger').item.json.questions.v8MM.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Do you consider yourself to be someone that is “hands-on” or you prefer to hire people to do the work?\": \"{{ String($('Fillout Trigger').item.json.questions.gYjH.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Imagine one year from now, the business is showing signs of success and you’ve quit your job to go full time on this. What does your typical day-to-day look like?\": \"{{ String($('Fillout Trigger').item.json.questions.nCYJ.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"As a founder coming from the corporate world, it’s typical to take a salary cut in the early stages of building your business so more money can be used on growing the business, which in turn grows your long-term wealth.\": \"{{ String($('Fillout Trigger').item.json.questions.mJME.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What is the minimum annual salary you would need to support yourself while working full-time on your business?\": \"{{ String($('Fillout Trigger').item.json.questions['3BFW'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Why do you want DQventures to work with you on your new business?\": \"{{ String($('Fillout Trigger').item.json.questions['7rP9'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Is there anything else you'd like us to know about you and your goals?\": \"{{ String($('Fillout Trigger').item.json.questions.vGqM.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Which country are you currently located in?\": \"{{ String($('Fillout Trigger').item.json.questions.umgN.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How did you hear about DQventures?\": \"{{ String($('Fillout Trigger').item.json.questions['8fKT'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Walk us through your idea\": \"{{ String($('Fillout Trigger').item.json.questions.tcTa.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Are you aware of the $20k / 20% terms?\": \"{{ String($('Fillout Trigger').item.json.questions.v4TV.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Status\": \"Applied\",\n      \"Referral URL\": \"{{ String($('Fillout Trigger').item.json.urlParameters?.ref?.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Fillout ID\": \"{{ $('Fillout Trigger').item.json.submissionId ?? '' }}\",\n      \"Date of Application\": \"{{ $('Fillout Trigger').item.json.lastUpdatedAt ? new Date($('Fillout Trigger').item.json.lastUpdatedAt).toISOString().split('T')[0] : '' }}\",\n\"Status\" : \"Applied\",\n      \"Would you like to proceed?\": \"{{ $('Fillout Trigger').item.json.questions['7civ'].value }}\"\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -464,
+        320
+      ],
+      "id": "62cb4e89-0a1b-4906-ae97-cecd7b7c4525",
+      "name": "Create New User"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.folk.app/v1/people/{{ $json.data.items[0].id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"firstName\": \"{{ String($('Fillout Trigger').item.json.questions.xpbS.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n  \"lastName\": \"{{ String($('Fillout Trigger').item.json.questions['4ma5'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n  \"emails\": [\"{{ $json.data.items[0].emails[0]}}\"],\n  \"phones\": [\"{{ String($('Fillout Trigger').item.json.questions.dk67.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\"],\n  \"customFieldValues\": {\n    \"grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f\": {\n      \"Why do you want to become an entrepreneur?\": \"{{ String($('Fillout Trigger').item.json.questions['3jkv'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Why now, and what has stopped you starting a business already?\": \"{{ String($('Fillout Trigger').item.json.questions.mFMG.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What are your strongest skills / specific things you want to be doing in the early stages of your new business?\": \"{{ String($('Fillout Trigger').item.json.questions['9po8'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What are your main skill gaps where you'll need help?\": \"{{ String($('Fillout Trigger').item.json.questions['5HJE'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Which industry do you want to build a business in, and why?\": \"{{ String($('Fillout Trigger').item.json.questions.qG1G.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Do you have any notable connections, insights, expertise or advantages in this industry? Tell us more about that.\": \"{{ String($('Fillout Trigger').item.json.questions.hN3D.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What trends or shifts in your industry are you most excited about? Why?\": \"{{ String($('Fillout Trigger').item.json.questions.rJ3u.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What is the specific problem in your industry that you want to solve?\": \"{{ String($('Fillout Trigger').item.json.questions.tZ42.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Who is experiencing this problem?\": \"{{ String($('Fillout Trigger').item.json.questions['7wHz'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How are people getting around this problem at the moment?\": \"{{ String($('Fillout Trigger').item.json.questions.hKVV.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Will solving this problem save people time or money (or both)? How much time or money?\": \"{{ String($('Fillout Trigger').item.json.questions.qFLN.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Approximately how many people are affected by this problem?\": \"{{ String($('Fillout Trigger').item.json.questions.mymB.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Do you already an idea in mind for what could solve this problem?\": \"{{ String($('Fillout Trigger').item.json.questions['9CiT'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How do you think you'll get your first 1 - 10 customers?\": \"{{ String($('Fillout Trigger').item.json.questions.dNQ5.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How much do you think people will pay for this? And why do you think that number?\": \"{{ String($('Fillout Trigger').item.json.questions.chXn.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Who is your main competition, and what are they getting wrong?\": \"{{ String($('Fillout Trigger').item.json.questions.wFSJ.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How many hours / days a week are you able to commit to working on your business now while still part time?\": \"{{ String($('Fillout Trigger').item.json.questions['8iZG'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What does success look like for you?\": \"{{ String($('Fillout Trigger').item.json.questions.mRvX.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"If things go well, would you be comfortable raising external capital for your business?\": \"{{ String($('Fillout Trigger').item.json.questions['9iJC'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Are there people in your network you could pitch to for some early startup funding?\": \"{{ String($('Fillout Trigger').item.json.questions.v8MM.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Do you consider yourself to be someone that is “hands-on” or you prefer to hire people to do the work?\": \"{{ String($('Fillout Trigger').item.json.questions.gYjH.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Imagine one year from now, the business is showing signs of success and you’ve quit your job to go full time on this. What does your typical day-to-day look like?\": \"{{ String($('Fillout Trigger').item.json.questions.nCYJ.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '')}}\",\n      \"As a founder coming from the corporate world, it’s typical to take a salary cut in the early stages of building your business so more money can be used on growing the business, which in turn grows your long-term wealth.\": \"{{ String($('Fillout Trigger').item.json.questions.mJME.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"What is the minimum annual salary you would need to support yourself while working full-time on your business?\": \"{{ String($('Fillout Trigger').item.json.questions['3BFW'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Why do you want DQventures to work with you on your new business?\": \"{{ String($('Fillout Trigger').item.json.questions['7rP9'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Is there anything else you'd like us to know about you and your goals?\": \"{{ String($('Fillout Trigger').item.json.questions.vGqM.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Which country are you currently located in?\": \"{{ String($('Fillout Trigger').item.json.questions.umgN.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"How did you hear about DQventures?\": \"{{ String($('Fillout Trigger').item.json.questions['8fKT'].value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Walk us through your idea\": \"{{ String($('Fillout Trigger').item.json.questions.tcTa.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Are you aware of the $20k / 20% terms?\": \"{{ String($('Fillout Trigger').item.json.questions.v4TV.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Referral URL\": \"{{ String($('Fillout Trigger').item.json.urlParameters?.ref?.value ?? '').replace(/\\r?\\n/g, ' ').replace(/\\\\/g, '\\\\\\\\').replace(/\\\"/g, '\\\\\\\"').replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\",\n      \"Fillout ID\": \"{{ $('Fillout Trigger').item.json.submissionId ?? '' }}\",\n      \"Date of Application\": \"{{ $('Fillout Trigger').item.json.lastUpdatedAt ? new Date($('Fillout Trigger').item.json.lastUpdatedAt).toISOString().split('T')[0] : '' }}\",\n\"Status\":\"Applied\",\n     \"Would you like to proceed?\": \"{{ $('Fillout Trigger').item.json.questions['7civ'].value }}\"\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -464,
+        128
+      ],
+      "id": "c024fdf7-7db8-4050-82ce-c5e9c94cb9bb",
+      "name": "Update Existing User"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.folk.app/v1/people?filter[emails][eq]={{ $node[\"Fillout Trigger\"].json.questions['8Etk'].value }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -16,
+        320
+      ],
+      "id": "c94d4050-35a4-4ab6-a107-00094239a2ba",
+      "name": "Search User ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-5\",\n  \"prompt\": {\n    \"id\": \"pmpt_68c0e5ef3af4819681486d207d9042160ce65f43822c7973\",\n    \"version\": \"6\"\n  },\n  \"input\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"input_text\",\n          \"text\": {{ \n            JSON.stringify(\n              (()=>{\n                const founder_first_name = $node[\"Fillout Trigger\"].json.questions[\"xpbS\"][\"value\"];\n                const founder_last_name = $node[\"Fillout Trigger\"].json.questions[\"4ma5\"][\"value\"];\n                const q = $node[\"Fillout Trigger\"].json.questions;\n                const ids = [\n                  \"3jkv\",\"mFMG\",\"9po8\",\"5HJE\",\"qG1G\",\"hN3D\",\"rJ3u\",\"tZ42\",\"7wHz\",\"hKVV\",\n                  \"qFLN\",\"mymB\",\"9CiT\",\"tcTa\",\"dNQ5\",\"chXn\",\"wFSJ\",\"8iZG\",\"mRvX\",\"9iJC\",\n                  \"v8MM\",\"gYjH\",\"nCYJ\",\"mJME\",\"3BFW\",\"7rP9\",\"vGqM\",\"umgN\",\"8fKT\"\n                ];\n\n                const lines = [`Following are the questions and their answers: \\n\\n Founder: ${founder_first_name} ${founder_last_name}`];\n                for (const id of ids) {\n                  if (!q || !q[id]) continue;\n                  const name = q[id].name ?? id;\n                  let val = q[id].value;\n                  if (Array.isArray(val)) val = val.join(\", \");\n                  if (val === undefined || val === null) val = \"\";\n                  lines.push(name);\n                  lines.push(String(val));\n                }\n                return lines.join(\"\\n\\n\");\n              })()\n            ) \n          }}\n        }\n      ]\n    }\n  ],\n  \"store\": true\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        320
+      ],
+      "id": "b3a84bb4-a10d-43bb-b498-565991921dac",
+      "name": "Generate Note2"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.folk.app/v1/people/{{ $('Search User').item.json.data.items[0].id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customFieldValues\": {\n    \"grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f\": {\n      \"Offer Personalization\": \"{{ String($json.output[1].content[0].text)\n        .replace(/\\r?\\n/g, ' ')\n        .replace(/\\\\/g, '\\\\\\\\')\n        .replace(/\\\"/g, '\\\\\\\"')\n        .replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\"\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        608,
+        128
+      ],
+      "id": "30b11dff-68ac-4bb0-a87d-f953f8fda15c",
+      "name": "Update Offer Personalization"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": {\n    \"id\": \"pmpt_68ff05e8e9c48195abde762f38670ce00005c305f59ee62e\",\n    \"version\": \"2\"\n  },\n  \"input\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"input_text\",\n          \"text\": {{ \n            JSON.stringify(\n              (()=>{\n                const lines = [];\n                lines.push($json.data.content);\n                return lines.join(\"\\n\\n\");\n              })()\n            ) \n          }}\n        }\n      ]\n    }\n  ],\n  \"reasoning\": {},\n  \"store\": true,\n  \"include\": [\n    \"reasoning.encrypted_content\",\n    \"web_search_call.action.sources\"\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        432,
+        320
+      ],
+      "id": "15b18ea3-065b-4615-938e-644db37c14b8",
+      "name": "Generate Offer1"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.folk.app/v1/people/{{ $('Search User ID').item.json.data.items[0].id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customFieldValues\": {\n    \"grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f\": {\n      \"Offer Personalization\": \"{{ String($json.output[1].content[0].text)\n        .replace(/\\r?\\n/g, ' ')\n        .replace(/\\\\/g, '\\\\\\\\')\n        .replace(/\\\"/g, '\\\\\\\"')\n        .replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, '') }}\"\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        608,
+        320
+      ],
+      "id": "40237668-1505-4a34-884c-22646c0bf95d",
+      "name": "Update Offer Personalization1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ \n            JSON.stringify(\n              (()=>{\n                const founder_first_name = $node[\"Fillout Trigger\"].json.questions[\"xpbS\"][\"value\"];\n                const founder_last_name = $node[\"Fillout Trigger\"].json.questions[\"4ma5\"][\"value\"];\n                const q = $node[\"Fillout Trigger\"].json.questions;\n                const ids = [\n                  \"3jkv\",\"mFMG\",\"9po8\",\"5HJE\",\"qG1G\",\"hN3D\",\"rJ3u\",\"tZ42\",\"7wHz\",\"hKVV\",\n                  \"qFLN\",\"mymB\",\"9CiT\",\"tcTa\",\"dNQ5\",\"chXn\",\"wFSJ\",\"8iZG\",\"mRvX\",\"9iJC\",\n                  \"v8MM\",\"gYjH\",\"nCYJ\",\"mJME\",\"3BFW\",\"7rP9\",\"vGqM\",\"umgN\",\"8fKT\"\n                ];\n\n                const lines = [`Following are the questions and their answers: \\n\\n Founder: ${founder_first_name} ${founder_last_name}`];\n                for (const id of ids) {\n                  if (!q || !q[id]) continue;\n                  const name = q[id].name ?? id;\n                  let val = q[id].value;\n                  if (Array.isArray(val)) val = val.join(\", \");\n                  if (val === undefined || val === null) val = \"\";\n                  lines.push(name);\n                  lines.push(String(val));\n                }\n                return lines.join(\"\\n\\n\");\n              })()\n            ) \n          }}\n",
+        "options": {
+          "systemMessage": "=You are a specialist venture analyst at DQventures, executing the first step of our Selection Process: Application & Vetting. Your mission is to screen applicants to identify high-potential, experienced professionals who align with our \"talent investing\" thesis and generate risk hypotheses for validation.\n\nYour analysis must embody our core value: \"Tell it like it is.\" Be analytical and use full complete sentences, in a style of writing that is easy to read. Use a MECE (Mutually Exclusive, Collectively Exhaustive) structure to avoid duplication across sections. Base your assessment strictly on the facts presented in the application - avoid making assumptions or inferring motivations not explicitly stated. When information is missing or unclear, note it as such rather than filling gaps with speculation. Your primary goal is to assess talent potential first, as we invest in good people solving real problems, not just ideas.\n\nDQVENTURES INVESTMENT THESIS & MODEL:\nWe de-risk entrepreneurship for experienced professionals (typically 8-10+ years) transitioning out of corporate careers. We act as 0-to-1 cofounders for domain experts who are solving a real problem they have intimately experienced. Our model allows founders to stay in their corporate roles while we work together through the Explore and Validate stages to build a Minimum Viable Business (MVB). Only after validation do we expect \"The Transition\" - where the founder commits to going \"All-In\" as full-time CEO of their startup. We help them build capital-efficient, asset-light businesses with the potential to be worth $10m or more. We prefer B2B solutions. We do not chase unicorns; we build investable, scalable and valuable businesses.\n\nOUTPUT STRUCTURE:\nAlways use the exact framework below. The format is optimized for Partner review. Use the specified headers, bullet points, and emojis for scannable signals. Use bold for all section headers and all subheadings. Insert a blank line between bullet points. Keep bullets concise (max 2 lines each where possible).\n\nSummary\n• A brief, neutral summary of the founder's background and what they aim to build. Mention their name and location in the first line.\n\n✅ Founder-Thesis Fit (Talent Potential Assessment)\n• Experience & Domain Expertise: Do they fit our target profile of an experienced professional (8+ years)? Is their expertise directly relevant to the problem they want to solve?\n• Problem Connection: Is this a \"real problem\" they have personally lived with? Does their insight feel authentic and earned?\n• Entrepreneurial Motivation: What is driving their transition? Is their motivation intrinsic (e.g., independence, interest, passion, impact) or extrinsic (e.g., money, power, fame)?\n• Entrepreneurial Commitment: Are they willing to eventually go \"All-In\" as full-time CEO once their business is validated? Note: staying in corporate roles initially is aligned with our model; having already quit is acceptable but not our ICP.\n• Character & Integrity: Are they a \"good person\" with evidence of grit/determination/resilience and integrity/trust/good judgement? Do they seem like someone we can work with and trust?\n\n• Verdict: [A short, decisive sentence on the strength of the founder's talent potential and thesis fit.]\n\n📈 Opportunity-Thesis Fit (Business Potential Assessment)\n• Model & DQ Alignment: Is the business model simple enough for us to understand and help build? Is it a B2B solution? Can it realistically start as a service-led or asset-light business?\n• Value Potential: Does this have a credible path to becoming an investable, scalable, and valuable ($10m+) business?\n\n• Verdict: [A short sentence summarizing the business opportunity's alignment with our model.]\n\n🔍 Initial Risk Hypotheses for Explore Stage Validation\nBased on the application assessment, identify if any of these 8 key risk hypotheses exist and require testing during the Explore Stage:\n\n• Founder Capability Hypotheses:\n1. [Specific capability assessment risk - domain expertise application, execution ability]\n2. [Specific character assessment risk - grit/determination/resilience, integrity/trust/good judgement]\n\n• Market Validation Hypotheses:\n3. [Specific customer discovery risk - customer interviews, market research needs]\n4. [Specific problem validation risk - problem urgency, customer pain confirmation]\n\n• Solution Delivery Hypotheses:\n5. [Specific service delivery risk - ability to deliver customer value]\n6. [Specific solution-problem fit risk - how well solution addresses customer needs]\n\n• Business Model Hypotheses:\n7. [Specific pricing risk - willingness to pay, customer budget validation]\n8. [Specific asset-light model risk - capital efficiency, scalability evidence]\n\n🚩 Red Flags & Risks\n• List any critical concerns that challenge their fit with our model (e.g., character/integrity questions, weak/extrinsic motivation, unwillingness to fully commit to entrepreneurship, unrealistic expectations, model misalignment, appears uncoachable).\n\n⚖️ Recommendation\n• Conviction: [✅ Advance to Interview / ⚠️ Additional Information Needed / ❌ Decline] - Should we advance them to the interview stage? Keep in mind that we only want to decline people who have poor written communications, refuse to pay the DQventures fees, or appear unserious about this.\n• Justification: A single sentence explaining the \"why\" behind your recommendation, anchored to talent potential assessment.\n\n📌 Interview Focus Areas\n• Provide 4 strategic areas that should be explored during the interview to validate talent potential and refine risk hypotheses:\n1. [Character Deep-Dive Opportunity - specific area to assess grit/determination/resilience or integrity/trust/good judgement]\n2. [Risk Validation Priority - specific concern from application that needs interview exploration]\n3. [DQ Model Understanding Test - area to assess comprehension of hands-on cofounder approach]\n4. [Payment Readiness Discussion - approach to validate $2,000 Explore Stage investment readiness]\n\n🔄 Handoff to Interview Stage\n• Key insights, risk areas, and talent potential indicators that should inform the interview assessment and hypothesis refinement."
+        }
+      },
+      "id": "a362b29d-44ea-4496-8de4-ee3b9d8f4311",
+      "name": "AI Agent - Generate Assessment",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "gpt-5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -224,
+        -64
+      ],
+      "id": "95b03568-eb4c-4ed7-9c18-d1a1d88671e6",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "gpt-5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        304,
+        -80
+      ],
+      "id": "5ebab484-b241-46a0-9752-7908c09dd7bf",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ \n            JSON.stringify(\n              (()=>{\n                const lines = [];\n                lines.push($json.data.content);\n                return lines.join(\"\\n\\n\");\n              })()\n            ) \n}}",
+        "options": {
+          "systemMessage": "**Instruction:**  \nWrite a warm, professional, and supportive email paragraph explaining why an applicant has been selected for DQventures, using their application assessment as the basis for your message.  \nAct as an expert venture analyst and business development partner: your paragraph should be friendly, precise, and intellectually honest, showing that you *understand the commercial logic* behind their idea and *why it aligns with DQventures’ investment thesis and co-creation model.*\n \n---\n \n**Reasoning Process (you must reason before writing):**  \n1. Carefully review the application assessment.  \n2. Identify concrete strengths — e.g. founder experience, insight quality, validation approach, or early traction.  \n3. Assess the idea’s strength — What’s the strategic rationale? Is there clear founder–market fit, timing advantage, or proof of unmet demand?  \n4. Connect the analysis to why this applicant fits DQventures’ model (structured validation, repeatable growth hypotheses, pragmatic founders).  \n5. Only after this reasoning, compose a single, well-written paragraph (3–6 sentences) that blends empathy with analytical conviction.\n \n---\n \n**Output Format:**  \n- Output *only* the final paragraph, ready to paste into an email.  \n- Tone: warm but intelligent — founder-to-founder, not HR-to-founder.  \n- Each sentence must carry meaning — avoid filler adjectives (“exciting”, “amazing”, “inspiring”) unless justified by evidence.  \n- The paragraph should make the applicant feel seen *and* demonstrate that DQ’s selection is evidence-based.  \n- Do not include any meta-explanation or reasoning text in the final output.\n \n---\n \n**Example:**\n \n**Application Assessment:**  \n\"The applicant identified a gap in SME logistics: small manufacturers often lack visibility over last-mile delivery and inventory handoffs. They’ve worked in supply-chain operations for 8 years and validated demand through interviews with 20+ warehouse managers. Their MVP concept focuses on data unification across fragmented tools rather than replacing legacy systems.\"\n \n**Final Output Paragraph:**  \nYour application demonstrated rare clarity in both insight and execution. You’ve pinpointed a real pain point — fragmented visibility in SME logistics — and approached it with the pragmatism of someone who’s lived the problem. We were particularly impressed by your validation discipline and by the decision to focus on data unification rather than product replacement, which shows an operator’s understanding of adoption risk. That combination of first-hand market experience, analytical framing, and pragmatic build strategy fits perfectly with how DQventures co-creates ventures designed to prove traction fast and efficiently."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        128
+      ],
+      "id": "c02419f0-dbb7-45aa-9e53-f0d7004eb7b7",
+      "name": "AI Agent Generate Offer"
+    }
+  ],
+  "connections": {
+    "Fillout Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update Existing User",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create New User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search User": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create New User": {
+      "main": [
+        [
+          {
+            "node": "Generate Note2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Existing User": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Generate Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search User ID": {
+      "main": [
+        [
+          {
+            "node": "Add Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Note1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Generate Offer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Note2": {
+      "main": [
+        [
+          {
+            "node": "Search User ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Note": {
+      "main": [
+        [
+          {
+            "node": "Generate Offer1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Offer1": {
+      "main": [
+        [
+          {
+            "node": "Update Offer Personalization1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Generate Assessment": {
+      "main": [
+        [
+          {
+            "node": "Add Note1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Generate Assessment",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Generate Offer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Generate Offer": {
+      "main": [
+        [
+          {
+            "node": "Update Offer Personalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Fillout Trigger": [
+      {
+        "json": {
+          "submissionId": "c834dcfc-1485-47ef-be09-04b8730582e7",
+          "submissionTime": "2025-10-29T11:41:13.310Z",
+          "lastUpdatedAt": "2025-10-29T11:41:13.310Z",
+          "questions": {
+            "4ma5": {
+              "name": "Last name",
+              "value": "Ogunsola"
+            },
+            "xpbS": {
+              "name": "First name",
+              "value": "Idris "
+            },
+            "8Etk": {
+              "name": "Email",
+              "value": "idris.ogunsola@spaceway.ng"
+            },
+            "dk67": {
+              "name": "Phone number",
+              "value": "+2348154765255"
+            },
+            "9t7Y": {
+              "name": "Referral",
+              "value": null
+            },
+            "3jkv": {
+              "name": "Why do you want to become an entrepreneur?",
+              "value": "I have decided to become an entrepreneur as a job creator, problem solver and meet the need of society and create opportunities for others to thrive.\n\nI want to build businesses that last or ventures that will create more jobs and drive innovations in the societies"
+            },
+            "mFMG": {
+              "name": "Why now, and what has stopped you starting a business already?",
+              "value": "I believe the timing is right now because i have gained experience on how businesses are run, insight on how decisions are made and what kind of structures need to be put in place for businesses to grow. More reason now is that technology has reduced the barrier to entry \n\nWhat stoped me beforer was i was gathering knowledge and experience, "
+            },
+            "9po8": {
+              "name": "What are your strongest skills / specific things you want to be doing in the early stages of your new business?",
+              "value": "My strongest skills are strategy, communication and execution.\n\nWhat i will be doing at the early stage of the business is to build the system, build a team, customer acquisition and development and brand positioning"
+            },
+            "5HJE": {
+              "name": "What are your main skill gaps where you'll need help?",
+              "value": "Investment planning and financial management, leadership development and hiring, advanced supply chain management and operational efficiency and technological integration"
+            },
+            "qG1G": {
+              "name": "Which industry do you want to build a business in, and why?",
+              "value": "Manufacturing and Agriculture\n\nThe main reason is that both the agriculture and manufacturing intersect, one produce raw materials while the other add value to the raw materials to make finished goods, creating jobs, reducing imports, and driving exports. I see a real opportunity to process what we grow locally into finished or semi-finished products that meet domestic and international demand."
+            },
+            "hN3D": {
+              "name": "Do you have any notable connections, insights, expertise or advantages in this industry? Tell us more about that.",
+              "value": "As Executive Director of Spaceway Limited, I’ve managed operations in the manufacturing sector, particularly in adhesive tape production — overseeing sourcing, production efficiency, and market distribution. This experience has helped me understand machinery setup, supply chain challenges, and quality control in a local manufacturing context.\n\nIn addition, through Captain Farm and Consultancy, I’ve developed a strong network in agriculture, especially among farmers, agro-dealers, and input suppliers in Southwest Nigeria. This has given me deep insights into local production systems, market gaps, and opportunities for agro-processing."
+            },
+            "rJ3u": {
+              "name": "What trends or shifts in your industry are you most excited about? Why?",
+              "value": "I’m most excited about the growing shift toward local value addition and agro-processing. More entrepreneurs are realizing that instead of exporting raw materials, we can process them locally into higher-value products — creating jobs, saving foreign exchange, and strengthening local industries.\n\nI’m also inspired by the rise of agritech and smart manufacturing — from precision farming and digital marketplaces to automation and data-driven production. These innovations are making both sectors more efficient, traceable, and scalable."
+            },
+            "tZ42": {
+              "name": "What is the specific problem in your industry that you want to solve?",
+              "value": "The main problem I want to solve is the disconnect between agricultural production and manufacturing capacity.\n\nNigeria produces abundant raw materials — crops, livestock, and natural resources — but most are sold in unprocessed form, leading to low farmer income, high post-harvest losses, and overdependence on imported finished goods.\n\nAt the same time, many small manufacturers struggle with inconsistent supply, poor-quality inputs, and lack of affordable local processing solutions."
+            },
+            "7wHz": {
+              "name": "Who is experiencing this problem?",
+              "value": "This problem is being experienced by both farmers and small manufacturers across Nigeria and other developing economies"
+            },
+            "hKVV": {
+              "name": "How are people getting around this problem at the moment?",
+              "value": "Farmers often sell their produce to middlemen at low prices just to avoid spoilage, instead of processing or storing it.\n\nManufacturers rely heavily on imported raw materials because local inputs are inconsistent in quality and supply"
+            },
+            "qFLN": {
+              "name": "Will solving this problem save people time or money (or both)? How much time or money?",
+              "value": "Solving this problem will save both time and money across the entire value chain.  For farmers, access to local processing and manufacturing outlets will reduce post-harvest losses by up to 30–40%, while increasing income since they can sell at better prices.  For manufacturers, reliable local inputs will cut import costs by 20–35% and shorten production lead times by weeks, since they won’t have to depend on foreign shipments or currency fluctuations"
+            },
+            "mymB": {
+              "name": "Approximately how many people are affected by this problem?",
+              "value": "This problem affects millions of people across Nigeria — directly and indirectly.\n\nNigeria has over 38 million smallholder farmers, according to the Federal Ministry of Agriculture, and the vast majority lack access to reliable processing or storage facilities. Even if we focus on just 10% of them, that’s nearly 4 million farmers losing value every harvest.\n\nOn the other side, there are an estimated 80,000+ small and medium manufacturers, many of whom rely on imported raw materials because local inputs aren’t processed to the required standard.\n\nWhen you include transporters, distributors, and consumers affected by higher costs and delays, the total market impact easily reaches tens of millions of Nigerians — representing a multi-billion-naira opportunity to strengthen local production chains."
+            },
+            "9CiT": {
+              "name": "Do you already an idea in mind for what could solve this problem?",
+              "value": "No"
+            },
+            "tcTa": {
+              "name": "Walk us through this idea:What your solution actuallydoesWhy it’s a smart way to solve the problemHow it compares to what people use nowWhat makes your approach different or better",
+              "value": null
+            },
+            "dNQ5": {
+              "name": "How do you think you'll get your first 1 - 10 customers?",
+              "value": null
+            },
+            "chXn": {
+              "name": "How much do you think people will pay for this? And why do you think that number?",
+              "value": null
+            },
+            "wFSJ": {
+              "name": "Who is your main competition, and what are they getting wrong?",
+              "value": "My main competition comes from importers of finished and semi-processed goods, as well as large processing companies that dominate certain value chains.\n\nImporters are meeting demand but not solving the local production gap — they keep Nigeria dependent on foreign supply, draining foreign exchange and limiting local job creation. Their model focuses on trading, not transformation."
+            },
+            "8iZG": {
+              "name": "How many hours / days a week are you able to commit to working on your business now while still part time?",
+              "value": "2hrs pr day"
+            },
+            "mRvX": {
+              "name": "What does success look like for you?",
+              "value": [
+                "A profitable lifestyle business with a good salary and regular dividends",
+                "A business I can pass on to future generations"
+              ]
+            },
+            "9iJC": {
+              "name": "If things go well, would you be comfortable raising external capital for your business?",
+              "value": "Yes"
+            },
+            "v8MM": {
+              "name": "Are there people in your network you could pitch to for some early startup funding?",
+              "value": "Yes, but they probably wouldn’t invest in my business"
+            },
+            "gYjH": {
+              "name": "Do you consider yourself to be someone that is “hands-on” or you prefer to hire people to do the work?",
+              "value": "Yes, Hands-on but as the business expand hiring is very important"
+            },
+            "nCYJ": {
+              "name": "Imagine one year from now, the business is showing signs of success and you’ve quit your job to go full time on this. What does your typical day-to-day look like?",
+              "value": "working full time on the business and training a successors"
+            },
+            "mJME": {
+              "name": "As a founder coming from the corporate world, it’s typical to take a salary cut in the early stages of building your business - or even working for a period without pay - so more money can be used on growing the business, which in turn grows your long-term wealth.",
+              "value": "Yes, I understand and am prepared to take a reduced salary in the short term."
+            },
+            "3BFW": {
+              "name": "What is the minimum annual salary you would need to support yourself while working full-time on your business?",
+              "value": "USD 4000"
+            },
+            "7rP9": {
+              "name": "Why do you want DQventures to work with you on your new business?",
+              "value": "Because of the potential of DQventures to assist in making the dream a reality"
+            },
+            "vGqM": {
+              "name": "Is there anything else you'd like us to know about you and your goals?",
+              "value": "Not at all"
+            },
+            "umgN": {
+              "name": "Which country are you currently located in?",
+              "value": "Nigeria"
+            },
+            "8fKT": {
+              "name": "How did you hear about DQventures?",
+              "value": "Linkedlin"
+            },
+            "v4TV": {
+              "name": "Before we move forward, please confirm you're aware of the DQventures program structure:We charge a $2000 / month fee to work with our team, and 20% equity in the new company if we enter a full partnership.",
+              "value": "I need more information about how that works"
+            },
+            "7civ": {
+              "name": "Would you like to proceed?",
+              "value": "Yes, I’m able to commit $2k to explore my business idea"
+            }
+          },
+          "calculations": {},
+          "urlParameters": {
+            "ref": {
+              "name": "ref",
+              "value": null
+            }
+          },
+          "quiz": {},
+          "documents": {},
+          "scheduling": {},
+          "payments": {}
+        }
+      }
+    ],
+    "Update Offer Personalization": [
+      {
+        "json": {
+          "data": {
+            "id": "per_cf590644-47c3-4e19-b512-b488170ac375",
+            "firstName": "Idris",
+            "lastName": "Ogunsola",
+            "fullName": "Idris Ogunsola",
+            "description": "",
+            "birthday": null,
+            "jobTitle": "",
+            "createdAt": "2025-10-29T11:41:22.172Z",
+            "createdBy": {
+              "id": "usr_fd2401fb-8a63-4185-87d6-6cdba8eab39e",
+              "fullName": "DQventures Team",
+              "email": "tools@dqventures.com"
+            },
+            "groups": [
+              {
+                "id": "grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f",
+                "name": "Pipeline"
+              }
+            ],
+            "companies": [],
+            "addresses": [],
+            "emails": [
+              "idris.ogunsola@spaceway.ng"
+            ],
+            "phones": [
+              "+2348154765255"
+            ],
+            "urls": [],
+            "customFieldValues": {
+              "grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f": {
+                "Anything else you'd like to share with us?": null,
+                "Approximately how many people are affected by this problem?": "This problem affects millions of people across Nigeria — directly and indirectly.  Nigeria has over 38 million smallholder farmers, according to the Federal Ministry of Agriculture, and the vast majority lack access to reliable processing or storage facilities. Even if we focus on just 10% of them, that’s nearly 4 million farmers losing value every harvest.  On the other side, there are an estimated 80,000+ small and medium manufacturers, many of whom rely on imported raw materials because local inputs aren’t processed to the required standard.  When you include transporters, distributors, and consumers affected by higher costs and delays, the total market impact easily reaches tens of millions of Nigerians — representing a multi-billion-naira opportunity to strengthen local production chains.",
+                "Are there people in your network you could pitch to for some early startup funding?": "Yes, but they probably wouldn’t invest in my business",
+                "Are you aware of the $20k / 20% terms?": "I need more information about how that works",
+                "As a founder coming from the corporate world, it’s typical to take a salary cut in the early stages of building your business so more money can be used on growing the business, which in turn grows your long-term wealth.": "Yes, I understand and am prepared to take a reduced salary in the short term.",
+                "Call 1 Date": null,
+                "Current Company": null,
+                "Current Stage": null,
+                "Current Title": null,
+                "Date applied to LinkedIn Job Ad": null,
+                "Date of Application": "2025-10-29",
+                "Date of Interview": null,
+                "Deal value": null,
+                "Degree": null,
+                "Do you already an idea in mind for what could solve this problem?": "No",
+                "Do you consider yourself to be someone that is “hands-on” or you prefer to hire people to do the work?": "Yes, Hands-on but as the business expand hiring is very important",
+                "Do you have any notable connections, insights, expertise or advantages in this industry? Tell us more about that.": "As Executive Director of Spaceway Limited, I’ve managed operations in the manufacturing sector, particularly in adhesive tape production — overseeing sourcing, production efficiency, and market distribution. This experience has helped me understand machinery setup, supply chain challenges, and quality control in a local manufacturing context.  In addition, through Captain Farm and Consultancy, I’ve developed a strong network in agriculture, especially among farmers, agro-dealers, and input suppliers in Southwest Nigeria. This has given me deep insights into local production systems, market gaps, and opportunities for agro-processing.",
+                "DQ has equity": null,
+                "Existing business": null,
+                "Explore End Date": null,
+                "Explore Stage DQ member": null,
+                "Fillout ID": "c834dcfc-1485-47ef-be09-04b8730582e7",
+                "GP Lead": null,
+                "How are people getting around this problem at the moment?": "Farmers often sell their produce to middlemen at low prices just to avoid spoilage, instead of processing or storing it.  Manufacturers rely heavily on imported raw materials because local inputs are inconsistent in quality and supply",
+                "How did you hear about DQventures?": "Linkedlin",
+                "How do you think you'll get your first 1 - 10 customers?": "",
+                "How many hours / days a week are you able to commit to working on your business now while still part time?": "2hrs pr day",
+                "How much do you think people will pay for this? And why do you think that number?": "",
+                "If things go well, would you be comfortable raising external capital for your business?": "Yes",
+                "Imagine one year from now, the business is showing signs of success and you’ve quit your job to go full time on this. What does your typical day-to-day look like?": "working full time on the business and training a successors",
+                "Interviewer": null,
+                "Investment Memo 1": null,
+                "Investment Memo 2": null,
+                "Is there anything else you'd like us to know about you and your goals?": "Not at all",
+                "LinkedIn Headline": null,
+                "LinkedIn Job Ad Location": null,
+                "LinkedIn Location": null,
+                "LinkedIn Profile URL": null,
+                "Marketing Contact": null,
+                "Next steps": null,
+                "Offer Personalization": "",
+                "Official Start Date": null,
+                "Partnership Assessment": null,
+                "Portal Link": null,
+                "Potential (interview stage)": null,
+                "Priority": null,
+                "Referral URL": "",
+                "Revenue": null,
+                "Sales Owner": [],
+                "Scorecard": null,
+                "Start Month": null,
+                "Start Year": null,
+                "Status": "Applied",
+                "Time of Withdrawal": null,
+                "University": null,
+                "Validate Lead": null,
+                "Validate Phase": null,
+                "Walk us through your idea": "",
+                "What are your main skill gaps where you'll need help?": "Investment planning and financial management, leadership development and hiring, advanced supply chain management and operational efficiency and technological integration",
+                "What are your strongest skills / specific things you want to be doing in the early stages of your new business?": "My strongest skills are strategy, communication and execution.  What i will be doing at the early stage of the business is to build the system, build a team, customer acquisition and development and brand positioning",
+                "What does success look like for you?": "A profitable lifestyle business with a good salary and regular dividends,A business I can pass on to future generations",
+                "What is it about DQventures that made you want to reach out?": null,
+                "What is the minimum annual salary you would need to support yourself while working full-time on your business?": "USD 4000",
+                "What is the specific problem in your industry that you want to solve?": "The main problem I want to solve is the disconnect between agricultural production and manufacturing capacity.  Nigeria produces abundant raw materials — crops, livestock, and natural resources — but most are sold in unprocessed form, leading to low farmer income, high post-harvest losses, and overdependence on imported finished goods.  At the same time, many small manufacturers struggle with inconsistent supply, poor-quality inputs, and lack of affordable local processing solutions.",
+                "What skills or experience do you think would make you a great founder?": null,
+                "What trends or shifts in your industry are you most excited about? Why?": "I’m most excited about the growing shift toward local value addition and agro-processing. More entrepreneurs are realizing that instead of exporting raw materials, we can process them locally into higher-value products — creating jobs, saving foreign exchange, and strengthening local industries.  I’m also inspired by the rise of agritech and smart manufacturing — from precision farming and digital marketplaces to automation and data-driven production. These innovations are making both sectors more efficient, traceable, and scalable.",
+                "Which country are you currently located in?": "Nigeria",
+                "Which industry do you know deeply? Tell us more about your experience in this industry.": null,
+                "Which industry do you want to build a business in, and why?": "Manufacturing and Agriculture  The main reason is that both the agriculture and manufacturing intersect, one produce raw materials while the other add value to the raw materials to make finished goods, creating jobs, reducing imports, and driving exports. I see a real opportunity to process what we grow locally into finished or semi-finished products that meet domestic and international demand.",
+                "Who is experiencing this problem?": "This problem is being experienced by both farmers and small manufacturers across Nigeria and other developing economies",
+                "Who is your main competition, and what are they getting wrong?": "My main competition comes from importers of finished and semi-processed goods, as well as large processing companies that dominate certain value chains.  Importers are meeting demand but not solving the local production gap — they keep Nigeria dependent on foreign supply, draining foreign exchange and limiting local job creation. Their model focuses on trading, not transformation.",
+                "Why do you want DQventures to work with you on your new business?": "Because of the potential of DQventures to assist in making the dream a reality",
+                "Why do you want to become an entrepreneur?": "I have decided to become an entrepreneur as a job creator, problem solver and meet the need of society and create opportunities for others to thrive.  I want to build businesses that last or ventures that will create more jobs and drive innovations in the societies",
+                "Why now, and what has stopped you starting a business already?": "I believe the timing is right now because i have gained experience on how businesses are run, insight on how decisions are made and what kind of structures need to be put in place for businesses to grow. More reason now is that technology has reduced the barrier to entry   What stoped me beforer was i was gathering knowledge and experience,",
+                "Will solving this problem save people time or money (or both)? How much time or money?": "Solving this problem will save both time and money across the entire value chain.  For farmers, access to local processing and manufacturing outlets will reduce post-harvest losses by up to 30–40%, while increasing income since they can sell at better prices.  For manufacturers, reliable local inputs will cut import costs by 20–35% and shorten production lead times by weeks, since they won’t have to depend on foreign shipments or currency fluctuations",
+                "Withdrawal Reason": [],
+                "Would you like to proceed?": "Yes, I’m able to commit $2k to explore my business idea",
+                "Years of work experience": null
+              }
+            },
+            "interactionMetadata": {
+              "user": {
+                "approximateCount": 0,
+                "lastInteractedAt": null
+              },
+              "workspace": {
+                "approximateCount": 0,
+                "lastInteractedAt": null,
+                "lastInteractedBy": []
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "versionId": "5948e599-936f-4bd2-937b-17e965323e11",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-07T06:09:55.047Z",
+      "updatedAt": "2025-11-07T06:09:55.047Z",
+      "role": "workflow:owner",
+      "workflowId": "Wj4VcZ1BN670XySo",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
