@@ -1,0 +1,798 @@
+{
+  "createdAt": "2025-09-24T05:57:42.638Z",
+  "updatedAt": "2025-09-25T07:55:20.622Z",
+  "id": "t1DxI7hCif0QwMq7",
+  "name": "complete_enrichment_workflow_v3",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b70f5d47-6c04-459c-94a2-e00e18471fba",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "0",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "3a12c045-1142-4cb3-8390-551cd46c255f",
+      "name": "1. Read Companies from Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        304,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "250b679f-e8f1-45cb-9337-8ad9cf63bb00",
+      "name": "Split Companies for Processing",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        592,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "companyName",
+              "stringValue": "={{ $json[\"Account Name\"] }}"
+            },
+            {
+              "name": "country",
+              "stringValue": "={{ $json.Country }}"
+            },
+            {
+              "name": "city",
+              "stringValue": "={{ $json.City }}"
+            }
+          ]
+        },
+        "include": "selected",
+        "options": {}
+      },
+      "id": "525145ad-86a0-47eb-9a85-4cd8e08b6c4e",
+      "name": "Extract Company Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.companyName }}"
+            },
+            {
+              "name": "gl",
+              "value": "={{ $json.country === 'US - United States of America' ? 'us' : 'uk' }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.city && $json.country ? $json.city + ', ' + $json.country : $json.country }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "050c767c-59e5-4923-be52-0ce78dc30d0b",
+      "name": "2. Scrape Company Information",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1088,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: the raw JSON response (e.g., from SerpApi/Serper.dev)\n// In n8n, the data will usually be in items[0].json\nconst input = items[0].json;\n\n// Default values\nlet company_name = \"\";\nlet website = \"\";\nlet domain = \"\";\nlet description = \"\";\nlet industry = \"\";\n\n// Try to find best matches from \"organic\" results\nif (input.organic && Array.isArray(input.organic)) {\n  // Pick Wikipedia (for description) if available\n  const wikiResult = input.organic.find(r => r.link.includes(\"wikipedia.org\"));\n  if (wikiResult) {\n    description = wikiResult.snippet || description;\n  }\n\n  // Pick official website if available\n  const websiteResult = input.organic.find(r => r.link.includes(\"aarcorp.com\"));\n  if (websiteResult) {\n    website = websiteResult.link;\n    try {\n      domain = new URL(website).hostname;\n    } catch (e) {\n      domain = website;\n    }\n  }\n\n  // Fallback: use first organic result as company name\n  if (input.organic[0] && input.organic[0].title) {\n    company_name = input.organic[0].title;\n  }\n}\n\n// Return in required format\nreturn [\n  {\n    json: {\n      company_name,\n      website,\n      domain,\n      description,\n      industry\n    }\n  }\n];\n"
+      },
+      "id": "95d3d070-5182-4424-94bd-1803ca12861f",
+      "name": "Extract Company Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.company_name }} CEO LinkedIn site:linkedin.com/in/"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "dda66ea0-549b-415d-8ce2-9e6e77553adc",
+      "name": "3. Find CEO LinkedIn Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1536,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract CEO LinkedIn profile from search results\nconst allData = [];\n\nfor (const item of $input.all()) {\n  const searchResults = item.json.organic || [];\n  const prevData = $('Extract Company Details').all().find(x => x.json.row_number === item.json.row_number)?.json || {};\n  \n  let ceoName = '';\n  let ceoLinkedin = '';\n  let ceoTitle = '';\n\n  // Look for LinkedIn profiles of CEOs\n  for (const result of searchResults) {\n    const title = result.title || '';\n    const snippet = result.snippet || '';\n    const link = result.link || '';\n    \n    // Check if it's a LinkedIn profile\n    if (link.includes('linkedin.com/in/')) {\n      // Look for CEO, Founder, President keywords\n      const titleLower = title.toLowerCase();\n      const snippetLower = snippet.toLowerCase();\n      \n      if (titleLower.includes('ceo') || titleLower.includes('chief executive') ||\n          titleLower.includes('founder') || titleLower.includes('president') ||\n          snippetLower.includes('ceo') || snippetLower.includes('chief executive')) {\n        \n        // Extract name from title (usually before the | or - separator)\n        const nameMatch = title.match(/^([^|\\-]+)/);\n        if (nameMatch) {\n          ceoName = nameMatch[1].trim();\n          ceoLinkedin = link;\n          \n          // Extract title\n          if (snippetLower.includes('ceo') || snippetLower.includes('Chief Executive Officer')) {\n            ceoTitle = 'CEO';\n          } else if (snippetLower.includes('founder')) {\n            ceoTitle = 'Founder';\n          } else if (snippetLower.includes('president')) {\n            ceoTitle = 'President';\n          } else {\n            ceoTitle = 'Executive';\n          }\n          \n          break; // Found the CEO, stop looking\n        }\n      }\n    }\n  }\n\n  allData.push({\n    ...prevData,\n    ceo_name: ceoName || 'Not found',\n    ceo_title: ceoTitle || 'Not found',\n    ceo_linkedin: ceoLinkedin || 'Not found'\n  });\n}\n\nreturn allData;"
+      },
+      "id": "ca501997-bfe5-42d8-b9b7-bc613bf9a200",
+      "name": "Extract CEO Information",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.hunter.io/v2/email-finder?domain={{ $json.domain }}&first_name={{ $json.first_name }}&last_name={{ $json.last_name }}&api_key=cdf1ba76c5d3f5d994ac2152754dacf6b0fad52b",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "20a7c659-4150-4eb7-82b1-a32890ddcb2f",
+      "name": "Find CEO Email Address",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2192,
+        0
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract CEO email from Hunter.io results - FIXED for single email response format\nconst allData = [];\n\n// Get all input items (Hunter.io responses)\nconst inputItems = $input.all();\nconsole.log(`Processing ${inputItems.length} Hunter.io responses`);\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  \n  console.log(`Item ${i} raw data:`, JSON.stringify(item.json, null, 2));\n  \n  // Extract Hunter.io data - handle array response format\n  let emailData = null;\n  let hunterInfo = {};\n  \n  if (Array.isArray(item.json) && item.json.length > 0) {\n    // Response is an array with single object\n    const responseObj = item.json[0];\n    emailData = responseObj.data;\n    hunterInfo = responseObj.meta || {};\n    console.log(`Found array response with email data:`, emailData);\n  } else if (item.json && item.json.data) {\n    // Response is single object with data\n    emailData = item.json.data;\n    hunterInfo = item.json.meta || {};\n  } else if (item.json && item.json.email) {\n    // Direct email object\n    emailData = item.json;\n  }\n  \n  // Get previous data from CEO Information node\n  let prevData = {};\n  const prevNodes = $('Extract CEO Information').all();\n  \n  if (prevNodes.length > 0) {\n    // Try to match with previous node data\n    if (item.json && item.json.row_number) {\n      const match = prevNodes.find(x => x.json.row_number === item.json.row_number);\n      if (match) {\n        prevData = match.json;\n        console.log(`Matched by row_number: ${item.json.row_number}`);\n      }\n    }\n    \n    // Match by index if row_number failed\n    if (Object.keys(prevData).length === 0 && i < prevNodes.length) {\n      prevData = prevNodes[i].json;\n      console.log(`Matched by index: ${i}`);\n    }\n    \n    // Use first available if all else fails\n    if (Object.keys(prevData).length === 0) {\n      prevData = prevNodes[0].json;\n      console.log(`Using first available previous data`);\n    }\n  }\n  \n  const companyName = prevData.company_name || prevData.companyName || 'Unknown';\n  const ceoName = prevData.ceo_name || '';\n  \n  console.log(`Processing company: ${companyName}, CEO: ${ceoName}`);\n  \n  let ceoEmail = '';\n  let matchMethod = '';\n  let alternativeEmails = [];\n  \n  // Process the email data if found\n  if (emailData && emailData.email) {\n    const email = emailData.email;\n    const firstName = emailData.first_name || '';\n    const lastName = emailData.last_name || '';\n    const position = (emailData.position || '').toLowerCase();\n    const domain = emailData.domain || '';\n    const company = emailData.company || '';\n    const score = emailData.score || 0;\n    \n    console.log(`Found email candidate: ${email}`);\n    console.log(`Position: ${position}`);\n    console.log(`Name: ${firstName} ${lastName}`);\n    console.log(`Score: ${score}`);\n    \n    let isMatch = false;\n    \n    // Strategy 1: Check if position matches executive roles\n    if (position.includes('ceo') || \n        position.includes('chief executive officer') ||\n        position.includes('chief executive') ||\n        position.includes('founder') || \n        position.includes('co-founder') ||\n        position.includes('president') ||\n        position.includes('managing director') ||\n        position.includes('executive director')) {\n      isMatch = true;\n      matchMethod = `Executive position: ${position}`;\n      console.log(`✓ Matched by position: ${position}`);\n    }\n    \n    // Strategy 2: Check if name matches CEO name from previous step\n    if (!isMatch && ceoName && ceoName !== 'Not found' && ceoName.trim() !== '') {\n      const ceoNameParts = ceoName.toLowerCase()\n        .replace(/[^\\w\\s]/g, '')\n        .split(' ')\n        .filter(part => part.length > 1);\n      \n      const firstNameLower = firstName.toLowerCase();\n      const lastNameLower = lastName.toLowerCase();\n      \n      // Direct name match\n      if (firstNameLower && lastNameLower && ceoNameParts.length >= 2) {\n        if (ceoNameParts.includes(firstNameLower) && ceoNameParts.includes(lastNameLower)) {\n          isMatch = true;\n          matchMethod = `Name match: ${firstName} ${lastName}`;\n          console.log(`✓ Matched by name: ${firstName} ${lastName}`);\n        }\n      }\n      \n      // Email pattern match\n      if (!isMatch) {\n        const emailLocal = email.split('@')[0].toLowerCase();\n        let matchingParts = 0;\n        \n        for (const namePart of ceoNameParts) {\n          if (namePart.length > 2 && emailLocal.includes(namePart)) {\n            matchingParts++;\n          }\n        }\n        \n        if (matchingParts >= 2) {\n          isMatch = true;\n          matchMethod = `Email pattern match: ${matchingParts} name parts found in email`;\n          console.log(`✓ Matched by email pattern: ${matchingParts} parts`);\n        }\n      }\n    }\n    \n    // Strategy 3: Check if email has executive patterns\n    if (!isMatch) {\n      const emailLocal = email.split('@')[0].toLowerCase();\n      const executivePatterns = ['ceo', 'founder', 'president', 'director', 'chief', 'exec'];\n      \n      for (const pattern of executivePatterns) {\n        if (emailLocal.includes(pattern)) {\n          isMatch = true;\n          matchMethod = `Email pattern: contains '${pattern}'`;\n          console.log(`✓ Matched by email pattern: ${pattern}`);\n          break;\n        }\n      }\n    }\n    \n    // Strategy 4: If score is high and not obviously generic, accept it\n    if (!isMatch && score > 80) {\n      const emailLocal = email.split('@')[0].toLowerCase();\n      const genericPrefixes = ['info', 'contact', 'support', 'sales', 'admin', 'service', 'hello', 'team'];\n      const isGeneric = genericPrefixes.some(prefix => emailLocal.startsWith(prefix));\n      \n      if (!isGeneric) {\n        isMatch = true;\n        matchMethod = `High confidence score: ${score}`;\n        console.log(`✓ Matched by high score: ${score}`);\n      }\n    }\n    \n    // If we found a match, use this email\n    if (isMatch) {\n      ceoEmail = email;\n    }\n    \n    console.log(`Final decision: ${isMatch ? 'ACCEPTED' : 'REJECTED'} - ${email}`);\n  } else {\n    console.log(`No email data found in Hunter.io response`);\n  }\n  \n  // Build final result\n  const result = {\n    // Include all previous data\n    ...prevData,\n    // Add email information\n    ceo_email: ceoEmail || 'Not found',\n    email_match_method: matchMethod || 'No valid email found',\n    alternative_emails: alternativeEmails,\n    total_emails_found: emailData ? 1 : 0,\n    // Add Hunter.io metadata\n    hunter_domain: emailData?.domain || '',\n    hunter_organization: emailData?.company || '',\n    hunter_score: emailData?.score || 0,\n    hunter_position: emailData?.position || '',\n    hunter_first_name: emailData?.first_name || '',\n    hunter_last_name: emailData?.last_name || '',\n    // Add verification info\n    verification_status: emailData?.verification?.status || '',\n    verification_date: emailData?.verification?.date || ''\n  };\n  \n  console.log(`Final result for ${companyName}: ${result.ceo_email} (${result.email_match_method})`);\n  \n  allData.push(result);\n}\n\nconsole.log(`\\n=== PROCESSING COMPLETE ===`);\nconsole.log(`Total companies processed: ${allData.length}`);\nconsole.log(`Emails found: ${allData.filter(item => item.ceo_email !== 'Not found').length}`);\nconsole.log(`Success rate: ${((allData.filter(item => item.ceo_email !== 'Not found').length / allData.length) * 100).toFixed(1)}%`);\n\nreturn allData;"
+      },
+      "id": "0933aed9-073f-44e1-b079-7b49b7d000f2",
+      "name": "Extract Email Information",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/news",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.company_name }} recent news"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "dfcabb36-d378-40ed-a1da-4341176e1617",
+      "name": "4. Scrape Recent Company News",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        3088,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract recent news about the company\nconst allData = [];\n\nfor (const item of $input.all()) {\n  const newsResults = item.json.news || [];\n  const prevData = $('Extract Email Information').all().find(x => x.json.row_number === item.json.row_number)?.json || {};\n  \n  let recentNews = [];\n  let newsTopics = [];\n\n  // Process news articles\n  for (const article of newsResults.slice(0, 3)) {\n    const title = article.title || '';\n    const snippet = article.snippet || '';\n    const link = article.link || '';\n    const date = article.date || '';\n    const source = article.source || '';\n    \n    if (title && snippet) {\n      recentNews.push({\n        title: title,\n        snippet: snippet,\n        link: link,\n        date: date,\n        source: source\n      });\n      \n      // Extract key topics from title\n      const titleLower = title.toLowerCase();\n      if (titleLower.includes('funding') || titleLower.includes('investment')) {\n        newsTopics.push('Funding/Investment');\n      }\n      if (titleLower.includes('partnership') || titleLower.includes('collaboration')) {\n        newsTopics.push('Partnership');\n      }\n      if (titleLower.includes('product') || titleLower.includes('launch')) {\n        newsTopics.push('Product Launch');\n      }\n      if (titleLower.includes('expansion') || titleLower.includes('growth')) {\n        newsTopics.push('Expansion');\n      }\n      if (titleLower.includes('acquisition') || titleLower.includes('merger')) {\n        newsTopics.push('M&A');\n      }\n    }\n  }\n\n  // Create news summary\n  let newsSummary = '';\n  if (recentNews.length > 0) {\n    const latestNews = recentNews[0];\n    newsSummary = `Latest: ${latestNews.title} - ${latestNews.snippet.substring(0, 150)}...`;\n  }\n\n  allData.push({\n    ...prevData,\n    recent_news: recentNews,\n    news_summary: newsSummary || 'No recent news found',\n    news_topics: [...new Set(newsTopics)], // Remove duplicates\n    news_count: recentNews.length\n  });\n}\n\nreturn allData;"
+      },
+      "id": "278e89b2-3a38-4681-970f-f653eba3eb5e",
+      "name": "Extract News Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3376,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gemini-1.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Based on the following company information, write a personalized outreach email:\\n\\nCompany: {{ $json.company_name }}\\nCEO: {{ $json.ceo_name }} ({{ $json.ceo_title }})\\nEmail: {{ $json.ceo_email }}\\nWebsite: {{ $json.website }}\\nRecent News: {{ $json.news_summary }}\\nIndustry: {{ $('1. Read Companies from Google Sheet').item.json['Industry Segment'] }}\\n\\nWrite a brief, professional outreach email that:\\n1. Addresses the CEO by name\\n2. References their recent news or achievements\\n3. Proposes a relevant business opportunity\\n4. Keeps it under 150 words\\n5. Has a clear call-to-action\\n\\nFormat as a complete email with subject line."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "7bf96a25-b0fe-4770-b24a-4b64b138f628",
+      "name": "5. Generate Personalized Outreach with Gemini",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        3568,
+        0
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AddN13YCTv8VpGh7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6b2de309-1b13-49cb-ba3c-ccea9b48af0a",
+      "name": "Prepare Data for Sheet Update",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        3936,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Accounts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Account Name",
+              "displayName": "Account Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry Segment",
+              "displayName": "Industry Segment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f8cacdd3-ba11-4da3-ba61-0a1b73f4ddf4",
+      "name": "6. Update Google Sheet with Enriched Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        4128,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e37b6a3e-3dba-40bf-ac52-7c587d10bc1e",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1088,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Accounts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": 0
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Account Name",
+              "displayName": "Account Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry Segment",
+              "displayName": "Industry Segment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "934554a3-604d-4e32-a21d-fc6c1092ff0c",
+      "name": "Log Error to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1312,
+        224
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const ceoName = item.json.ceo_name || \"\";\n  const parts = ceoName.trim().split(/\\s+/);\n\n  return {\n    json: {\n      ...item.json,                      // keep all existing fields\n      first_name: parts[0] || \"\",        // first word\n      last_name: parts.length > 1 ? parts[parts.length - 1] : \"\" // last word\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        0
+      ],
+      "id": "4551b3b1-b10d-4b2a-8de7-ec9140927e66",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "1. Read Companies from Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Read Companies from Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Split Companies for Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Companies for Processing": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract Company Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Company Data": {
+      "main": [
+        [
+          {
+            "node": "2. Scrape Company Information",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Scrape Company Information": {
+      "main": [
+        [
+          {
+            "node": "Extract Company Details",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Company Details": {
+      "main": [
+        [
+          {
+            "node": "3. Find CEO LinkedIn Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Find CEO LinkedIn Profile": {
+      "main": [
+        [
+          {
+            "node": "Extract CEO Information",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract CEO Information": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find CEO Email Address": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Email Information",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Information": {
+      "main": [
+        [
+          {
+            "node": "4. Scrape Recent Company News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Scrape Recent Company News": {
+      "main": [
+        [
+          {
+            "node": "Extract News Content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract News Content": {
+      "main": [
+        [
+          {
+            "node": "5. Generate Personalized Outreach with Claude",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "5. Generate Personalized Outreach with Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Generate Personalized Outreach with Claude": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data for Sheet Update",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data for Sheet Update": {
+      "main": [
+        [
+          {
+            "node": "6. Update Google Sheet with Enriched Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Update Google Sheet with Enriched Data": {
+      "main": [
+        [
+          {
+            "node": "Split Companies for Processing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Split Companies for Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Find CEO Email Address",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Generate Personalized Outreach with Gemini": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data for Sheet Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "cb6433d2-f926-4b4b-8af8-5d48ecc8ab3a",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-24T05:57:42.640Z",
+      "updatedAt": "2025-09-24T05:57:42.640Z",
+      "role": "workflow:owner",
+      "workflowId": "t1DxI7hCif0QwMq7",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
