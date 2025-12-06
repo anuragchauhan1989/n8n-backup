@@ -1,0 +1,364 @@
+{
+  "createdAt": "2025-10-17T06:01:43.187Z",
+  "updatedAt": "2025-11-02T06:43:30.000Z",
+  "id": "pBt4bgQOfeWJveyb",
+  "name": "Nano Banana influence image",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Influencer Ad Creative Generator",
+        "formDescription": "Select and upload an image of your product. ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Image",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f5fd6304-acb6-45af-beae-7b6cf6152236",
+      "name": "form_trigger",
+      "webhookId": "fe94ee22-4cc4-41f1-98ea-e69855b6b630"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa",
+            "mode": "list",
+            "cachedResultName": "ZenshopInfluencer",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        528,
+        0
+      ],
+      "id": "aa662f72-f741-4eab-a1c6-04025abe07ae",
+      "name": "list_influencer_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        0,
+        224
+      ],
+      "id": "2026fe73-6ad0-49a0-9a86-0115c593afbd",
+      "name": "iterate_influencer_images"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        272,
+        288
+      ],
+      "id": "5b7c452e-b4ca-4573-9549-a92ce2f174ce",
+      "name": "download_influencer_image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "Image",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        272,
+        0
+      ],
+      "id": "3cbbcf9c-71ff-46ef-ae4a-243980ceab17",
+      "name": "product_image_to_base64"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        528,
+        288
+      ],
+      "id": "62557f17-3256-4dba-886d-747c57af9c5b",
+      "name": "influencer_image_to_base_64"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      { \n        \"text\": \"Using the person shown in image 2 exactly as they appear, create a realistic lifestyle photo of them showcasing the hair product from image 1. Keep their facial features, skin tone, and overall appearance identical to image 2. Style their hair to match the length, color, texture, and volume of the hair extensions shown in image 1. Place them in a casual, relatable setting like outdoors, at home, or in an everyday location. They should look confident and happy, with the hair clearly visible and flowing naturally. Use angle variation {{ $runIndex % 5 }}: 0=front view facing camera with hair framing the face, 1=side profile showing hair length and volume, 2=back view showcasing the full length and texture, 3=three-quarter angle showing both face and hair flow, 4=dynamic pose with hair in motion or being touched naturally. The photo should feel authentic like a friend took it, not overly professional. The lighting should be natural and flattering, emphasizing the hair's texture, shine, and length. Keep everything about the person from image 2 the same except their hairstyle, which should match the product in image 1. Only return the final generated image.\" \n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/png\",\n          \"data\": \"{{ $node['product_image_to_base64'].json.data }}\"\n        }\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/jpeg\",\n          \"data\": \"{{ $node['influencer_image_to_base_64'].json.data }}\"\n        }\n      }\n    ]\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        768,
+        288
+      ],
+      "id": "08bc8ff2-fbf2-4a6b-92f1-008f79d50626",
+      "name": "generate_image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cAWTpPjxWun8tUIM",
+          "name": "Header Auth account - google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        288
+      ],
+      "id": "5194e5c8-5e20-4f41-abbf-7bc14aa41bc5",
+      "name": "get_image"
+    },
+    {
+      "parameters": {
+        "name": "=Influencer Image #{{ $runIndex + 1 }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1",
+          "mode": "list",
+          "cachedResultName": "Zenshop Ad creative",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1504,
+        384
+      ],
+      "id": "31da6130-0760-49e8-a518-6148bf2034e6",
+      "name": "upload_image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "524da01b-f8b9-4c2c-9e28-319455903e4d",
+              "name": "=image_result",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1008,
+        288
+      ],
+      "id": "9188a002-317f-46b7-a9f5-a41a7d08ecbe",
+      "name": "set_result"
+    }
+  ],
+  "connections": {
+    "form_trigger": {
+      "main": [
+        [
+          {
+            "node": "product_image_to_base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_influencer_images": {
+      "main": [
+        [
+          {
+            "node": "iterate_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "iterate_influencer_images": {
+      "main": [
+        [],
+        [
+          {
+            "node": "download_influencer_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download_influencer_image": {
+      "main": [
+        [
+          {
+            "node": "influencer_image_to_base_64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "product_image_to_base64": {
+      "main": [
+        [
+          {
+            "node": "list_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "influencer_image_to_base_64": {
+      "main": [
+        [
+          {
+            "node": "generate_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_image": {
+      "main": [
+        [
+          {
+            "node": "set_result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_image": {
+      "main": [
+        [
+          {
+            "node": "upload_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload_image": {
+      "main": [
+        [
+          {
+            "node": "iterate_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_result": {
+      "main": [
+        [
+          {
+            "node": "get_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "4519989e-4813-4126-8076-dc2fc6a88101",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-17T06:01:43.193Z",
+      "updatedAt": "2025-10-17T06:01:43.193Z",
+      "role": "workflow:owner",
+      "workflowId": "pBt4bgQOfeWJveyb",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
