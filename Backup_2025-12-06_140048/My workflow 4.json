@@ -1,0 +1,282 @@
+{
+  "createdAt": "2025-09-24T05:32:37.716Z",
+  "updatedAt": "2025-09-25T10:50:42.000Z",
+  "id": "m4nWwiI6NheIgSU9",
+  "name": "My workflow 4",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyWeek",
+              "hour": 9,
+              "weekday": 1
+            }
+          ]
+        }
+      },
+      "id": "c9b75679-4ae6-4fa4-a26d-3dd666117935",
+      "name": "Scheduled Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        48,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "fded1f50-0df4-4ed0-a751-ae75b54b497d",
+      "name": "Read Companies from Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        272,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "5a05ca1b-ff88-416b-9374-21de72e737b9",
+      "name": "Process Each Company",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        496,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6a58f1ba-2b71-4605-8ad2-313f6d9d9e0e",
+      "name": "Extract Company Name",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        720,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "f597522d-1362-4439-a8f0-71768f9be70b",
+      "name": "Scrape Business Info (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        928,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~linkedin-company-scraper/run-sync",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "fe99ddec-c33a-4eb2-a88a-d6a47ccafba3",
+      "name": "Find CEO LinkedIn Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1152,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hunter.io/v2/domain-search?domain={{ $('scrape_business_info').item.json.website_domain }}&api_key=YOUR_HUNTER_API_KEY&type=personal&seniority=executive&department=management",
+        "options": {}
+      },
+      "id": "0402950b-0842-481f-b797-093502067511",
+      "name": "Find CEO Email (Hunter.io Alternative)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1376,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "608394d9-bdb9-4c8d-a20a-87624926df33",
+      "name": "Scrape Recent Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1600,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-3-5-sonnet-20241022",
+          "mode": "id"
+        },
+        "messages": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.7
+        }
+      },
+      "id": "582601a9-a1a9-485d-856d-c88073ed65d6",
+      "name": "Generate Outreach Message with Claude",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1808,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "08f8903e-772d-4ebc-bfbf-acdca46436f3",
+      "name": "Prepare Data for Sheet Update",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        2160,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "34be4972-644c-477c-b480-a01f1aa7372c",
+      "name": "Update Google Sheet with Enriched Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        2384,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "3bf26b25-5a19-4b75-afe7-3ad7de59148b",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        928,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "70ef6cb2-7f2f-4f3e-9a6b-f5b028a4a00e",
+      "name": "Log Error to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1152,
+        240
+      ]
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "009399f2-d616-4bd5-8973-4a4ccb82d97b",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-24T05:32:37.718Z",
+      "updatedAt": "2025-09-24T05:32:37.718Z",
+      "role": "workflow:owner",
+      "workflowId": "m4nWwiI6NheIgSU9",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
