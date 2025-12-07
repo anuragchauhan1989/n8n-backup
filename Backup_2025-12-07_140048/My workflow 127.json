@@ -1,0 +1,271 @@
+{
+  "createdAt": "2025-12-06T10:45:29.355Z",
+  "updatedAt": "2025-12-06T12:55:11.000Z",
+  "id": "Qb7z9QMuacSyg61E",
+  "name": "My workflow 127",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "dropboxApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "path",
+              "value": "={{ $('Upload a file1').item.json.path_display }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        96
+      ],
+      "id": "27446230-c0de-465d-927f-2cc2bff28d8f",
+      "name": "Create Share Link",
+      "credentials": {
+        "dropboxApi": {
+          "id": "4bnCumdGcaK87Rw6",
+          "name": "Dropbox account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567891",
+              "name": "dropbox_webview_url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567892",
+              "name": "file_name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567893",
+              "name": "google_drive_link",
+              "value": "={{ $('Search File1').item.json.webViewLink }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        96
+      ],
+      "id": "e1e16c07-5668-47cf-ad7d-d2d0df4f8caa",
+      "name": "Extract URLs"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Get New File1').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        720,
+        96
+      ],
+      "id": "b15d15c4-4f96-418f-9f5b-168873e55d82",
+      "name": "Download file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OF1WKdd2PL1HcLqp",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "/test-video",
+        "binaryData": true
+      },
+      "type": "n8n-nodes-base.dropbox",
+      "typeVersion": 1,
+      "position": [
+        880,
+        96
+      ],
+      "id": "ad5ef8b4-1f72-40e2-871e-63bddb3b1949",
+      "name": "Upload a file1",
+      "credentials": {
+        "dropboxApi": {
+          "id": "4bnCumdGcaK87Rw6",
+          "name": "Dropbox account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1cwh0oCAAj1-Q-ehyHSQ4xLK-kSfGHnaV",
+          "mode": "list",
+          "cachedResultName": "Document Automation",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1cwh0oCAAj1-Q-ehyHSQ4xLK-kSfGHnaV"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        448,
+        96
+      ],
+      "id": "ec118a13-5b07-4818-8a8c-cd9a86f56ecf",
+      "name": "Get New File1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OF1WKdd2PL1HcLqp",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $json.name }}",
+        "filter": {
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "webViewLink"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        592,
+        96
+      ],
+      "id": "d3d1d223-a615-4c35-a584-3225edbad0e9",
+      "name": "Search File1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OF1WKdd2PL1HcLqp",
+          "name": "Google Drive account 3"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Create Share Link": {
+      "main": [
+        [
+          {
+            "node": "Extract URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file1": {
+      "main": [
+        [
+          {
+            "node": "Upload a file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file1": {
+      "main": [
+        [
+          {
+            "node": "Create Share Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get New File1": {
+      "main": [
+        [
+          {
+            "node": "Search File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search File1": {
+      "main": [
+        [
+          {
+            "node": "Download file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "f17613da-1b68-4657-afd0-2d55f40fc7e0",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-12-06T10:45:29.364Z",
+      "updatedAt": "2025-12-06T10:45:29.364Z",
+      "role": "workflow:owner",
+      "workflowId": "Qb7z9QMuacSyg61E",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
