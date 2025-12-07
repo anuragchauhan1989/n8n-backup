@@ -1,0 +1,377 @@
+{
+  "createdAt": "2025-12-05T16:53:34.319Z",
+  "updatedAt": "2025-12-06T09:30:43.000Z",
+  "id": "UyeAGUJDDSMkY6V0",
+  "name": "Workflow 17",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "11Er4hGnZdrbPgItF0ClqstycQ8S3JV7_",
+            "mode": "list",
+            "cachedResultName": "Ad Creative",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/11Er4hGnZdrbPgItF0ClqstycQ8S3JV7_"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        112,
+        176
+      ],
+      "id": "2d1ec30d-0059-45f6-bf6d-df152f8c34f3",
+      "name": "list_influencer_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OF1WKdd2PL1HcLqp",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        176
+      ],
+      "id": "b8b79550-2314-4d94-80f5-18cc6c21cfcd",
+      "name": "product_image_to_base64"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        128,
+        400
+      ],
+      "id": "cbe22cb3-74e9-4498-8b37-7c44cc023d2d",
+      "name": "influencer_image_to_base_64"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        400
+      ],
+      "id": "0f8f330f-2aac-44f5-a831-7bc07c13d354",
+      "name": "get_image"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "524da01b-f8b9-4c2c-9e28-319455903e4d",
+              "name": "=image_result",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        496,
+        400
+      ],
+      "id": "2125c579-c48b-4265-a871-36cb73cfcb64",
+      "name": "set_result"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -48,
+        400
+      ],
+      "id": "79cb0973-6b25-41a1-bf73-1a86d657a99f",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OF1WKdd2PL1HcLqp",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        384
+      ],
+      "id": "a805122a-a422-4b66-980f-4f067f7e4013",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        176
+      ],
+      "id": "685ec141-d626-4aa7-8c83-bf43f5df5641",
+      "name": "Telegram Trigger",
+      "webhookId": "817f3862-d7b0-42f0-9a67-3db7ac342343",
+      "credentials": {
+        "telegramApi": {
+          "id": "wtAxTMcdhKfdzvYb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        816,
+        400
+      ],
+      "id": "e5952a3e-c859-4d59-baf5-7bad463c1176",
+      "name": "Send a photo message",
+      "webhookId": "90667814-e8fd-4b69-b362-26482c442065",
+      "credentials": {
+        "telegramApi": {
+          "id": "wtAxTMcdhKfdzvYb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      { \n        \"text\": \"Using the person shown in image 2 exactly as they appear, create a realistic lifestyle photo of them showcasing the hair product from image 1. Keep their facial features, skin tone, and overall appearance identical to image 2. Style their hair to match the length, color, texture, and volume of the hair extensions shown in image 1. Place them in a casual, relatable setting like outdoors, at home, or in an everyday location. They should look confident and happy, with the hair clearly visible and flowing naturally. Use angle variation {{ $runIndex % 5 }}: 0=front view facing camera with hair framing the face, 1=side profile showing hair length and volume, 2=back view showcasing the full length and texture, 3=three-quarter angle showing both face and hair flow, 4=dynamic pose with hair in motion or being touched naturally. The photo should feel authentic like a friend took it, not overly professional. The lighting should be natural and flattering, emphasizing the hair's texture, shine, and length. Keep everything about the person from image 2 the same except their hairstyle, which should match the product in image 1. Only return the final generated image.\" \n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/png\",\n          \"data\": \"{{ $node['product_image_to_base64'].json.data }}\"\n        }\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/jpeg\",\n          \"data\": \"{{ $node['influencer_image_to_base_64'].json.data }}\"\n        }\n      }\n    ]\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        496,
+        128
+      ],
+      "id": "07c964b6-ea78-4818-b6b7-f87863e59543",
+      "name": "generate_image1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cAWTpPjxWun8tUIM",
+          "name": "Header Auth account - google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        320,
+        400
+      ],
+      "id": "0ad92cd6-dda3-46ff-bc12-89c4faac265c",
+      "name": "Generate an image",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "list_influencer_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "product_image_to_base64": {
+      "main": [
+        [
+          {
+            "node": "list_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "influencer_image_to_base_64": {
+      "main": [
+        [
+          {
+            "node": "Generate an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_image": {
+      "main": [
+        [
+          {
+            "node": "Send a photo message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_result": {
+      "main": [
+        [
+          {
+            "node": "get_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "influencer_image_to_base_64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "product_image_to_base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a photo message": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image": {
+      "main": [
+        [
+          {
+            "node": "set_result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "2372d6c9-d859-41a5-93cf-d50daf8801a8",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-12-05T16:53:34.329Z",
+      "updatedAt": "2025-12-05T16:53:34.329Z",
+      "role": "workflow:owner",
+      "workflowId": "UyeAGUJDDSMkY6V0",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-12-06T07:09:17.023Z",
+      "updatedAt": "2025-12-06T07:09:17.023Z",
+      "id": "QC5eL0K6e7LBx6VU",
+      "name": "Road to first 1lakh"
+    }
+  ]
+}
