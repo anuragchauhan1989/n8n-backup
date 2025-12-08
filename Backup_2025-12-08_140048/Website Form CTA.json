@@ -1,0 +1,168 @@
+{
+  "createdAt": "2025-11-05T19:18:24.463Z",
+  "updatedAt": "2025-11-25T08:06:48.000Z",
+  "id": "RA4pfKhUspXeM4PP",
+  "name": "Website Form CTA",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "1bf7db4a-6c96-4dec-97a1-157353d45941",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -272,
+        -64
+      ],
+      "id": "85f29d37-bbbf-4c35-ae4b-4696c9dfcaeb",
+      "name": "Webhook",
+      "webhookId": "1bf7db4a-6c96-4dec-97a1-157353d45941"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1_WRtoq-boRoEmq6EGlRZYerGspyWQcXevCw02W3fmCw",
+          "mode": "list",
+          "cachedResultName": "Unfazed CTA Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_WRtoq-boRoEmq6EGlRZYerGspyWQcXevCw02W3fmCw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_WRtoq-boRoEmq6EGlRZYerGspyWQcXevCw02W3fmCw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.body.name }}",
+            "Work Email": "={{ $json.body.email }}",
+            "Phone Number": "={{ $json.body.phone }}",
+            "Company Name": "={{ $json.body.company }}",
+            "Challenge": "={{ $json.body.challenge }}",
+            "Specific Needs": "={{ $json.body.message }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Work Email",
+              "displayName": "Work Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Challenge",
+              "displayName": "Challenge",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Specific Needs",
+              "displayName": "Specific Needs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -64,
+        -64
+      ],
+      "id": "ea53729b-12bd-41c1-b431-9de801210140",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "4e3988e1-036f-476b-a045-e0b3b71d0013",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-05T19:18:24.467Z",
+      "updatedAt": "2025-11-05T19:18:24.467Z",
+      "role": "workflow:owner",
+      "workflowId": "RA4pfKhUspXeM4PP",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
