@@ -1,0 +1,1248 @@
+{
+  "createdAt": "2025-10-14T09:44:21.547Z",
+  "updatedAt": "2025-10-28T05:50:15.000Z",
+  "id": "8x4xjgpgOkM1cgBX",
+  "name": "AI-Powered Short-Form Video Generator with OpenAI, Flux, Kling, and ElevenLabs and upload to all social networks copy",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mAfK-jXwQNVa2Z-4L6xsJPXTs2S1GsDOhFNzWERRJXI",
+          "mode": "list",
+          "cachedResultName": "Competitor Viral Content Research",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mAfK-jXwQNVa2Z-4L6xsJPXTs2S1GsDOhFNzWERRJXI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Group 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mAfK-jXwQNVa2Z-4L6xsJPXTs2S1GsDOhFNzWERRJXI/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3120,
+        784
+      ],
+      "id": "b3304802-b01e-43f3-9615-66910c3f4a56",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2896,
+        784
+      ],
+      "id": "219b0080-17d7-4602-b323-91da262399cc",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3344,
+        784
+      ],
+      "id": "9cdd8592-8ea4-4ebd-9eec-5c64a0fd5535",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://15.204.238.192:5000/api/submit",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json[\"Viral Video Link\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2672,
+        784
+      ],
+      "id": "41b82f3d-ea9d-4980-861a-4c45b2150a21",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2448,
+        784
+      ],
+      "id": "6991457d-b8f6-48a1-a9f3-a243d3a5cd18",
+      "name": "Wait",
+      "webhookId": "d83235cd-390e-47f1-b548-144a422053c9"
+    },
+    {
+      "parameters": {
+        "url": "=http://15.204.238.192:5000/api/status/{{ $json.job_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2224,
+        784
+      ],
+      "id": "dfbb3c60-0a01-45a5-96d3-faef12ee1a40",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ccce7eb6-806b-4cc2-ac70-d64c4d66b540",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "processing",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1968,
+        672
+      ],
+      "id": "854ca0c9-238a-4dec-b5ff-fa56e71a4312",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1776,
+        784
+      ],
+      "id": "255759a9-0f49-4ebe-8f9d-3f1db65fb283",
+      "name": "Wait1",
+      "webhookId": "b5e5037e-b089-4aa8-83cc-20cfbf9ea0d3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a complete cinematic story from the following frame descriptions:\n\n{{ $json.body.frames.map(f => `${f.frame_index + 1}. ${f.description}`).join('\\n')}}\n\nMake the story natural and visually consistent, as if these scenes belong to one short reel (8–12 seconds long).\n",
+        "options": {
+          "systemMessage": "=You are a professional video director and storyteller who turns frame-by-frame visual descriptions into cinematic story prompts.\n\nYour goal is to merge all frame descriptions into a single cohesive story that feels natural and visually continuous. Focus on mood, pacing, and transitions between shots.\n\nKeep the tone cinematic, descriptive, and emotionally engaging — as if writing a short film brief for an AI video generator (e.g., Sora 2).\n\nDescribe:\n- The main setting and atmosphere\n- The flow of action across the frames\n- Camera style and motion (e.g., slow pan, close-up, drone shot)\n- Lighting and color tone\n- The emotional or narrative arc\n\nDo not return any JSON, keys, or structured data.  \nOnly return the final cinematic story prompt as continuous text suitable for video generation.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -2624,
+        80
+      ],
+      "id": "18399e5c-3f57-45ca-81bc-07975d8142c0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "gpt-5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -2624,
+        304
+      ],
+      "id": "c0d2c0d0-2581-4b6f-a845-5f794752b355",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.video_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -2496,
+        304
+      ],
+      "id": "1e2f58c9-c7e5-4890-a222-1d148594b5ee",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "427dade7-7f30-41f3-94d7-9040cd3e1cbd",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -3296,
+        176
+      ],
+      "id": "d01e3647-9e83-4bc2-abb2-0adfcb014da0",
+      "name": "Frame Descriptions",
+      "webhookId": "427dade7-7f30-41f3-94d7-9040cd3e1cbd"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "735e638e-c1dd-45d7-9cfd-5fc3958ed171",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1152,
+        64
+      ],
+      "id": "69001079-21e5-4e8c-8a22-15e11b08d6d4",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.openai.com/v1/videos/{{$json.id}}/content",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -928,
+        64
+      ],
+      "id": "90749b64-ecfb-4c79-9b60-6b44b594fa4b",
+      "name": "Downlaod the Video",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "23D564cKQZiHdYLh",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1158c02f-b70d-4cbc-bc08-18acaedc2041",
+              "name": "body",
+              "value": "={{ $json.body }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2848,
+        176
+      ],
+      "id": "bb5165ec-e255-47bc-9aad-74f686db1c81",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a04f7aba-9448-4424-9424-cc3dcbe7f6a2",
+              "name": "video_id",
+              "value": "={{ $('Frame Descriptions').item.json.body.video_id }}",
+              "type": "string"
+            },
+            {
+              "id": "969877e5-5772-45dd-bf48-9a1910969130",
+              "name": "analysis_id",
+              "value": "={{ $('Frame Descriptions').item.json.body.analysis_id }}",
+              "type": "string"
+            },
+            {
+              "id": "31755285-dddf-4a77-a73f-6d5ddd095edb",
+              "name": "prompt",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2272,
+        112
+      ],
+      "id": "88593103-7db7-48fd-8b6f-59b0fd8b6c2d",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "eff2ac7a-396b-40e6-bd84-237f101f7e16",
+              "leftValue": "={{ $json.prompt }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2048,
+        112
+      ],
+      "id": "770b74fc-1f92-4db7-9dff-30b258216e7c",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -704,
+        64
+      ],
+      "id": "d1f129e0-95ff-4118-b72b-b852b1c2a36f",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b1f28472-92ee-4f6e-bdee-0228765c4fa8",
+              "leftValue": "={{ $json.body.frames &&  $json.body.frames.length > 3}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -3072,
+        176
+      ],
+      "id": "170421f1-4242-4711-a06b-1f7389a0d681",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/videos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.prompt }}"
+            },
+            {
+              "name": "seconds",
+              "value": "=12"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1824,
+        64
+      ],
+      "id": "83df44df-334d-4c90-ac1b-f23aca095c4e",
+      "name": "HTTP Request2",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "23D564cKQZiHdYLh",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1600,
+        64
+      ],
+      "id": "44695d00-2a44-47fc-98c0-d03fe5cbe773",
+      "name": "Wait2",
+      "webhookId": "631d45bb-e246-48e5-9f5a-d64140b2c741"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.openai.com/v1/videos/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1360,
+        48
+      ],
+      "id": "684b9eaf-96e8-4325-bf35-d472d50d5868",
+      "name": "HTTP Request3",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "23D564cKQZiHdYLh",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1824,
+        272
+      ],
+      "id": "600eff08-caf6-4ea8-84a8-5e9f4ef67492",
+      "name": "Wait3",
+      "webhookId": "7319e360-f6a9-429f-be77-f667ca25a5c9"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.cognigenai.in/webhook-test/427dade7-7f30-41f3-94d7-9040cd3e1cbd",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "send-to-webhook-123",
+      "name": "Send to Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -480,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ac2aab64-524c-4ca7-9e5f-17335b409a07",
+              "leftValue": "={{ $json.progress.analyzed_frames > 0}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1584,
+        656
+      ],
+      "id": "3153844a-3643-4cff-8e20-d10f3dd3cd7b",
+      "name": "If4"
+    }
+  ],
+  "connections": {
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Frame Descriptions": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Downlaod the Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Downlaod the Video": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Send to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Frame Descriptions": [
+      {
+        "json": {
+          "completed_at": "2025-10-14T10:42:08.167417",
+          "created_at": "2025-10-14 10:41:16.450710",
+          "filename": "GPT-4o_voice_mode_is_really_impressive._We_gave_it_a_face_with_Synthe.mp4",
+          "job_id": "1bb8663b-69da-44de-9418-b5dae7c9fc25",
+          "progress": {
+            "analyzed_frames": 43,
+            "extracted_frames": 43,
+            "generated_images": 0,
+            "status": "analyzing",
+            "total_frames": 43
+          },
+          "results": [
+            {
+              "ai_prompt": "Person holding smartphone with AI avatar in red shirt, seated at a table with branded mug, lamp in background, minimalist setup, interactive scene.",
+              "frame_number": 1,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_1.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_1.jpg",
+              "scene_description": "A person sitting at a table holds a smartphone displaying an AI avatar wearing a red shirt, interacting with a virtual entity. The setting includes a table with a branded black mug, a lamp in the background, and minimalistic decor.",
+              "timestamp": 0
+            },
+            {
+              "ai_prompt": "Person in dark hoodie holding smartphone, displaying virtual avatar on screen, cozy room with lamp and plant in background, realistic style.",
+              "frame_number": 2,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_2.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_2.jpg",
+              "scene_description": "A person wearing a dark hoodie with a logo sits at a table, holding a smartphone. The smartphone displays a virtual avatar of a person in a red shirt. A lamp and potted plant are visible in the background, providing a cozy room setting.",
+              "timestamp": 2
+            },
+            {
+              "ai_prompt": "Person wearing hoodie with OpenAI logo, holding phone showing avatar in red shirt, video call setting, indoor room with lamp and plant in background.",
+              "frame_number": 3,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_3.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_3.jpg",
+              "scene_description": "A person is sitting at a table, wearing a dark hoodie with an OpenAI logo. They are holding a smartphone displaying a video call with an avatar in a red shirt. In the background, there is a lit lamp and a plant.",
+              "timestamp": 4
+            },
+            {
+              "ai_prompt": "Person in dark hoodie video calling an AI avatar on smartphone, AI avatar wearing red shirt, modern office setting, warm lighting, indoor scene.",
+              "frame_number": 4,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_4.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_4.jpg",
+              "scene_description": "A person wearing a dark hoodie is seated at a table, holding a smartphone. The phone's screen displays a video call with an AI avatar dressed in a red shirt. The room is well-lit with a lamp and some decor in the background. Text on the image highlights AI technology.",
+              "timestamp": 6
+            },
+            {
+              "ai_prompt": "Person in hoodie holding a phone displaying AI avatar in bright room with lamp, logo mug, and laptop on the table, modern tech demo setting.",
+              "frame_number": 5,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_5.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_5.jpg",
+              "scene_description": "A person wearing a dark hoodie sits at a table, holding a smartphone showing an AI avatar. The room is softly lit with a lamp in the background. A coffee mug with a logo is on the table, next to a black laptop or tablet.",
+              "timestamp": 8
+            },
+            {
+              "ai_prompt": "Person at table in modern room, holding smartphone displaying AI avatar in red shirt. Text: 'Watch GPT-4o with face' and 'AI avatar powered by Synthesia EXPRESS-1 model'. Black mug on table, lamp in background.",
+              "frame_number": 6,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_6.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_6.jpg",
+              "scene_description": "A person sits at a wooden table in a well-lit room with white walls and a modern lamp in the background. They are holding a smartphone showing an AI avatar, a woman in a red shirt. The text on the image mentions 'Watch GPT-4o with face' and 'The AI avatar is powered by Synthesia EXPRESS-1 model.' A black coffee mug with a logo is on the table.",
+              "timestamp": 10
+            },
+            {
+              "ai_prompt": "Person at desk holding smartphone with AI avatar on screen, wearing a dark hoodie with OpenAI logo, lit lamp and chair in background, text overlay about AI avatar and model.",
+              "frame_number": 7,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_7.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_7.jpg",
+              "scene_description": "A person is sitting at a desk in a well-lit room, holding a smartphone displaying an AI-generated avatar. The avatar is wearing a red shirt and appears on the phone screen prominently. The person is wearing a dark hoodie with an OpenAI logo. In the background, there is a lit floor lamp and a small black chair. Text on the image mentions 'Watch GPT-4o with face' and 'The AI avatar is powered by Synthesia EXPRESS-1 model.'",
+              "timestamp": 12
+            },
+            {
+              "ai_prompt": "Person in a dark hoodie looking at a smartphone in a warm-lit room. Phone screen shows an avatar in a red shirt. Background includes a lamp and furniture.",
+              "frame_number": 8,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_8.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_8.jpg",
+              "scene_description": "A person in a dark hoodie sits at a table in a warmly lit room, looking at a smartphone. The smartphone screen displays a bright image of a person in a red shirt. A lamp and some furniture are in the background.",
+              "timestamp": 14
+            },
+            {
+              "ai_prompt": "Analysis unavailable - please try again",
+              "frame_number": 9,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_9.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_9.jpg",
+              "scene_description": "Analysis failed after 3 attempts. Last error: No content in response (attempt 3)",
+              "timestamp": 16
+            },
+            {
+              "ai_prompt": "A close-up of a hand holding a smartphone, focus on the camera module, blurred background, overlay text saying 'Watch GPT-4o with face' and 'The AI avatar is powered by Synthesia EXPRESS-1 model'.",
+              "frame_number": 10,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_10.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_10.jpg",
+              "scene_description": "A person's hand is holding a smartphone in a vertical position. The phone has a visible camera module. There are text overlays with red and white backgrounds, mentioning 'Watch GPT-4o with face' and 'The AI avatar is powered by Synthesia EXPRESS-1 model'. The background is blurred, suggesting an indoor setting.",
+              "timestamp": 18
+            },
+            {
+              "ai_prompt": "A person sits at a desk using a smartphone, warm lamp light in background, black desk surface with a logo mug. Text overlay discussing GPT-4o and AI avatars.",
+              "frame_number": 11,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_11.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_11.jpg",
+              "scene_description": "A person is sitting at a desk with a smartphone in hand. Behind them, a lit lamp casts a warm glow. The desk has a black surface with items like a mug featuring a logo and some stationery. Text overlays the image, talking about GPT-4o and AI avatars.",
+              "timestamp": 20
+            },
+            {
+              "ai_prompt": "Person at a desk holding a smartphone showing an AI avatar, mug with OpenAI logo, warm lighting from a floor lamp, cozy room setting, and informative text overlays.",
+              "frame_number": 12,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_12.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_12.jpg",
+              "scene_description": "A person in a casual setting holds a smartphone displaying a video call with an AI avatar. They sit at a desk with a cup bearing the OpenAI logo. The room is warmly lit by a lamp, creating a cozy atmosphere. Text overlays describe the scene.",
+              "timestamp": 22
+            },
+            {
+              "ai_prompt": "A person in an OpenAI hoodie holding a phone, displaying an AI avatar of a woman in a red shirt, sitting in a warmly lit room with a lamp in the background.",
+              "frame_number": 13,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_13.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_13.jpg",
+              "scene_description": "The image is split into two sections. In the top section, a person wearing an OpenAI hoodie sits at a table, holding a smartphone. There's a lamp in the background, providing warm lighting to the scene. The bottom section shows a close-up of the smartphone displaying an AI avatar of a woman in a red shirt. The phone is held by a hand against a dark surface.",
+              "timestamp": 24
+            },
+            {
+              "ai_prompt": "Person in modern room holding a smartphone with a digital avatar on screen, soft lighting from a floor lamp, logo on a mug on table, AI-powered interaction scene.",
+              "frame_number": 14,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_14.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_14.jpg",
+              "scene_description": "A person is seated at a table in a modern room, holding a smartphone. On the phone, a digital avatar in a red shirt appears on the screen. The room is softly lit by a floor lamp in the background, and a logo appears on a mug on the table.",
+              "timestamp": 26
+            },
+            {
+              "ai_prompt": "A person sits at a table holding a smartphone showing an avatar in a modern office. Background features a lamp, a logo-branded hoodie, and a mug on the table.",
+              "frame_number": 15,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_15.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_15.jpg",
+              "scene_description": "A person is sitting at a table, holding a smartphone in one hand. The phone displays an image of a person wearing a red shirt, with a modern office background. The person at the table is wearing a dark hoodie with a logo. In the background, there's a lamp and a mug on the table.",
+              "timestamp": 28
+            },
+            {
+              "ai_prompt": "Person at desk holding smartphone, displaying virtual AI avatar on screen, modern room with floor lamp, coffee mug with logo, text overlay about AI technology, casual setting.",
+              "frame_number": 16,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_16.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_16.jpg",
+              "scene_description": "A person is sitting at a desk, holding a smartphone displaying a virtual AI avatar in a red shirt. The setting features a modern room with a lit floor lamp and minimal decor, including a coffee mug with a logo. Text overlays advertise AI technology.",
+              "timestamp": 30
+            },
+            {
+              "ai_prompt": "Person in 'OpenAI' hoodie, holding a smartphone showing an AI avatar of a woman in red, modern room setting.",
+              "frame_number": 17,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_17.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_17.jpg",
+              "scene_description": "A person in a gray hoodie labeled 'OpenAI' is seated at a table in a modern room with a lamp and decorative items in the background. They are holding a smartphone displaying an AI avatar of a woman in a red shirt, standing in a bright room.",
+              "timestamp": 32
+            },
+            {
+              "ai_prompt": "Person at a desk, holding a phone displaying an AI avatar on video call. Background shows a lamp and modern chair, with captions about GPT-4o and Synthesia model technology.",
+              "frame_number": 18,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_18.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_18.jpg",
+              "scene_description": "A person is seated at a desk, holding a smartphone displaying a video call with an AI avatar, set in a modern office with a lamp and chair visible in the background. The caption highlights the use of GPT-4o technology and Synthesia model.",
+              "timestamp": 34
+            },
+            {
+              "ai_prompt": "Person holding smartphone at a table, displaying an AI avatar in a red shirt on screen, minimalistic room with soft lighting, lamp, plants, dark furniture.",
+              "frame_number": 19,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_19.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_19.jpg",
+              "scene_description": "A person is sitting at a table, smiling while holding a smartphone. On the phone screen, an AI avatar of a person in a red shirt is displayed. The background shows a minimalistic room with a lamp, plants, and a dark chair in soft lighting.",
+              "timestamp": 36
+            },
+            {
+              "ai_prompt": "A person in a hoodie holds a smartphone with an AI avatar displayed, seated at a black desk with a branded mug, under soft warm lighting, indoor modern setting.",
+              "frame_number": 20,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_20.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_20.jpg",
+              "scene_description": "A person is sitting at a table, holding a smartphone displaying an AI avatar of a woman in a red shirt. Behind is a warm-lit room with a lamp. On the table is a black mug with a white logo. The setting includes overlay text announcing the AI model.",
+              "timestamp": 38
+            },
+            {
+              "ai_prompt": "Person at desk holding phone with AI avatar on screen, cozy room with lamp and plant in background.",
+              "frame_number": 21,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_21.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_21.jpg",
+              "scene_description": "A person sitting at a desk holding a smartphone, looking at the screen with a smile. The smartphone displays a video call with an AI avatar wearing a red shirt. There is a lamp and a plant in the background, adding a warm ambiance to the scene.",
+              "timestamp": 40
+            },
+            {
+              "ai_prompt": "A person in a hoodie holds a smartphone showing an AI avatar in a red shirt, warm room lighting, desk setting, modern technology theme.",
+              "frame_number": 22,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_22.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_22.jpg",
+              "scene_description": "A person is sitting at a table holding a smartphone displaying a video call with an AI-generated avatar. The room is warmly lit by a lamp in the background, and the person is wearing a dark hoodie. The smartphone shows a smiling avatar in a bright red shirt in a well-lit environment.",
+              "timestamp": 42
+            },
+            {
+              "ai_prompt": "Person in a dark hoodie at a table showing a smartphone with an AI avatar in red shirt, modern lamp in background, text overlays about GPT-4o and Synthesia EXPRESS-1.",
+              "frame_number": 23,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_23.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_23.jpg",
+              "scene_description": "A person wearing a dark hoodie sits at a table, holding a smartphone in one hand. The phone screen displays a digital avatar of a person in a red shirt speaking. A modern lamp and a few minimalistic room elements are visible in the background. Text overlays on the image describe the use of GPT-4o and Synthesia EXPRESS-1.",
+              "timestamp": 44
+            },
+            {
+              "ai_prompt": "Person at a table in a modern room, holding a smartphone showing an AI avatar video call, minimalistic background with a floor lamp and wooden table.",
+              "frame_number": 24,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_24.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_24.jpg",
+              "scene_description": "A person sits at a table, holding a smartphone in one hand, with a modern, minimalistic room in the background featuring a lit floor lamp and a wooden table. On the phone's screen is a video call with an AI avatar dressed in a red shirt.",
+              "timestamp": 46
+            },
+            {
+              "ai_prompt": "Person in dark hoodie at desk, holding smartphone displaying digital avatar in red shirt, minimal room with soft lighting, floor lamp, black chair, tech-themed setting.",
+              "frame_number": 25,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_25.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_25.jpg",
+              "scene_description": "A person wearing a dark hoodie sits at a desk in a room with minimal decor. They hold a smartphone showing an image of a digital avatar in a red shirt. The room is softly lit with a floor lamp in the background and a black chair is visible.",
+              "timestamp": 48
+            },
+            {
+              "ai_prompt": "Person in a dark hoodie at a table, holding a smartphone showing a digital avatar in a red shirt, minimal decor with a lamp and plant in the background.",
+              "frame_number": 26,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_26.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_26.jpg",
+              "scene_description": "A person wearing a dark hoodie sits at a table in a modern room with minimal decor. They hold a smartphone displaying an image of a virtual avatar in a red shirt. A lamp and a potted plant are visible in the background.",
+              "timestamp": 50
+            },
+            {
+              "ai_prompt": "Person in hoodie holding smartphone, displaying AI avatar in red shirt, minimalist indoor setting with lamp and mug, text overlay about AI technology.",
+              "frame_number": 27,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_27.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_27.jpg",
+              "scene_description": "A person wearing a dark hoodie is sitting at a table, holding a smartphone displaying an image of a person in a red shirt. The setting is indoors with a modern, minimalistic vibe, including a lamp and a mug. Text overlays describe an AI avatar powered by a model.",
+              "timestamp": 52
+            },
+            {
+              "ai_prompt": "Analysis unavailable - please try again",
+              "frame_number": 28,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_28.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_28.jpg",
+              "scene_description": "Analysis failed after 3 attempts. Last error: No content in response (attempt 3)",
+              "timestamp": 54
+            },
+            {
+              "ai_prompt": "Person in hoodie at table, holding smartphone showing AI avatar in red shirt, modern interior with lamp and furniture in background.",
+              "frame_number": 29,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_29.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_29.jpg",
+              "scene_description": "A person wearing a dark gray hoodie is sitting at a wooden table, holding a smartphone. The phone displays an AI-generated avatar in a red shirt. The background features a light-colored wall with a lamp and some furniture.",
+              "timestamp": 56
+            },
+            {
+              "ai_prompt": "Person in grey hoodie smiling at phone during video call, black mug on table, avatar in red shirt on phone screen, modern room with lamp and chair in background.",
+              "frame_number": 30,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_30.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_30.jpg",
+              "scene_description": "A person is sitting at a table, smiling at a smartphone in their hand. They are wearing a grey hoodie with a logo, and there is a black mug with a matching logo on the table. A video call is active on the phone, showing an avatar of a person in a red shirt. A lamp and dark chair are in the background.",
+              "timestamp": 58
+            },
+            {
+              "ai_prompt": "Person in a hoodie at a desk holding a smartphone, displaying a virtual avatar in a red shirt. Softly lit room with lamp, chair, and mug with a logo on the desk.",
+              "frame_number": 31,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_31.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_31.jpg",
+              "scene_description": "A person in a dark hoodie is sitting at a wooden desk in a softly lit room with a lamp and chair in the background. They are smiling while holding a smartphone. The phone screen shows a virtual avatar of a person in a red shirt in a well-lit room. A mug with a circular logo is on the desk.",
+              "timestamp": 60
+            },
+            {
+              "ai_prompt": "A person at a desk holding a smartphone showing an AI avatar video, modern room with a lamp, highlighting AI technology with text overlays about GPT-4o and Synthesia EXPRESS-1 model.",
+              "frame_number": 32,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_32.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_32.jpg",
+              "scene_description": "A person wearing a dark hoodie sits at a desk, holding a smartphone displaying a video of an AI avatar in a red shirt. The room has a warm ambiance with a modern floor lamp in the background. Text on the image highlights the GPT-4o AI and the Synthesia EXPRESS-1 model.",
+              "timestamp": 62
+            },
+            {
+              "ai_prompt": "A person in a hoodie holds a phone displaying an AI avatar in a modern office setting, with a lamp and a logo mug on the table in the background.",
+              "frame_number": 33,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_33.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_33.jpg",
+              "scene_description": "The image is divided into two sections. The top section shows a person with short brown hair, wearing a dark hoodie with a logo, seated at a table with a lamp in the background. He is holding a smartphone. On the table, there is a black mug featuring a logo. The bottom section of the image shows a close-up of a phone screen held by a hand, displaying an animated avatar of a person wearing a red shirt and speaking, with a background of a modern office space.",
+              "timestamp": 64
+            },
+            {
+              "ai_prompt": "Person in a cozy room holding phone with animated avatar on screen, warm lighting, lamp and plant in background, avatar wearing red shirt, casual setting.",
+              "frame_number": 34,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_34.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_34.jpg",
+              "scene_description": "A person sitting at a table in a cozy room, holding a phone. They are looking at the screen, which displays an animated avatar wearing a bright red shirt. A lamp, chair, and plant are in the background, adding warmth to the setting.",
+              "timestamp": 66
+            },
+            {
+              "ai_prompt": "A person in a dark hoodie holding a phone with an AI avatar on screen, sitting at a table with a mug, indoor setting with lamp and plant, warm lighting.",
+              "frame_number": 35,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_35.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_35.jpg",
+              "scene_description": "A person is sitting at a table, wearing a dark hoodie and looking at a smartphone. There is a mug with a logo on the table. The smartphone displays an AI avatar of a person in a red shirt against a modern interior backdrop. A lamp and plant are visible in the softly lit room.",
+              "timestamp": 68
+            },
+            {
+              "ai_prompt": "A person at a table using a smartphone shows an AI avatar video call, modern room, minimalistic decor, warm ambient lighting, floor lamp, technology-focused environment.",
+              "frame_number": 36,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_36.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_36.jpg",
+              "scene_description": "A person sitting at a table looks at a smartphone displaying a video call or video message featuring an AI avatar. The room appears comfortable with warm lighting, including a floor lamp, and minimalistic furnishings. Text on the image discusses GPT-4o and AI avatars powered by Synthesia.",
+              "timestamp": 70
+            },
+            {
+              "ai_prompt": "Person at desk using smartphone displaying virtual avatar, modern room with lamp, chairs and mug, casual setting, medium lighting.",
+              "frame_number": 37,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_37.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_37.jpg",
+              "scene_description": "A person sitting at a desk in a moderately lit room is looking at a smartphone. They are wearing a dark hoodie. The phone screen displays a video call or virtual avatar session with a character in a red shirt. The setting includes a modern table lamp, a couple of chairs, and a dark mug with a logo.",
+              "timestamp": 72
+            },
+            {
+              "ai_prompt": "A person in a hoodie sits at a table, holding a smartphone showing an AI avatar. There's a lamp and a plant in the background. Text emphasizes AI technology features.",
+              "frame_number": 38,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_38.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_38.jpg",
+              "scene_description": "A person is sitting at a table in a room with a simple, modern setup. The room has a lamp and a plant in the background. The person is wearing a hoodie and holding a smartphone, which displays a person in a red shirt on the screen. Text on the image highlights features of GPT technology and AI avatars.",
+              "timestamp": 74
+            },
+            {
+              "ai_prompt": "Person sitting at a table with a smartphone showing a video call, indoor setting with soft lighting, modern lamp and logoed mug on table, casual hoodie attire.",
+              "frame_number": 39,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_39.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_39.jpg",
+              "scene_description": "A person in a dark hoodie is sitting at a wooden table in a cozy room with a modern lamp. They are holding a smartphone displaying a video call with a person wearing a red shirt. The table has a black mug with a logo on it.",
+              "timestamp": 76
+            },
+            {
+              "ai_prompt": "Person in hoodie holding smartphone showing AI avatar in red shirt, sitting at desk with lamp and chair in background, mug on desk with logo.",
+              "frame_number": 40,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_40.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_40.jpg",
+              "scene_description": "A person wearing a dark hoodie sits at a desk in a room with a lamp and a chair in the background. They are holding a smartphone, showing an AI-generated avatar wearing a red shirt on the screen. A mug with a logo is on the desk.",
+              "timestamp": 78
+            },
+            {
+              "ai_prompt": "A person in a hoodie holds a smartphone showing an AI avatar in a red shirt. Background includes a lamp, plant, black chair, and a table with a mug. Indoor cozy setting.",
+              "frame_number": 41,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_41.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_41.jpg",
+              "scene_description": "A person in a hoodie is sitting at a table in a cozy room with a lamp and plant in the background. They are holding a smartphone. The phone displays an AI avatar in a red shirt on the screen. A mug and a black chair are also visible.",
+              "timestamp": 80
+            },
+            {
+              "ai_prompt": "Person in a hoodie at table, holding smartphone showing AI avatar, modern tech-themed room with lamp and chair in background, casual and relaxed setting.",
+              "frame_number": 42,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_42.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_42.jpg",
+              "scene_description": "A person in a hoodie is seated at a table holding a smartphone. There is a screen showing an AI avatar on the phone. The background includes a lamp, chair, and subtle furnishings, creating a relaxed, tech-oriented atmosphere.",
+              "timestamp": 82
+            },
+            {
+              "ai_prompt": "Person at a table holding a smartphone showing an avatar, black mug with logo on table, lamp and chair in the background, modern office setting.",
+              "frame_number": 43,
+              "original_frame_path": "static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_43.jpg",
+              "original_frame_url": "http://15.204.238.192:5000/static/extracted_frames/1bb8663b-69da-44de-9418-b5dae7c9fc25/frame_43.jpg",
+              "scene_description": "A person is sitting at a table, holding a smartphone that displays an avatar on the screen. The phone screen shows a person in a red shirt. The table has a black mug with a logo and there is a lamp and a chair in the background.",
+              "timestamp": 84
+            }
+          ],
+          "started_at": "2025-10-14T10:41:16.453965",
+          "status": "completed"
+        }
+      }
+    ]
+  },
+  "versionId": "64456a12-fdff-4444-bde8-916f618f0c35",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-10-14T09:44:21.588Z",
+      "updatedAt": "2025-10-14T09:44:21.588Z",
+      "role": "workflow:owner",
+      "workflowId": "8x4xjgpgOkM1cgBX",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
