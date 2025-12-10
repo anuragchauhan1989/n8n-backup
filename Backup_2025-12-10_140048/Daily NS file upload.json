@@ -1,0 +1,623 @@
+{
+  "createdAt": "2025-10-28T05:36:06.319Z",
+  "updatedAt": "2025-11-05T09:50:00.000Z",
+  "id": "Rvx03weZsoDBSa0h",
+  "name": "Daily NS file upload",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "=⚠️ Fuel File Sequence Warning\\n\\nDate: {{ $json.previousDayDate }} \\nPlease investigate missing files. "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "369ef093-7034-4b15-b5bb-a5984f899e54",
+      "name": "Send Sequence Warning Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        944,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "subject: Ampol has:attachment"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -160,
+        176
+      ],
+      "id": "915d1586-4eef-4e99-a9e6-fce9b01c363e",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "iLetl7zyDEFQe6Mc",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        0,
+        176
+      ],
+      "id": "7def47e9-176b-4930-8ba2-107851a1a76b",
+      "name": "Binary to Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract data from the text file and calculate totals\nconst items = $input.all();\nconst results = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  \n  // Get the text content\n  const fileContent = item.json.data;\n  \n  // Get filename from binary data\n  let filename = '';\n  if (item.binary && item.binary.attachment_0) {\n    filename = item.binary.attachment_0.fileName || '';\n  }\n  \n  if (!fileContent) {\n    console.log('No file content found, skipping...');\n    continue;\n  }\n  \n  // Extract date from filename (e.g., NS_20250924.txt or NS_2025-09-24.txt)\n  let fileDate = null;\n  \n  // Try YYYYMMDD format first\n  let match = filename.match(/(\\d{8})/);\n  if (match) {\n    const d = match[1];\n    fileDate = `${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}`;\n  } else {\n    // Try YYYY-MM-DD format\n    match = filename.match(/(\\d{4}-\\d{2}-\\d{2})/);\n    if (match) {\n      fileDate = match[1];\n    }\n  }\n  \n  if (!fileDate) {\n    console.log('Could not extract date from filename:', filename);\n    fileDate = new Date().toISOString().split('T')[0]; // Fallback to today\n  }\n  \n  // Parse CSV content\n  const lines = fileContent.split(/\\r?\\n/);\n  const transactions = [];\n  let totalAmount = 0;\n  let headers = [];\n  \n  // Process each line\n  for (let j = 0; j < lines.length; j++) {\n    const line = lines[j].trim();\n    if (!line) continue;\n    \n    const parts = line.split(',');\n    \n    if (j === 0) {\n      // First line is headers\n      headers = parts.map(h => h.trim());\n    } else {\n      // Data rows\n      const transaction = {};\n      \n      for (let k = 0; k < headers.length; k++) {\n        const header = headers[k];\n        const value = parts[k] ? parts[k].trim() : '';\n        transaction[header] = value;\n        \n        // Sum up the Cost column\n        if (header === 'Cost' || header === 'Amount' || header === 'Total') {\n          const amount = parseFloat(value);\n          if (!isNaN(amount)) {\n            totalAmount += amount;\n          }\n        }\n      }\n      \n      transactions.push(transaction);\n    }\n  }\n  \n  // Create result object\n  results.push({\n    json: {\n      fileDate: fileDate,\n      filename: filename,\n      totalAmount: Math.round(totalAmount * 100) / 100, // Round to 2 decimals\n      transactionCount: transactions.length,\n      transactions: transactions,\n      rawFileContent: fileContent,\n      processedAt: new Date().toISOString()\n    },\n    binary: item.binary // Keep binary for file upload later\n  });\n}\n\nreturn results;"
+      },
+      "id": "4459e6c6-70ed-4a61-89c9-b8de7fa70509",
+      "name": "Extract & Calculate Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1xL0VYHpWKtUYDdCxRDhJy7mN4K50d3FEO7PACfw8LJs",
+          "mode": "list",
+          "cachedResultName": "Fuel Transaction Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xL0VYHpWKtUYDdCxRDhJy7mN4K50d3FEO7PACfw8LJs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xL0VYHpWKtUYDdCxRDhJy7mN4K50d3FEO7PACfw8LJs/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "fe3850b5-a5a8-49cd-a4c8-477f4f3bc4c1",
+      "name": "Read Sheet for Consistency Check",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        352,
+        176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check for missing dates (consistency check)\nconst items = $input.all();\n\n// Get the original transaction data from node 3\nconst transactionData = $('Extract & Calculate Data').first().json;\n\nif (items.length === 0) {\n  // --- START NEW CODE (for consistency) ---\n  // Calculate the previous day's date\n  const prevDay = new Date(transactionData.fileDate);\n  prevDay.setDate(prevDay.getDate() - 1);\n  const previousDayDate = prevDay.toISOString().split('T')[0];\n  // --- END NEW CODE ---\n\n  return [{\n    json: {\n      // Pass through original data\n      ...transactionData,\n      // Add consistency check results\n      consistencyCheck: 'PASS',\n      message: 'No data to check',\n      missingDates: [],\n      currentFile: transactionData.fileDate,\n      previousDayDate: previousDayDate, // <-- ADDED HERE\n    }\n  }];\n}\n\n// Get all dates from sheet (sorted)\n// Try multiple possible column names\nconst dates = items\n  .map(item => item.json.Date || item.json.File_Date || item.json.date || item.json.fileDate)\n  .filter(d => d && d !== 'Date' && d !== 'File_Date') // Remove headers\n  .sort();\n\nconsole.log('Found dates in sheet:', dates);\n\n// Get current file date\nconst currentFileDate = transactionData.fileDate;\n\n// --- START NEW CODE ---\n// Calculate the previous day's date\nconst prevDay = new Date(currentFileDate);\nprevDay.setDate(prevDay.getDate() - 1);\nconst previousDayDate = prevDay.toISOString().split('T')[0];\n// --- END NEW CODE ---\n\nconsole.log('Current file date:', currentFileDate);\nconsole.log('Previous day date:', previousDayDate); // Added for debugging\n\n// Find missing dates\nconst missingDates = [];\n\nif (dates.length > 0) {\n  const startDate = new Date(dates[0]);\n  const endDate = new Date(currentFileDate);\n  \n  // Check each day from start to current\n  const current = new Date(startDate);\n  \n  while (current <= endDate) {\n    const dateStr = current.toISOString().split('T')[0];\n    \n    if (!dates.includes(dateStr) && dateStr !== currentFileDate) {\n      missingDates.push(dateStr);\n    }\n    \n    current.setDate(current.getDate() + 1);\n  }\n}\n\nconsole.log('Missing dates found:', missingDates);\n\nconst consistencyStatus = missingDates.length === 0 ? 'PASS' : 'WARNING';\nconst message = missingDates.length === 0 \n  ? 'All dates are consecutive' \n  : `Missing ${missingDates.length} date(s): ${missingDates.join(', ')}`;\n\n// Return ALL data including original transaction data\nreturn [{\n  json: {\n    // Pass through ALL original data from node 3\n    ...transactionData,\n    // Add consistency check results\n    consistencyCheck: consistencyStatus,\n    message: message,\n    missingDates: missingDates,\n    previousDayDate: previousDayDate, // <-- ADDED HERE\n    totalRecordsInSheet: dates.length,\n    dateRange: {\n      first: dates[0] || 'N/A',\n      last: dates[dates.length - 1] || 'N/A'\n    }\n  },\n  // Also pass through binary data if it exists\n  binary: $('Extract & Calculate Data').first().binary\n}];"
+      },
+      "id": "e5948884-f7b1-467f-bec2-1d589c4494bf",
+      "name": "Check Date Consistency",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.consistencyCheck }}",
+              "rightValue": "WARNING",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "59b837bc-c703-4ab8-98a5-1a24728f6c3b",
+      "name": "Has Missing Dates?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        720,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1xL0VYHpWKtUYDdCxRDhJy7mN4K50d3FEO7PACfw8LJs",
+          "mode": "list",
+          "cachedResultName": "Fuel Transaction Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xL0VYHpWKtUYDdCxRDhJy7mN4K50d3FEO7PACfw8LJs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xL0VYHpWKtUYDdCxRDhJy7mN4K50d3FEO7PACfw8LJs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Filename": "={{ $json.filename }}",
+            "File_Date": "={{ $json.fileDate }}",
+            "Transaction_Sum": "={{ $json.totalAmount }}",
+            "Processed_At": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "File_Date",
+              "displayName": "File_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Transaction_Sum",
+              "displayName": "Transaction_Sum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Filename",
+              "displayName": "Filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Processed_At",
+              "displayName": "Processed_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d273520a-0b82-40ec-83bb-4a287a0ce398",
+      "name": "Save to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        944,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.fleetmanagement.com/v1/fuel/import",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "date",
+              "value": "={{ $json.File_Date }}"
+            },
+            {
+              "name": "transactions",
+              "value": "="
+            },
+            {
+              "name": "totalAmount",
+              "value": "={{ $json.Transaction_Sum }}"
+            },
+            {
+              "name": "source",
+              "value": "n8n_automation"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "ceee2ddc-e7fb-4666-9e4f-ad91ab1f94a8",
+      "name": "Import to Fleet Management System",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1136,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "attachment_0",
+        "name": "={{ $now }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1orZwNEXyWeTFZGqNic_vt9-Siceqa1aq",
+          "mode": "list",
+          "cachedResultName": "Fuel Transaction Automation",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1orZwNEXyWeTFZGqNic_vt9-Siceqa1aq"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "eec45f69-c95c-489f-9377-f9f2f2d30c13",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "a1557e1d-4fa8-4e62-8a95-d6ffec629342",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "q": "subject:\"Ampol NS Report\" has:attachment is:unread",
+          "readStatus": "unread",
+          "receivedAfter": "={{ $now.minus(1, 'hour').toISO() }}"
+        }
+      },
+      "id": "0297c66e-ba0d-4a54-960b-2b386d4c3b4a",
+      "name": "Get Gmail Messages",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        112,
+        752
+      ],
+      "webhookId": "a10620ce-e096-4d2c-951d-b89c9a7bf835",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "iLetl7zyDEFQe6Mc",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              },
+              "id": "5b618833-ba0b-4eca-9dce-b88406eb29a5"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c44d44bd-b05f-4568-9990-394a45bff8d1",
+      "name": "IF Emails Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        336,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "={{ Object.keys($binary).find(key => key.startsWith('attachment_')) }}",
+        "name": "={{ $binary[Object.keys($binary).find(key => key.startsWith('attachment_'))].fileName }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_FOLDER_ID",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "4d056c67-e2f1-4bd2-bdf2-b89d4c50d457",
+      "name": "Upload to Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        560,
+        640
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Get Gmail Messages').item.json.id }}"
+      },
+      "id": "4bdacbdc-ea8e-4a5d-ac96-7df9d40ad1b9",
+      "name": "Mark as Read",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        784,
+        640
+      ],
+      "webhookId": "6cd45f8d-bfcf-4f1d-a489-604a61f93e0a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "iLetl7zyDEFQe6Mc",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Binary to Text",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Binary to Text": {
+      "main": [
+        [
+          {
+            "node": "Extract & Calculate Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract & Calculate Data": {
+      "main": [
+        [
+          {
+            "node": "Read Sheet for Consistency Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sheet for Consistency Check": {
+      "main": [
+        [
+          {
+            "node": "Check Date Consistency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Date Consistency": {
+      "main": [
+        [
+          {
+            "node": "Has Missing Dates?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Missing Dates?": {
+      "main": [
+        [
+          {
+            "node": "Send Sequence Warning Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Import to Fleet Management System",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Gmail Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Gmail Messages": {
+      "main": [
+        [
+          {
+            "node": "IF Emails Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Emails Found": {
+      "main": [
+        [
+          {
+            "node": "Upload to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Drive": {
+      "main": [
+        [
+          {
+            "node": "Mark as Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "cea32263-1bf1-4e09-b1f6-10567af63a1a",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-28T05:36:06.326Z",
+      "updatedAt": "2025-10-28T05:36:06.326Z",
+      "role": "workflow:owner",
+      "workflowId": "Rvx03weZsoDBSa0h",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
