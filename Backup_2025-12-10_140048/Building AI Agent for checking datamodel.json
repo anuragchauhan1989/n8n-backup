@@ -1,0 +1,1071 @@
+{
+  "createdAt": "2025-11-07T17:25:14.940Z",
+  "updatedAt": "2025-11-10T06:19:39.000Z",
+  "id": "BGEuOgCjeWwIoIfv",
+  "name": "Building AI Agent for checking datamodel",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Upload Files",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload Files",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -1536,
+        208
+      ],
+      "id": "fc9183fd-29f5-48c1-a3a7-af5936935ba0",
+      "name": "Upload Files",
+      "webhookId": "8c9a2d65-b3b0-4b40-9ff3-3479e2f20e0a"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "Upload_Files",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        208
+      ],
+      "id": "6128e4fb-528c-401f-9371-70465d012ad7",
+      "name": "Extract form XLSX"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1X_n-epgINq_8L36IHcKr4fk5kSJuMPD_6mxWwsnL2BM",
+          "mode": "list",
+          "cachedResultName": "Master Sheet - Data Model",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1X_n-epgINq_8L36IHcKr4fk5kSJuMPD_6mxWwsnL2BM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1X_n-epgINq_8L36IHcKr4fk5kSJuMPD_6mxWwsnL2BM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -976,
+        208
+      ],
+      "id": "fc2c477a-532b-4009-bdd7-6a9a2b5704a7",
+      "name": "Get Rows from Master Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1X_n-epgINq_8L36IHcKr4fk5kSJuMPD_6mxWwsnL2BM",
+          "mode": "list",
+          "cachedResultName": "Master Sheet - Data Model",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1X_n-epgINq_8L36IHcKr4fk5kSJuMPD_6mxWwsnL2BM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1X_n-epgINq_8L36IHcKr4fk5kSJuMPD_6mxWwsnL2BM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Bedrijf": "={{ $json.Bedrijf }}",
+            "Artikel": "={{ $json.Artikel }}",
+            "Omschrijving": "={{ $json.Omschrijving }}",
+            "netto Gewicht per CE (gram)": "={{ $json['netto Gewicht per CE (gram)'] }}",
+            "Artikelgroep": "={{ $json.Artikelgroep }}",
+            "Artikelsoort": "={{ $json.Artikelsoort }}",
+            "Label relatie": "={{ $json['Label relatie'] }}",
+            "Signalering": "={{ $json.Signalering }}",
+            "EAN-code": "={{ $json['EAN-code'] }}",
+            "Inhoud per HE (CE per doos)": "={{ $json['Inhoud per HE (CE per doos)'] }}",
+            "Inhoud per CE (stuks)": "={{ $json['Inhoud per CE (stuks)'] }}",
+            "Gewicht": "={{ $json.Gewicht }}",
+            "Eenheid": "={{ $json.Eenheid }}",
+            "Interne THT": "={{ $json['Interne THT'] }}",
+            "THT productie": "={{ $json['THT productie'] }}",
+            "Pallet belading": "={{ $json['Pallet belading'] }}",
+            "Pallet hoeveelheid": "={{ $json['Pallet hoeveelheid'] }}",
+            "Eenheid.1": "={{ $json.Eenheid_1 }}",
+            "Checkweger programma": "={{ $json['Checkweger programma'] }}",
+            "Datum en naam aanleggen": "={{ $json['Datum en naam aanleggen'] }}",
+            "Doosetiket extra info": "={{ $json['Doosetiket extra info'] }}",
+            "Doosnummer": "={{ $json.Doosnummer }}",
+            "Doosetiket lay out no": "={{ $json['Doosetiket lay out no'] }}",
+            "Aanmaakdatum": "={{ $json.Aanmaakdatum }}",
+            "Laatste mutatiedatum": "={{ $json['Laatste mutatiedatum'] }}",
+            "Levertijd in werkdagen": "={{ $json['Levertijd in werkdagen'] }}",
+            "Min. THT uitlever": "={{ $json['Min. THT uitlever'] }}",
+            "Objective": "={{ $json.Objective }}",
+            "Technisch coördinator": "={{ $json['Technisch coördinator'] }}",
+            "Selectiecode": "={{ $json.Selectiecode }}",
+            "Productsoort": "={{ $json.Productsoort }}",
+            "Productlijn": "={{ $json.Productlijn }}",
+            "Productklasse": "={{ $json.Productklasse }}",
+            "Producent": "={{ $json.Producent }}",
+            "Plaats THT": "={{ $json['Plaats THT'] }}",
+            "Partijgestuurd": "={{ $json.Partijgestuurd }}",
+            "Pallets stapelen": "={{ $json['Pallets stapelen'] }}",
+            "Pallet wikkelen": "={{ $json['Pallet wikkelen'] }}",
+            "Pallet soort": "={{ $json['Pallet soort'] }}",
+            "THT Datum formaat": "={{ $json['THT Datum formaat'] }}",
+            "THT afrondingsmethode:": "={{ $json['THT afrondingsmethode:'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Aanmaakdatum",
+              "displayName": "Aanmaakdatum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Artikel",
+              "displayName": "Artikel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Artikelgroep",
+              "displayName": "Artikelgroep",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Artikelsoort",
+              "displayName": "Artikelsoort",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Bedrijf",
+              "displayName": "Bedrijf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Checkweger programma",
+              "displayName": "Checkweger programma",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Datum en naam aanleggen",
+              "displayName": "Datum en naam aanleggen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Doosetiket extra info",
+              "displayName": "Doosetiket extra info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Doosetiket lay out no",
+              "displayName": "Doosetiket lay out no",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Doosnummer",
+              "displayName": "Doosnummer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "EAN-code",
+              "displayName": "EAN-code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Eenheid",
+              "displayName": "Eenheid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Eenheid.1",
+              "displayName": "Eenheid.1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Gewicht",
+              "displayName": "Gewicht",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Import Code",
+              "displayName": "Import Code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Import Message",
+              "displayName": "Import Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Import Status",
+              "displayName": "Import Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Inhoud per CE (stuks)",
+              "displayName": "Inhoud per CE (stuks)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Inhoud per HE (CE per doos)",
+              "displayName": "Inhoud per HE (CE per doos)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Interne THT",
+              "displayName": "Interne THT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Laatste mutatiedatum",
+              "displayName": "Laatste mutatiedatum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Label relatie",
+              "displayName": "Label relatie",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Levertijd in werkdagen",
+              "displayName": "Levertijd in werkdagen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Min. THT uitlever",
+              "displayName": "Min. THT uitlever",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Objective",
+              "displayName": "Objective",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Omschrijving",
+              "displayName": "Omschrijving",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pallet belading",
+              "displayName": "Pallet belading",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pallet hoeveelheid",
+              "displayName": "Pallet hoeveelheid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pallet soort",
+              "displayName": "Pallet soort",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pallet wikkelen",
+              "displayName": "Pallet wikkelen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pallets stapelen",
+              "displayName": "Pallets stapelen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Partijgestuurd",
+              "displayName": "Partijgestuurd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Plaats THT",
+              "displayName": "Plaats THT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Producent",
+              "displayName": "Producent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Productklasse",
+              "displayName": "Productklasse",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Productlijn",
+              "displayName": "Productlijn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Productsoort",
+              "displayName": "Productsoort",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Selectiecode",
+              "displayName": "Selectiecode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Signalering",
+              "displayName": "Signalering",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "THT Datum formaat",
+              "displayName": "THT Datum formaat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "THT afrondingsmethode:",
+              "displayName": "THT afrondingsmethode:",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "THT productie",
+              "displayName": "THT productie",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Technisch coördinator",
+              "displayName": "Technisch coördinator",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Unnamed: 5",
+              "displayName": "Unnamed: 5",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Zoekargument I",
+              "displayName": "Zoekargument I",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "netto Gewicht per CE (gram)",
+              "displayName": "netto Gewicht per CE (gram)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1168,
+        208
+      ],
+      "id": "4cb7c46a-cb4c-470d-a480-18e0c14756dc",
+      "name": "Append Row (Master Sheet)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = [];\nfor (const m of items.map(i => i.json)) {\n  const SKU = m[\"Artikel\"] || \"\";\n  const Name = m[\"Omschrijving\"] || \"\";\n  const FullDesc = m[\"Omschrijving\"] || \"\";\n  const Gtin = m[\"EAN-code\"] || \"\";\n  const StockQty = m[\"Inhoud per CE (stuks)\"] || \"\";\n  const Weight = m[\"Gewicht\"] || \"\";\n  const Unit = m[\"Eenheid\"] || \"\";\n  const Brand = m[\"Producent\"] || \"\";\n  const Category = m[\"Artikelgroep\"] || \"\";\n  const Notes = m[\"Doosetiket extra info\"] || \"\";\n  const Supplier = m[\"Bedrijf\"] || \"\";\n\n  output.push({\n    json: {\n      SKU,\n      Name,\n      FullDesc,\n      Gtin,\n      StockQty,\n      Weight,\n      Unit,\n      Brand,\n      Category,\n      Notes,\n      Supplier\n    }\n  });\n}\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        208
+      ],
+      "id": "a432c45d-90ee-48b7-a880-f773215b7a26",
+      "name": "Map to Katana Sheet Columns"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec",
+          "mode": "list",
+          "cachedResultName": "Katana Sheet - Data Model",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1621969387,
+          "mode": "list",
+          "cachedResultName": "Suppliers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit#gid=1621969387"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SKU": "={{ $json.SKU }}",
+            "Supplier": "={{ $json.Supplier }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Supplier",
+              "displayName": "Supplier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -544,
+        208
+      ],
+      "id": "1977ced9-af6f-453c-9f29-e4ffaa839654",
+      "name": "Suppliers Sheet - Katana",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec",
+          "mode": "list",
+          "cachedResultName": "Katana Sheet - Data Model",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SKU": "={{ $json.SKU }}",
+            "Name": "={{ $json.Name }}",
+            "Full Description": "={{ $json.FullDesc }}",
+            "GTIN": "={{ $json.Gtin }}",
+            "Weight": "={{ $json.Weight }}",
+            "Unit": "={{ $json.Unit }}",
+            "Brand": "={{ $json.Brand }}",
+            "Category": "={{ $json.Category }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Full Description",
+              "displayName": "Full Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "GTIN",
+              "displayName": "GTIN",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Weight",
+              "displayName": "Weight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Unit",
+              "displayName": "Unit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brand",
+              "displayName": "Brand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -544,
+        -112
+      ],
+      "id": "7158a637-dca8-4e87-8ea2-c806694dba10",
+      "name": "Products Sheet - Katana",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec",
+          "mode": "list",
+          "cachedResultName": "Katana Sheet - Data Model",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1382101405,
+          "mode": "list",
+          "cachedResultName": "Descriptions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit#gid=1382101405"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SKU": "={{ $json.SKU }}",
+            "Notes": "={{ $json.Notes }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -544,
+        368
+      ],
+      "id": "3195a2c7-2b72-46ad-99a0-e92ae4948c9f",
+      "name": "Descriptions Sheet - Katana",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec",
+          "mode": "list",
+          "cachedResultName": "Katana Sheet - Data Model",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1040879092,
+          "mode": "list",
+          "cachedResultName": "Categories",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit#gid=1040879092"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Category": "={{ $json.Category }}",
+            "Description": "={{ $json.FullDesc }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -544,
+        544
+      ],
+      "id": "f486c543-0a84-4b65-90a7-2f2239f3b5f7",
+      "name": "Categories Sheet - Katana",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec",
+          "mode": "list",
+          "cachedResultName": "Katana Sheet - Data Model",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1124313960,
+          "mode": "list",
+          "cachedResultName": "Stock",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tN-Ky4Py3-7dia3cGA-jFF2mlxMhB04FpJgR5WoLec/edit#gid=1124313960"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SKU\t": "={{ $json.SKU }}",
+            "StockQuantity": "={{ $json.StockQty }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "SKU\t",
+              "displayName": "SKU\t",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "StockQuantity",
+              "displayName": "StockQuantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -544,
+        48
+      ],
+      "id": "1bd78e50-dc1b-43ed-aa68-557035267321",
+      "name": "Stock Sheet - Katana",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Upload Files": {
+      "main": [
+        [
+          {
+            "node": "Extract form XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract form XLSX": {
+      "main": [
+        [
+          {
+            "node": "Append Row (Master Sheet)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows from Master Sheet": {
+      "main": [
+        [
+          {
+            "node": "Map to Katana Sheet Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Row (Master Sheet)": {
+      "main": [
+        [
+          {
+            "node": "Get Rows from Master Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map to Katana Sheet Columns": {
+      "main": [
+        [
+          {
+            "node": "Stock Sheet - Katana",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Products Sheet - Katana",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Suppliers Sheet - Katana",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Descriptions Sheet - Katana",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Categories Sheet - Katana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "1cf07303-09de-415f-8bae-ec5d6ee36e41",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-07T17:25:14.942Z",
+      "updatedAt": "2025-11-07T17:25:14.942Z",
+      "role": "workflow:owner",
+      "workflowId": "BGEuOgCjeWwIoIfv",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
