@@ -1,0 +1,350 @@
+{
+  "createdAt": "2025-10-17T06:01:43.187Z",
+  "updatedAt": "2025-12-12T06:45:48.000Z",
+  "id": "pBt4bgQOfeWJveyb",
+  "name": "Nano Banana influence image",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "11Er4hGnZdrbPgItF0ClqstycQ8S3JV7_",
+            "mode": "list",
+            "cachedResultName": "Ad Creative",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/11Er4hGnZdrbPgItF0ClqstycQ8S3JV7_"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        368,
+        0
+      ],
+      "id": "39d2cdd0-c446-4343-860b-83fde824b2c8",
+      "name": "list_influencer_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "3ugiLECCSApxYhQ6",
+          "name": "Google Drive account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        176,
+        0
+      ],
+      "id": "c6ef7067-d2d0-44b0-82e9-7e27a97f37aa",
+      "name": "product_image_to_base64"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        384,
+        224
+      ],
+      "id": "8bacef48-1867-4af8-bae2-6a816161b0cf",
+      "name": "influencer_image_to_base_64"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      { \n        \"text\": \"Create a professional lifestyle product photograph where the person from image 2 is naturally showcasing the product from image 1. COMPOSITION & ANGLES (choose one randomly): Slightly angled from the side (30-45 degrees) at eye level, Over-the-shoulder perspective showing the product prominently, Slightly elevated angle looking down at 15-20 degrees, Low angle shot from table level looking up slightly, Straight-on angle with shallow depth of field, Three-quarter profile view with natural head turn toward camera. POSITIONS & POSES (choose one randomly): Sitting at a modern café table with product held at chest level with both hands, Standing casually against a clean wall with product in one hand at waist height, Leaning over a table with product placed in front and hands gently touching it, Seated at a workspace/desk actively using or admiring the product, Standing at a counter with product held naturally in mid-conversation pose, Sitting on a modern chair/stool with product resting on lap or held comfortably. BACKGROUNDS & SETTINGS (choose one randomly): Bright minimalist coffee shop with soft bokeh background, Modern co-working space with blurred laptops and plants, Clean home office with natural window light and neutral tones, Upscale café with warm wooden textures and soft lighting, Contemporary kitchen counter with marble or clean surfaces, Outdoor café setting with natural daylight and urban background, Minimalist studio setting with solid color backdrop and professional lighting. LIGHTING & MOOD: Natural soft lighting that feels authentic (golden hour or diffused daylight). The person should be smiling warmly and looking at the camera with genuine expression. Casual candid feeling as if a friend is taking the photo. Professional color grading with vibrant but natural tones. Sharp focus on both the person and product with artistically blurred background. STYLE REQUIREMENTS: This should look like a high-end lifestyle brand advertisement. Natural unposed feeling despite professional composition. Product should be clearly visible and well-lit. Image should evoke trust, authenticity, and relatability. Avoid overly staged or stiff poses. Include subtle environmental details that add context without distraction. Generate a final image that feels like authentic user-generated content but with professional ad quality.\" \n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/png\",\n          \"data\": \"{{ $node['product_image_to_base64'].json.data }}\"\n        }\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/jpeg\",\n          \"data\": \"{{ $node['influencer_image_to_base_64'].json.data }}\"\n        }\n      }\n    ]\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        224
+      ],
+      "id": "3101cc3c-41c7-42eb-8150-987e12407f09",
+      "name": "generate_image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cAWTpPjxWun8tUIM",
+          "name": "Header Auth account - google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        224
+      ],
+      "id": "d61734ba-728d-405e-aeb0-bac3f786a796",
+      "name": "get_image"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "524da01b-f8b9-4c2c-9e28-319455903e4d",
+              "name": "=image_result",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        224
+      ],
+      "id": "d4f47d8b-24f9-4f7f-b479-7a4187598cec",
+      "name": "set_result"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        224
+      ],
+      "id": "e7e9ee08-ec60-4951-92ec-2e6ae25d3f41",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "3ugiLECCSApxYhQ6",
+          "name": "Google Drive account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        0,
+        208
+      ],
+      "id": "ce92836a-afe2-4c5c-8878-ac42804954d9",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f50de73d-35ea-426e-b7a9-8f7277f17ba9",
+      "name": "Telegram Trigger",
+      "webhookId": "817f3862-d7b0-42f0-9a67-3db7ac342343",
+      "credentials": {
+        "telegramApi": {
+          "id": "wtAxTMcdhKfdzvYb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        224
+      ],
+      "id": "902015f8-7b06-48f2-ab75-46c53c2ca7ef",
+      "name": "Send a photo message",
+      "webhookId": "90667814-e8fd-4b69-b362-26482c442065",
+      "credentials": {
+        "telegramApi": {
+          "id": "wtAxTMcdhKfdzvYb",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "list_influencer_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "product_image_to_base64": {
+      "main": [
+        [
+          {
+            "node": "list_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "influencer_image_to_base_64": {
+      "main": [
+        [
+          {
+            "node": "generate_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_image": {
+      "main": [
+        [
+          {
+            "node": "set_result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_image": {
+      "main": [
+        [
+          {
+            "node": "Send a photo message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_result": {
+      "main": [
+        [
+          {
+            "node": "get_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "influencer_image_to_base_64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "product_image_to_base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a photo message": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "d4757028-5b78-40da-8c76-f0ff24f0c348",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-17T06:01:43.193Z",
+      "updatedAt": "2025-10-17T06:01:43.193Z",
+      "role": "workflow:owner",
+      "workflowId": "pBt4bgQOfeWJveyb",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
