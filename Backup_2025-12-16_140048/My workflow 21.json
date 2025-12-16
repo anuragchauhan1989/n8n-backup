@@ -1,0 +1,844 @@
+{
+  "createdAt": "2025-10-05T01:24:53.666Z",
+  "updatedAt": "2025-10-07T04:22:40.000Z",
+  "id": "nraPeDZlezHZg4uh",
+  "name": "My workflow 21",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json[\"Company Name\"] }}"
+            },
+            {
+              "name": "gl",
+              "value": "={{ $json[\"Company Country \"] }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json[\"Company City\"] }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "4747cb8c-2a43-451a-b664-31b9da95ae23",
+      "name": "2. Scrape Company Information",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        208,
+        112
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site:linkedin.com/in/ \"{{ $json.searchParameters.q }}\" (Founder OR \"Co-Founder\" OR CEO OR \"Chief Executive Officer\" OR President OR CTO OR Safety OR EHS OR \"Environmental Health\" OR \"Health Safety\" OR Operations OR Facilities OR Plant OR Engineering OR \"Field Services\" OR Maintenance) (Founder OR \"Co-Founder\" OR CEO OR President OR CTO OR Director OR Manager OR Coordinator OR VP OR \"Vice President\" OR Head OR Supervisor OR Regional)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "21fd097c-54f6-445d-b3dc-72acc2bad990",
+      "name": "Linkedin Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        416,
+        96
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the text that contains the JSON block\nconst raw = $json[\"content\"][\"parts\"][0][\"text\"];\n\n// Extract JSON content between ```json and ```\nconst match = raw.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n\nif (!match) {\n  return [{ error: \"JSON block not found\" }];\n}\n\n// Parse the extracted JSON string\nconst parsed = JSON.parse(match[1]);\n\n// Clean and map to desired output format\nconst cleaned = parsed.map(item => {\n  const name = item.title.split(\" - \")[0]?.trim();\n  const postMatch = item.subtitle.match(/· (.*?) ·/);\n  const post = postMatch ? postMatch[1].trim() : \"\";\n\n  return {\n    Name: name,\n    Post: post,\n    Linkedin_URL: item.link\n  };\n});\n\nreturn cleaned;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        80
+      ],
+      "id": "2ec30f35-6f23-48ed-b005-ef8aa6f03773",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4fdc8fa0-8933-4eae-bd99-33e1efcefa3a",
+              "name": "Data",
+              "value": "={{ $json.organic }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        80
+      ],
+      "id": "91a9d07f-2673-48b2-9e0a-10d0afbd021d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert data validator and company researcher. You will be given a list of people from the same company with their names, job titles, and LinkedIn URLs. Your task is to rigorously verify the accuracy of each record and remove duplicates, fake profiles, or incorrect entries.\n\nCRITICAL VALIDATION RULES:\n1. Search the internet to verify each person actually works at the company\n2. Cross-check the person's location with the company's known office locations\n3. If there are multiple people claiming the SAME title (e.g., two CEOs), keep ONLY the most credible one based on:\n   - Profile completeness and detail\n   - Connection count and engagement\n   - Consistency with company's official information\n   - Location matching company headquarters or major offices\n4. Remove profiles that appear fake or unverified (low connections, minimal details, location mismatches)\n5. Verify LinkedIn URLs are valid and match the person's name\n\nInput Data:\nCompany Name: {{ $('On form submission').item.json['Company Name'] }}\nCompany Location:{{ $('On form submission').item.json['Company City'] }}, {{ $('On form submission').item.json['Company Country '] }}\nData of people: {{ $json.Data }}\n\nKeep only verified, relevant positions including:\n- C-Suite: Founder, Co-Founder, CEO, Chief Executive Officer, President, CTO, COO\n- Safety: Safety Director, Director Health & Safety, Director EHS, Health & Safety Coordinator, Safety Coordinator, Environmental Health & Safety Coordinator, VP Health & Safety, VP Safety, VP EHS, Vice President Corporate Safety\n- Operations: Head of Operations & Maintenance, Head of Operations Engineering, Plant Manager, Plant Director, Regional Operations Manager, Field Services Supervisor, Service Operations Manager, Director of Maintenance, COO\n- Facilities: Engineering & Facilities Director, Engineering & Facilities Manager, Facilities Manager, Facilities Director, Director of Engineering\n\nReturn ONLY verified profiles in this JSON format:\n[\n  {\n    \"title\": \"Full Name - Company Name\",\n    \"subtitle\": \"Location · Role · Company\",\n    \"link\": \"LinkedIn Profile URL\"\n  }\n]\n\nDo not include any extra text, explanation, or comments outside the JSON output. If a profile cannot be verified or appears fake, DO NOT include it."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        768,
+        80
+      ],
+      "id": "84bd7522-6fed-4469-8d7d-6fbce39b1da5",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1288844163,
+          "mode": "list",
+          "cachedResultName": "DATA",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=1288844163"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.Name }}",
+            "Post": "={{ $json.Post }}",
+            "Linkedin_URL": "={{ $json.Linkedin_URL }}",
+            "Company Name": "={{ $('On form submission').item.json[\"Company Name\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Post",
+              "displayName": "Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Linkedin_URL",
+              "displayName": "Linkedin_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        80
+      ],
+      "id": "43e86774-6509-4d1a-ad5a-5c5eb49c8b1b",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        624,
+        432
+      ],
+      "id": "312ea299-3450-4989-855f-43331d9d67a8",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "value": "VhxlqQXRwhW8H5hNV",
+          "mode": "list",
+          "cachedResultName": "Linkedin Profile Details Scraper + EMAIL (No Cookies Required) (apimaestro/linkedin-profile-detail)",
+          "cachedResultUrl": "https://console.apify.com/actors/VhxlqQXRwhW8H5hNV/input"
+        },
+        "customBody": "={\n    \"includeEmail\": true,\n    \"username\": \"{{ $json.Linkedin_URL }}\"\n}"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        832,
+        448
+      ],
+      "id": "5ac5c6c6-4230-46fc-b007-00acb17b981b",
+      "name": "Run an Actor and get dataset",
+      "credentials": {
+        "apifyApi": {
+          "id": "4Xogg6oFsGNGcj6X",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1288844163,
+          "mode": "list",
+          "cachedResultName": "DATA",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=1288844163"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.email }}",
+            "row_number": "={{ $('Loop Over Items').item.json.row_number }}",
+            "status": "={{ $json.status }}",
+            "score": "={{ $json.score }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Post",
+              "displayName": "Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Linkedin_URL",
+              "displayName": "Linkedin_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        448
+      ],
+      "id": "a112938a-8b75-4755-b531-7313d58c4178",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1376,
+        144
+      ],
+      "id": "6693be03-81c2-42aa-83db-5d8ba242d726",
+      "name": "Wait1",
+      "webhookId": "db6ac7af-7297-4966-b3ec-2713f6630ade"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0085c7fd-4c67-42af-a800-5d14d3ba4a1c",
+              "leftValue": "={{ $json.Email }}",
+              "rightValue": "NA",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "eaffff92-886f-41a1-8f11-872b9b47c68a",
+              "leftValue": "={{ $json.Linkedin_URL }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        432
+      ],
+      "id": "f117afed-a01b-4dfc-be72-a48185571ee2",
+      "name": "Filter1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1376,
+        448
+      ],
+      "id": "bc3e6c82-64f3-400c-b4e4-3f475a2a9547",
+      "name": "Wait",
+      "webhookId": "44eb41a7-ac3a-4ee6-abf4-706d7701021f"
+    },
+    {
+      "parameters": {
+        "formTitle": "Give company details",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Company Name",
+              "placeholder": "AAA corp.",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company Country ",
+              "placeholder": "USA"
+            },
+            {
+              "fieldLabel": "Company City",
+              "placeholder": "Chicago"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        48,
+        112
+      ],
+      "id": "e4eb6065-abc3-442c-93e2-8e730dff530d",
+      "name": "On form submission",
+      "webhookId": "a5e5348d-2c86-4f69-bfee-d55fe20a7390"
+    },
+    {
+      "parameters": {
+        "operation": "emailVerifier",
+        "email": "={{ $json.basic_info.email }}"
+      },
+      "type": "n8n-nodes-base.hunter",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        448
+      ],
+      "id": "7e7b6238-3e2b-4ae3-a056-9f1b0a539a8d",
+      "name": "Hunter",
+      "credentials": {
+        "hunterApi": {
+          "id": "vkMOyF6OTWNmFI2h",
+          "name": "Hunter account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1288844163,
+          "mode": "list",
+          "cachedResultName": "DATA",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=1288844163"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        32,
+        432
+      ],
+      "id": "8b52cc68-4fa0-481d-a801-ad1473d6d7b2",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\nreturn items.filter(item => {\n  const row = item.json.row_number;\n  if (seen.has(row)) return false;\n  seen.add(row);\n  return true;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        432
+      ],
+      "id": "ba43706b-10cb-4d10-851f-5b1bf84f14d1",
+      "name": "Remove Duplicate"
+    },
+    {
+      "parameters": {
+        "content": "## Company Research & Linkedin Profile Finder\n",
+        "height": 288,
+        "width": 1536,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "864bf7cc-0b38-439f-af67-8a88e4fba232",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "##    Find Email & Verify",
+        "height": 320,
+        "width": 1536,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        352
+      ],
+      "typeVersion": 1,
+      "id": "b9d518e8-dce2-401f-bc1e-e81e4169a138",
+      "name": "Sticky Note1"
+    }
+  ],
+  "connections": {
+    "2. Scrape Company Information": {
+      "main": [
+        [
+          {
+            "node": "Linkedin Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin Scraper": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter1": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "2. Scrape Company Information",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hunter": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Run an Actor and get dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run an Actor and get dataset": {
+      "main": [
+        [
+          {
+            "node": "Hunter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "e880d534-27ac-4e9f-bd6c-59ceea9f65e8",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-05T01:24:53.669Z",
+      "updatedAt": "2025-10-05T01:24:53.669Z",
+      "role": "workflow:owner",
+      "workflowId": "nraPeDZlezHZg4uh",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
