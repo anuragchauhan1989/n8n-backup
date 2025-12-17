@@ -1,0 +1,1270 @@
+{
+  "createdAt": "2025-10-15T03:41:42.065Z",
+  "updatedAt": "2025-10-15T03:41:42.000Z",
+  "id": "zEn3PhwKaSk69t0T",
+  "name": "Linkedin_Facebook_Instagram_Post_Automation_backup",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is the Input Idea:\n\nINPUT: {{ $json[\"My Content Idea\"] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an expert social media content creator who writes in the bold, punchy, contrarian style of Alex Hormozi — combining pattern interrupts, curiosity hooks, authority, lessons, and engagement triggers.\n\nTASK:\nCreate **three versions** of a social media post (LinkedIn, Instagram, Facebook) based on this idea:\n\"{{ $('Get Rows').item.json[\"My Content Idea\"] }}\"\n\n### Style Rules\n- **Hook (1–2 lines):** Contrarian opener that challenges a belief or expectation.\n- **Story (2–4 lines):** Personal or observational story showing transformation (I used to believe → I discovered → result).\n- **Lesson (1–2 lines):** Clear takeaway or principle.\n- **Engagement Trigger (1 line):** Ask an open-ended question that drives comments.\n\n### Platform Guidelines\n- **LinkedIn:** 150–200 words, professional but bold, clean formatting, short paragraphs with line breaks.\n- **Instagram:** 100–150 words, short punchy sentences, casual tone, emojis optional, line breaks for readability.\n- **Facebook:** 120–180 words, warm conversational tone, slightly personal, encourages discussion.\n\n### Additional Requirements\n- Include these links **naturally** at the end of each post:\n  - YouTube: https://youtube.com/@YourChannel\n  - Skool Community: https://www.skool.com/yourcommunity\n- Do **not** mention that it’s AI-generated.\n- Add 5–7 relevant, high-engagement hashtags at the end (based on the post topic).\n- Maintain human-like flow and conversational rhythm.\n- Avoid overusing emojis (max 3 per post).\n\nOUTPUT FORMAT:\n---\n**LinkedIn Post**\n[Full post text]\n\n**Instagram Post**\n[Full post text]\n\n**Facebook Post**\n[Full post text]\n---"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -112,
+        1376
+      ],
+      "id": "2b166dce-aa4d-40cc-a33e-55d8f3fbaebf",
+      "name": "Content Generator"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "sessiondata"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        1696
+      ],
+      "id": "2c310e45-ac8f-47ec-877e-ca6e3f9eac4b",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"Linkedin\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"Instagram\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n      \"Facebook\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t}\n}",
+        "autoFix": true,
+        "customizeRetryPrompt": true,
+        "prompt": "Instructions:\nRemove \\n from the response\n\nAbove, the Completion did not satisfy the constraints given in the Instructions.\nError:\n--------------\n{error}\n--------------\n\nPlease try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        1664
+      ],
+      "id": "e0c39d7a-ae29-4b05-a61a-8f00ed5f569c",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3424b6be-534a-44be-8757-7f9726d75298",
+                    "leftValue": "={{ $json[\"Control Column\"] }}",
+                    "rightValue": "Approved & Create Post",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approved & Create Post"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json[\"Control Column\"] }}",
+                    "rightValue": "Generate Content",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f32b3a2a-5adb-4207-ab84-2b1b110466d7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Generate Content"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1248,
+        848
+      ],
+      "id": "9a2b935e-08d8-4960-b5bc-f0651f7ba9f0",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "={{ $('Download image').item.json.node }}",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "caption",
+                "value": "={{ $('Download image').item.json.Post }}"
+              },
+              {
+                "name": "image_url",
+                "value": "={{ $json.image_url }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        800
+      ],
+      "id": "79217d0d-2cf9-4591-a078-253e2f4430c9",
+      "name": "Instagram container id",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "HMaPcsF5NrBd8aWK",
+          "name": "Instagram graph api- cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const data = item.json;\n  \n  // Get the content and trim it\n  let content = (data[\"Linkedin Post Content\"] || \"\").trim();\n  \n  // Convert escaped newlines back to actual newlines\n  content = content.replace(/\\\\n/g, '\\n');\n  \n  // Also handle any other escaped characters that might be present\n  content = content.replace(/\\\\\"/g, '\"');\n  \n  return {\n    json: {\n      linkedinContent: content\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "497dc91a-f2dd-4b2d-9e81-b7979c5e283e",
+      "name": "Extract Linkedin Post content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2fd5a4cc-5e81-479e-9ab8-fffe330ec69c",
+              "name": "=node",
+              "value": "17841476541298452",
+              "type": "string"
+            },
+            {
+              "id": "e5e39ee1-f2f0-4cc3-810c-06aaefe94bfe",
+              "name": "Post",
+              "value": "={{ $('Switch').item.json['Instagram Post Content'] }}",
+              "type": "string"
+            },
+            {
+              "id": "78d4375a-570f-4381-8e4b-a4cb5d453faa",
+              "name": "cloud_name",
+              "value": "=djcf4plbk",
+              "type": "string"
+            },
+            {
+              "id": "d522f002-8725-47aa-a3fe-d2ef14475384",
+              "name": "api_key",
+              "value": "195328934477254",
+              "type": "string"
+            },
+            {
+              "id": "3edbc111-53bc-48e0-a74b-d609fe813657",
+              "name": "api_secret",
+              "value": "vD9X6BBbk6CRpVGvBQiuvEhxOiM",
+              "type": "string"
+            },
+            {
+              "id": "bd625dfd-20d6-47cf-9993-8ef8e564a115",
+              "name": "public_id",
+              "value": "=ea8a46fd-4489-430f-aa28-26fd94b31b16",
+              "type": "string"
+            },
+            {
+              "id": "c4a0ae57-01a7-4200-aa83-7ca243c9834f",
+              "name": "upload_preset",
+              "value": "akcloudpreset",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -336,
+        800
+      ],
+      "id": "4ea7beae-2cee-4dbd-aef4-e96123a8a3a0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "path": "039bde48-7b57-4c77-96d1-11aeaa34fa2f"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        800
+      ],
+      "id": "e2ae6dc2-bb58-4756-88ac-f412f69be415",
+      "name": "Wait for 5 Sec",
+      "webhookId": "039bde48-7b57-4c77-96d1-11aeaa34fa2f"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "={{ $('Edit Fields').item.json.node }}",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        2032,
+        800
+      ],
+      "id": "2d772a1b-a725-4468-83fd-4eafe3d1cb67",
+      "name": "Instagram post with image",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "HMaPcsF5NrBd8aWK",
+          "name": "Instagram graph api- cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "me",
+        "edge": "photos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "data",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $json[\"Facebook Post Content\"] }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        320,
+        384
+      ],
+      "id": "f649921d-ebda-4d00-b98a-5442d8b597bf",
+      "name": "Facebook post with image",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "VTvp4R5kfa5OUUcR",
+          "name": "Facebook Graph account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2880,
+        368
+      ],
+      "id": "b9801fb5-73cf-43a3-9f4a-ede889f15b78",
+      "name": "Merge Linkedin,  Facbeook and Instagram",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const linkedin = $items(\"Company Linkedin Post With Image\")[0].json;\nconst instagram = $items(\"Instagram post with image\")[0].json;\nconst facebook = $items(\"Facebook post with image\")[0].json;\n\n// Merge all into one array\nconst mergedData = [\n  { linkedin_id: linkedin.urn,\n    instagram_id: instagram.id,\n    facebook_id: facebook.id,\n    row_number:$('Switch').first().json.row_number\n  }\n];\n\n// Return in n8n format\nreturn mergedData.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        384
+      ],
+      "id": "a06ca3f5-cbc4-41a2-a828-fcd92ff962ce",
+      "name": "Merge into one list"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "49cfa5d5-e8ab-4a88-b71d-9137c2c144ab",
+              "leftValue": "={{ $json.linkedin_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "3cf83996-dd16-41f8-a0eb-6ee8aa9fc808",
+              "leftValue": "={{ $json.instagram_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "5dddfcba-5e71-4997-bf18-e51696d52d2e",
+              "leftValue": "={{ $json.facebook_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3664,
+        384
+      ],
+      "id": "5884c819-b1f7-4053-bf83-358122d26f07",
+      "name": "Check if posting is done"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4",
+          "mode": "list",
+          "cachedResultName": "Master Social Media Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Switch').item.json.row_number }}",
+            "Linkedin Post Content": "={{ $('Content Generator').item.json.output.Linkedin }}",
+            "Instagram Post Content": "={{ $('Content Generator').item.json.output.Instagram }}",
+            "Facebook Post Content": "={{ $('Content Generator').item.json.output.Facebook }}",
+            "Image Link": "={{ $json.webViewLink }}",
+            "Control Column": "Ready for Review"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "My Content Idea",
+              "displayName": "My Content Idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Facebook Post Content",
+              "displayName": "Facebook Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instagram Post Content",
+              "displayName": "Instagram Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Linkedin Post Content",
+              "displayName": "Linkedin Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image Link",
+              "displayName": "Image Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Control Column",
+              "displayName": "Control Column",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1120,
+        1376
+      ],
+      "id": "6bafec2d-4bbe-4684-bb02-ebd07b446634",
+      "name": "Review Done",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4",
+          "mode": "list",
+          "cachedResultName": "Master Social Media Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "Control Column": "Posting Done",
+            "Posting Done": "={{ $now.format('yyyy-MM-dd hh:mm:ss') }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "My Content Idea",
+              "displayName": "My Content Idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Facebook Post Content",
+              "displayName": "Facebook Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Instagram Post Content",
+              "displayName": "Instagram Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Linkedin Post Content",
+              "displayName": "Linkedin Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Image Link",
+              "displayName": "Image Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Control Column",
+              "displayName": "Control Column",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Post Generated Date",
+              "displayName": "Post Generated Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Posting Done",
+              "displayName": "Posting Done",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        4032,
+        368
+      ],
+      "id": "2a9f4861-1195-48cf-b7ff-e35aea115d55",
+      "name": "Posting Complete",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "=post_image - {{$now}}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "13zPQ0bp1rjEJm99-tmpssuBcTMdruTWw",
+          "mode": "list",
+          "cachedResultName": "Social Media Post Image",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/13zPQ0bp1rjEJm99-tmpssuBcTMdruTWw"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        768,
+        1376
+      ],
+      "id": "4b8bb116-5321-46b0-bfae-9bac981fe880",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Switch').item.json['Image Link'] }}",
+          "mode": "url"
+        },
+        "options": {
+          "binaryPropertyName": "data",
+          "fileName": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        336,
+        0
+      ],
+      "id": "449616a5-5074-4ddc-a604-e871e88fd1d6",
+      "name": "Download file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json['Image Link'] }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -48,
+        384
+      ],
+      "id": "d389f21d-00e5-4fcf-bbb4-e6dae18012fd",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Switch').item.json['Image Link'] }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -32,
+        784
+      ],
+      "id": "58a6bbda-6296-4573-b7d8-64b31ce7ba14",
+      "name": "Download image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4",
+          "mode": "list",
+          "cachedResultName": "Master Social Media Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lt6T6pwKffWCLYHb_v7qOY_fbH0OlwYD5NVii234nP4/edit#gid=0"
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1520,
+        848
+      ],
+      "id": "df253ea7-e181-4fa9-8466-6ebd1272c571",
+      "name": "Get Rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        1904
+      ],
+      "id": "acf48642-73af-467a-9a39-68e83b0c00a7",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-image-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-image-preview (Nano Banana)"
+        },
+        "prompt": "=Generate a hyper-realistic photograph of \"{{ $('Get Rows').item.json[\"My Content Idea\"] }}\". \nIt should look like a real professional photo taken in a clean studio or natural environment, \nwith soft lighting, realistic reflections, and balanced composition.\n\nFocus only on the visual subject — not a poster, advertisement, or graphic layout. \nExclude all forms of writing, signage, symbols, logos, watermarks, QR codes, or URLs. \nNo words, letters, or numbers should appear anywhere in the image background, objects, or surfaces.\n\nStyle: professional commercial photography, cinematic realism, 8k quality, no added text or branding elements.\n",
+        "options": {
+          "binaryPropertyOutput": "data"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        416,
+        1376
+      ],
+      "id": "f89b5e61-964e-461a-bdb7-f2b93a1537ba",
+      "name": "Generate an image1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "=/instagram_copy_image/{{$binary.data.fileName.replace(/\\s+/g, \"_\")}}.jpeg",
+        "binaryData": true
+      },
+      "type": "n8n-nodes-base.dropbox",
+      "typeVersion": 1,
+      "position": [
+        320,
+        784
+      ],
+      "id": "9277e68f-e91f-48e9-9e20-b0101d4db81a",
+      "name": "Upload a file",
+      "credentials": {
+        "dropboxApi": {
+          "id": "4bnCumdGcaK87Rw6",
+          "name": "Dropbox account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"path\": \"{{ $json.path_display }}\",\n  \"settings\": {\n    \"requested_visibility\": \"public\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        656,
+        784
+      ],
+      "id": "7739a471-07a3-4936-8126-1351ba075b27",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Hz6Qq6TCKZczt6Jk",
+          "name": "Header Auth account - dropbox"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    image_url: $json.url\n      .replace(\"?dl=0\", \"?raw=1\")\n      .replace(\"&dl=0\", \"&raw=1\")\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        784
+      ],
+      "id": "5759542a-1493-4e3f-a1a1-96c5f5587b16",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "postAs": "organization",
+        "organization": "108402968",
+        "text": "={{ $('Extract Linkedin Post content').item.json.linkedinContent }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        704,
+        0
+      ],
+      "id": "cb0d466d-3ce6-471a-9e79-91c062ad8ad6",
+      "name": "Company Linkedin Post With Image",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "5L42H8ZJFVu2qfGn",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1808,
+        848
+      ],
+      "id": "aa92807d-364d-4763-9700-5fc06017eb0a",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "connections": {
+    "Content Generator": {
+      "main": [
+        [
+          {
+            "node": "Generate an image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Content Generator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Content Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Linkedin Post content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Content Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram container id": {
+      "main": [
+        [
+          {
+            "node": "Wait for 5 Sec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Linkedin Post content": {
+      "main": [
+        [
+          {
+            "node": "Download file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Download image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for 5 Sec": {
+      "main": [
+        [
+          {
+            "node": "Instagram post with image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram post with image": {
+      "main": [
+        [
+          {
+            "node": "Merge Linkedin,  Facbeook and Instagram",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Facebook post with image": {
+      "main": [
+        [
+          {
+            "node": "Merge Linkedin,  Facbeook and Instagram",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Linkedin,  Facbeook and Instagram": {
+      "main": [
+        [
+          {
+            "node": "Merge into one list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge into one list": {
+      "main": [
+        [
+          {
+            "node": "Check if posting is done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if posting is done": {
+      "main": [
+        [
+          {
+            "node": "Posting Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Review Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file1": {
+      "main": [
+        [
+          {
+            "node": "Company Linkedin Post With Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Facebook post with image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download image": {
+      "main": [
+        [
+          {
+            "node": "Upload a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image1": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Instagram container id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Linkedin Post With Image": {
+      "main": [
+        [
+          {
+            "node": "Merge Linkedin,  Facbeook and Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "27844a5c-7c79-425d-985e-95fa9fe253ef",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-10-15T03:41:42.071Z",
+      "updatedAt": "2025-10-15T03:41:42.071Z",
+      "role": "workflow:owner",
+      "workflowId": "zEn3PhwKaSk69t0T",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
