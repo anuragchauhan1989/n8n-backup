@@ -1,0 +1,1047 @@
+{
+  "createdAt": "2025-10-19T08:47:01.040Z",
+  "updatedAt": "2025-10-20T04:24:15.000Z",
+  "id": "iUDlxjEpQDYMmIj5",
+  "name": "My workflow 107",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        128,
+        304
+      ],
+      "id": "ef7c4cd1-09cc-4ca6-9436-332853a27b2a",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site:linkedin.com/posts (\n    \"hiring n8n expert\" OR \n    \"looking for n8n automation\" OR \n    \"n8n developer job\" OR \n    \"n8n specialist\" OR \n    \"n8n freelancer\" OR \n    \"need help with n8n\" OR \n    \"workflow automation consultant\"\n)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "bfaa31f2-492e-4d9c-9985-4db2cf5f965d",
+      "name": "Linkedin Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        352,
+        224
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site:facebook.com (\n    \"need n8n expert\" OR \n    \"hire automation expert\" OR \n    \"looking for a n8n dev\" OR \n    \"n8n consultant\" OR \n    \"freelancer needed for n8n\"\n) AND (group OR job)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b85bee18-5871-47b4-ac55-f7fc5ed49970",
+      "name": "Facebook Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        352,
+        64
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site:reddit.com/r/n8n OR site:reddit.com/r/nocode OR site:reddit.com/r/automations (\n    \"hiring n8n\" OR \n    \"paying for n8n help\" OR \n    \"n8n workflow built\" OR \n    \"who can build automation\"\n)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "6a8d40d0-9b81-4b03-8acb-06d23675c3f3",
+      "name": "Reddit Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        352,
+        400
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        576,
+        288
+      ],
+      "id": "50baf307-0c91-4dc0-a12b-a88616c237fb",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "7c41f959a151d6c5f4ddab119389b780b0224573"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site: fiverr.com\n(\n    \"who can build n8n workflow\" OR \n    \"best n8n expert to hire\" OR \n    \"n8n consultant recommendations\" OR \n    \"n8n vs Zapier expert\" OR \n    \"need expert help with n8n\"\n)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "33ab9b68-9798-4698-9621-204d7487cc2e",
+      "name": "Fiverr",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        352,
+        560
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Connect this node directly after your Merge All Results node.\n\nconst allLeadsList = [];\n\n// 1. Loop through each item coming from the Merge node.\nfor (const item of $input.all()) {\n    const rawData = item.json;\n\n    // 2. Access the 'organic' array, which holds the actual search results.\n    const organicResults = rawData.organic;\n\n    if (Array.isArray(organicResults)) {\n\n        // 3. Iterate over each individual lead object.\n        for (const lead of organicResults) {\n\n            // 4. Construct the clean, desired object structure for each lead.\n            if (lead.title && lead.link && lead.snippet) {\n                allLeadsList.push({\n                    Title: lead.title,\n                    Link: lead.link,\n                    Snippet: lead.snippet,\n                    // Use a fallback for date, as it's often optional\n                    Date_String: lead.date || 'Date not available',\n                });\n            }\n        }\n    }\n}\n\n// 5. **CRITICAL FIX: Stringify the aggregated list.**\n//    We return ONE output item. The 'all_leads_data' value is the stringified array.\nconst stringifiedLeads = JSON.stringify(allLeadsList, null, 2); \n\nreturn [\n    {\n        json: {\n            // The value is now a clean string of JSON data.\n            all_leads_data: stringifiedLeads \n        }\n    }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        320
+      ],
+      "id": "5a12d729-4171-427e-8204-12abfbb18c33",
+      "name": "Normalize Search Results"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=INPUT LEAD DATA (JSON ARRAY): \n{{ $json.all_leads_data }}\nToday's Date: {{ $now }}\n\nREQUIRED FINAL JSON OUTPUT FORMAT (ARRAY OF OBJECTS):\nFor each qualified lead in the input data (where \"hiring\" is true), extract and map the following fields into a new JSON array:\n- **Title:** Map from 'title' field.\n- **Details:** Map from 'description' field.\n- **Platform:** Map from 'platform' field.\n- **Platform Url:** Map from 'url' field.(In case of linkedin just extract the profile url)\n- **Handle:** Extract the user's name or handle from the 'description' or 'title' if present, otherwise use null.\n- **Budget:** Map from 'budget' field.\n- **Contact Info:** Map from 'contact_info' field.\n- **Date Posted:** Map from 'estimated_post_date' field.",
+        "options": {
+          "systemMessage": "You are a highly specialized Lead Data Transformation and Extraction Agent. \nYour primary task is to extract data from the provided lead post and format it according to the final JSON schema.\n\nRULES:\n1. **Profile Extraction:** If the 'Platform Url' contains **'linkedin.com/posts/'**, you MUST extract the LinkedIn profile path (e.g., linkedin.com/in/willson-ursia-107804171/) and place it in the new 'Platform Url' field.\n2. **Filtering:** You must only process leads where \"hiring\" is true (even if the field is not provided, imply it from the title/description).\n3. **Strict Format:** Return only the final JSON array. Do not include any external text or prose."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        912,
+        320
+      ],
+      "id": "fa0eef55-302a-43c6-a7a0-b63afd416276",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        912,
+        480
+      ],
+      "id": "7687b434-9c50-435d-b916-4a26d73a9efc",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1360,
+        320
+      ],
+      "id": "5d68ce1d-e583-4913-94e4-a912ceb51c6a",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        336
+      ],
+      "id": "6b394506-5b9a-4dcc-a9ae-55c0909d4f5e",
+      "name": "Wait",
+      "webhookId": "ec217a2a-d352-4fe1-99cb-b9cc25c1f163"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM",
+          "mode": "list",
+          "cachedResultName": "n8n job leads data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_j8eYAmLBClXUUhpaxCkauB1JME7X8tcZl_FmzAMIHE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "title": "={{ $json.title }}",
+            "details": "={{ $json.details }}",
+            "platform": "={{ $json.platform }}",
+            "platform_url": "={{ $json.platform_url }}",
+            "handle": "={{ $json.handle }}",
+            "date_posted": "={{ $json.date_posted }}"
+          },
+          "matchingColumns": [
+            "details"
+          ],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "platform_url",
+              "displayName": "platform_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "handle",
+              "displayName": "handle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "date_posted",
+              "displayName": "date_posted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1600,
+        336
+      ],
+      "id": "4338ec93-42e9-4c1c-afc6-011b09ae4a22",
+      "name": "Append Lead Data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code Node to parse AI agent output and format for Google Sheets\n\n// Get the input data from the previous node\nconst inputData = $input.all();\n\n// Array to store all parsed records\nlet allRecords = [];\n\n// Process each input item\nfor (const item of inputData) {\n  try {\n    // Get the output field from the item\n    let outputText = item.json.output;\n    \n    // Remove the markdown code block markers if present\n    if (outputText.includes('```json')) {\n      outputText = outputText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '');\n    }\n    \n    // Parse the JSON string\n    const parsedData = JSON.parse(outputText.trim());\n    \n    // Process each record in the parsed array\n    for (const record of parsedData) {\n      // Create a formatted record matching your sheet columns\n      const formattedRecord = {\n        title: record.Title || '',\n        details: record.Details || '',\n        platform: record.Platform || '',\n        platform_url: record['Platform Url'] || '',\n        contact: record['Contact Info'] || '',\n        budget: record.Budget || '',\n        handle: record.Handle || '',\n        date_posted: record['Date Posted'] || ''\n      };\n      \n      allRecords.push(formattedRecord);\n    }\n    \n  } catch (error) {\n    console.error('Error parsing item:', error.message);\n    // Continue processing other items even if one fails\n  }\n}\n\n// Return the formatted records\n// Each record will be a separate item that can be looped over\nreturn allRecords.map(record => ({ json: record }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        320
+      ],
+      "id": "865d2879-fddd-452e-9dc1-8a633e7b34b0",
+      "name": "Parse JSON"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        960,
+        832
+      ],
+      "id": "ca08800b-0a38-44e4-bc16-487efd2c871a",
+      "name": "Loop Items"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorId": {
+          "__rl": true,
+          "value": "VhxlqQXRwhW8H5hNV",
+          "mode": "list",
+          "cachedResultName": "Linkedin Profile Details Scraper + EMAIL (No Cookies Required) (apimaestro/linkedin-profile-detail)",
+          "cachedResultUrl": "https://console.apify.com/actors/VhxlqQXRwhW8H5hNV/input"
+        },
+        "customBody": "={\n    \"includeEmail\": true,\n    \"username\": \"{{ $json.platform_url }}\"\n}",
+        "timeout": {},
+        "memory": "={{ 1024 }}"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        848
+      ],
+      "id": "17196e7e-2521-4844-a37e-708b72b99ccb",
+      "name": "Run an Actor and get dataset",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM",
+          "mode": "list",
+          "cachedResultName": "n8n job leads data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "platform_url": "={{ $('Loop Items').item.json.platform_url }}",
+            "Email": "={{ $json.basic_info.email }}"
+          },
+          "matchingColumns": [
+            "platform_url"
+          ],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "platform_url",
+              "displayName": "platform_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "handle",
+              "displayName": "handle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date_posted",
+              "displayName": "date_posted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1360,
+        848
+      ],
+      "id": "e6569b1e-4b60-493f-bac9-1355e4d4c3cf",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Job Posts Details Scraper             ",
+        "height": 720,
+        "width": 1952,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "2b1f8968-9274-4e77-b4af-8bfff0fb6168",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# FInds email of linkedin Job Posts Leads",
+        "height": 320,
+        "width": 1264,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        464,
+        752
+      ],
+      "typeVersion": 1,
+      "id": "6e9e8bc1-4a26-478f-8efc-04deb49cec8e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM",
+          "mode": "list",
+          "cachedResultName": "n8n job leads data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        544,
+        832
+      ],
+      "id": "ef087186-d571-4f06-9e35-13793ef11c5e",
+      "name": "Check Updates or Added",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "uHdaH2QDMcY8ICJf",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d76f0c04-0362-4a49-9b4b-35edcd1a1194",
+              "leftValue": "={{ $json.platform }}",
+              "rightValue": "LinkedIn",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        752,
+        832
+      ],
+      "id": "49aec733-63f5-46aa-a06c-713073dbab67",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM",
+          "mode": "list",
+          "cachedResultName": "n8n job leads data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1578527578,
+          "mode": "list",
+          "cachedResultName": "Linkedin Job Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PRZQGJxrfM-HAA_HxnRRAwGJ3Yln1cZvKrC88UEtKmM/edit#gid=1578527578"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "platform_url": "={{ $json.platform_url }}",
+            "Email": "={{ $json.Email }}",
+            "title": "={{ $('Loop Items').item.json.title }}",
+            "details": "={{ $('Loop Items').item.json.details }}",
+            "handle": "={{ $('Loop Items').item.json.handle }}",
+            "date_posted": "={{ $('Loop Items').item.json.date_posted }}"
+          },
+          "matchingColumns": [
+            "platform_url"
+          ],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "details",
+              "displayName": "details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "platform_url",
+              "displayName": "platform_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "handle",
+              "displayName": "handle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date_posted",
+              "displayName": "date_posted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1552,
+        848
+      ],
+      "id": "2f975ec2-ec4d-4a74-89e4-2288caecf86b",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Linkedin Scraper",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Reddit Scraper",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fiverr",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Facebook Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit Scraper": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Facebook Scraper": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin Scraper": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Fiverr": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Normalize Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Search Results": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Append Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Run an Actor and get dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run an Actor and get dataset": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Updates or Added": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "2616c170-5e2b-4859-8337-483c45fc7df9",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-19T08:47:01.047Z",
+      "updatedAt": "2025-10-19T08:47:01.047Z",
+      "role": "workflow:owner",
+      "workflowId": "iUDlxjEpQDYMmIj5",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
