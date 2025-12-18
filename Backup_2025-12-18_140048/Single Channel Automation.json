@@ -1,0 +1,712 @@
+{
+  "createdAt": "2025-11-30T16:05:53.760Z",
+  "updatedAt": "2025-12-08T14:29:13.000Z",
+  "id": "xh8KEx4S2beEVDTS",
+  "name": "Single Channel Automation",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1B8VM8QVImd43NWKFHMpho6M19tY1adB6ljo4jRV_Q28",
+          "mode": "list",
+          "cachedResultName": "moni world videos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1B8VM8QVImd43NWKFHMpho6M19tY1adB6ljo4jRV_Q28/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1B8VM8QVImd43NWKFHMpho6M19tY1adB6ljo4jRV_Q28/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -4032,
+        16
+      ],
+      "id": "621b37c6-06ec-4bd6-88ed-74b6219e0883",
+      "name": "Get Next Pending Row"
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $json;\n\n// Check required fields\nconst missingFields = [];\nif (!row.prompt) missingFields.push(\"prompt\");\nif (!row.language) missingFields.push(\"language\");\nif (!row.target_duration_sec) missingFields.push(\"target_duration_sec\");\n\nif (missingFields.length > 0) {\n  return [\n    {\n      json: {\n        ...row,   // keep all original data accessible in future nodes\n        valid: false,\n        error: `Missing fields: ${missingFields.join(\", \")}`\n      }\n    }\n  ];\n}\n\n// Valid input\nreturn [\n  {\n    json: {\n      ...row,  // forward all fields\n      valid: true\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3840,
+        16
+      ],
+      "id": "cea2410c-4193-4141-8a1f-84a73662929e",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6a273fcd-d948-4f8d-a494-ea92b49ad26e",
+              "leftValue": "={{$json.process_flag}}",
+              "rightValue": "pending",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -3376,
+        16
+      ],
+      "id": "17c5e4cb-8183-41da-9ac9-53e4e17bcb1e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg",
+          "mode": "list",
+          "cachedResultName": "Single Channel Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1n2ACuMVVnoqL39Sxc-XswjBuZPSss5EIfctpmTNCdHg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "status": "ERROR"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "language",
+              "displayName": "language",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "target_duration_sec",
+              "displayName": "target_duration_sec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3088,
+        112
+      ],
+      "id": "47279f99-d681-4e88-8687-ae1ce554a3a0",
+      "name": "Log Error"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Create an engaging YouTube narration script for a video.\n\nTopic: {{ $json.prompt }}\nLanguage: {{ $json.language }}\nTarget Duration (seconds): {{ $json.target_duration_sec }}\n\nYou are creating narration for an educational and engaging video. The narration should be:\n- Conversational and engaging, as if speaking directly to the viewer\n- Detailed enough to fill the target duration when read at a natural pace (approximately 150 words per minute)\n- Rich with interesting facts, context, and storytelling elements\n- Smooth transitions between different aspects of the topic\n- No rushed taglines - develop ideas fully\n\nReturn ONLY valid JSON (no markdown, no commentary) with this exact structure:\n{\n  \"title\": \"<compelling video title without special characters or commas>\",\n  \"fullNarration\": \"<complete detailed narration text - write 2-3 full sentences per segment minimum>\",\n  \"segments\": [\n    {\n      \"title\": \"<descriptive segment title 3-5 words>\",\n      \"visualPrompt\": \"<detailed visual description for AI image generation: specify style (photorealistic/artistic/cinematic), subject, composition, lighting, mood, colors, and key details. Example: 'Cinematic photorealistic image of an ancient Egyptian temple at sunset, golden hour lighting, detailed hieroglyphics on stone pillars, warm orange and purple sky, wide angle shot, 8K quality'>\",\n      \"duration\": <integer seconds - minimum 8 seconds per segment>\n    }\n  ]\n}\n\nIMPORTANT RULES:\n1. Create 3-5 segments maximum\n2. Each segment duration must be minimum 8 seconds (allows for detailed narration)\n3. Total segment durations should sum to approximately {{ $json.target_duration_sec }} seconds\n4. fullNarration must be long enough to actually fill the target duration at normal speaking pace\n5. Each visualPrompt must be detailed and specific - include style, subject, composition, lighting, colors, and artistic direction\n6. Write narration as complete sentences, not bullet points or brief taglines\n7. Ensure smooth narrative flow between segments"
+            },
+            {
+              "content": "=You are an expert video script writer specializing in engaging narration and visual storytelling. Your scripts are detailed, conversational, and perfectly paced for video content. You generate clean JSON output without any markdown formatting or commentary. You always ensure narration length matches the target duration by calculating approximately 150 words per minute of speech. Each visual prompt you create is highly detailed and specific to ensure AI image generators produce high-quality, relevant images.",
+              "role": "system"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -3152,
+        -80
+      ],
+      "id": "12045f6d-16b8-40e5-b13a-817d90b8fc59",
+      "name": "Generate Script"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.message.content;\n\nlet data;\n\ntry {\n  data = JSON.parse(raw);\n} catch (e) {\n  return [\n    {\n      json: {\n        success: false,\n        error: \"Invalid JSON from LLM\",\n        details: e.message\n      }\n    }\n  ];\n}\n\nreturn [\n  {\n    json: {\n      success: true,\n      fullNarration: data.fullNarration,\n      title: data.title,\n      segments: data.segments\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2800,
+        -80
+      ],
+      "id": "636b2ffa-4977-4e34-ad2f-bdd0c80c5058",
+      "name": "Parse Script JSON"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -4256,
+        16
+      ],
+      "id": "8471aeb8-99be-4285-962b-e42eb8c43b97",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2320,
+        192
+      ],
+      "id": "650e78df-e4ff-410a-b14f-86a685102e94",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.segments.map(s => ({ json: s }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2800,
+        192
+      ],
+      "id": "3c316154-7b8d-44c3-9808-7090fb05745f",
+      "name": "Prepare Segments"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the Pexels photo\nconst photo = $json.photos?.[0];\n\n// Recover original segment data\nconst segment = $item(0).$node[\"Loop Over Items\"].json;\n\nif (!photo) {\n  return [\n    {\n      json: {\n        url: 'img:'+$input.first().json.webContentLink ,\n      }\n    }\n  ];\n}\n\nreturn [\n  {\n    json: {\n      title: segment.title,\n      visualPrompt: segment.visualPrompt,\n      duration: segment.duration,\n      imageUrl: photo.src.large2x\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1648,
+        208
+      ],
+      "id": "2a0041b1-25ca-43a2-80f0-d1127235ff38",
+      "name": "Extract Image URL"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -1424,
+        -80
+      ],
+      "id": "721ff31f-fce6-4254-82dd-042945c40bbb",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.video_id }}_audio.mp3",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1rGb8-fF-swNxZKp-TBgHnzJEgBb9clH5",
+          "mode": "list",
+          "cachedResultName": "Single Channel Automation",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1rGb8-fF-swNxZKp-TBgHnzJEgBb9clH5"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -2144,
+        -80
+      ],
+      "id": "35558f34-acf4-48cc-bd7f-33ef21ccc45c",
+      "name": "Upload file"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.creatomate.com/v1/renders",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer sk_82vRMo4yPuS7FMcf9L2jf64"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"template_id\": \"b1aa3fa0-3bb5-4f59-a621-d33c3ef9b85a\",\n  \"modifications\": {\n    \"Video-1\": \"{{ $json.url.split('audio:')[1] }}\",\n    \"Images-1\": \"{{ $('Extract Image URL').all().map(item => item.json.url.split('img:')[1]).join(',') }}\",\n    \"Duration-1\": \"{{ $('Extract Image URL').all().map(item => item.json.duration).join(',') }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1088,
+        -80
+      ],
+      "id": "589eff6d-73c8-47f5-b69f-4e0961f55d27",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "json.items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        -80
+      ],
+      "id": "57055eb7-1277-4359-ae6c-9976c13cb8fa",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Parse Script JSON').item.json.title }}.mp4",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1rGb8-fF-swNxZKp-TBgHnzJEgBb9clH5",
+          "mode": "list",
+          "cachedResultName": "Single Channel Automation",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1rGb8-fF-swNxZKp-TBgHnzJEgBb9clH5"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -464,
+        -80
+      ],
+      "id": "e9f090be-fbd1-4e89-88cc-c8975e904c98",
+      "name": "Upload a video"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.elevenlabs",
+      "typeVersion": 1.1,
+      "position": [
+        -2464,
+        -80
+      ],
+      "id": "51e054b7-9a0f-4659-8d9e-0f655522f528",
+      "name": "ElevanLabs Voice Generation",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "operation": "create"
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -2048,
+        208
+      ],
+      "id": "184730cc-234d-44fd-a7cf-937c542f2169",
+      "name": "Generate an image"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Get Next Pending Row').item.json.video_id }}_{{ $json.title }}.png",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1rGb8-fF-swNxZKp-TBgHnzJEgBb9clH5",
+          "mode": "list",
+          "cachedResultName": "Single Channel Automation",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1rGb8-fF-swNxZKp-TBgHnzJEgBb9clH5"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1856,
+        208
+      ],
+      "id": "81abd4b8-9062-4c77-a995-433d8af3e3b9",
+      "name": "Upload Images"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8ec074dd-dbf9-4185-9414-c30a6b82893f",
+              "name": "video_id",
+              "value": "={{ $json.row_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3632,
+        16
+      ],
+      "id": "75bf8570-dcda-4651-81d5-89d64a30640e",
+      "name": "Set Video ID"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn {\n  url : 'audio:'+$input.first().json.webContentLink\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1920,
+        -80
+      ],
+      "id": "e1fe00f6-a72e-4009-84b8-b934673f9d06",
+      "name": "Extract Audio URL"
+    }
+  ],
+  "connections": {
+    "Get Next Pending Row": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Set Video ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Generate Script",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Script": {
+      "main": [
+        [
+          {
+            "node": "Parse Script JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Next Pending Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Script JSON": {
+      "main": [
+        [
+          {
+            "node": "Prepare Segments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Generate an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Segments": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Image URL": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image": {
+      "main": [
+        [
+          {
+            "node": "Upload Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Upload a video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Extract Audio URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Images": {
+      "main": [
+        [
+          {
+            "node": "Extract Image URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Video ID": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Audio URL": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Manual Trigger": [
+      {
+        "json": {
+          "name": "First item",
+          "code": 1
+        }
+      },
+      {
+        "json": {
+          "name": "Second item",
+          "code": 2
+        }
+      }
+    ]
+  },
+  "versionId": "5817682a-4f97-4c66-9fc8-f60407350348",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-30T16:05:53.765Z",
+      "updatedAt": "2025-11-30T16:05:53.765Z",
+      "role": "workflow:owner",
+      "workflowId": "xh8KEx4S2beEVDTS",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
