@@ -1,0 +1,1537 @@
+{
+  "createdAt": "2025-10-24T06:45:16.600Z",
+  "updatedAt": "2025-10-24T13:40:33.000Z",
+  "id": "HtrlnGdyQDgQ4PxM",
+  "name": "FitWithPari - Workflow -1",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-agents/create-profiles",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1312,
+        272
+      ],
+      "id": "2c098e6c-018c-446a-864a-a721dc36db71",
+      "name": "Webhook",
+      "webhookId": "8e7037cf-81cf-463d-b4b6-ce374db5fd03"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f9d7b8ee-8cf9-478a-a56e-fba4d57fedb4",
+              "leftValue": "={{ $json.body.data.form_type }}",
+              "rightValue": "onboarding",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -672,
+        256
+      ],
+      "id": "c31d8ac9-3c29-4c68-8c6e-45cd76cc9412",
+      "name": "if onboarding"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "89423bc8-2b83-4a38-bf80-95ee2bb34b60",
+              "leftValue": "={{ $json.body.data.form_type }}",
+              "rightValue": "assessment",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -672,
+        416
+      ],
+      "id": "7d8f6bf7-0ba3-4428-b39d-b073b1ff2410",
+      "name": "If assessment"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "64e55d8b-73b5-4ad3-a7a3-dfd7fa9ff7ba",
+              "leftValue": "={{ $json.body.data.form_type }}",
+              "rightValue": "feedback",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -672,
+        576
+      ],
+      "id": "e673c0e9-1f92-466d-92ff-dad68a79dadf",
+      "name": "If feedback"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e5a36f37-27b3-4c15-94e0-b136cfb135c3",
+              "name": "body",
+              "value": "={{ $json.body }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -880,
+        256
+      ],
+      "id": "b82e1a18-417f-454c-b688-29ae69598d7c",
+      "name": "Set Body Only"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input data\nconst input = $input.first().json;\n\nconsole.log('=== Transform Onboarding - Input ===');\nconsole.log(JSON.stringify(input, null, 2));\n\n// Extract data based on structure\nlet transformedData;\nlet sessionId;\n\nif (input.body?.data) {\n  transformedData = input.body.data;\n  sessionId = input.body.session_id || null;\n} else if (input.data) {\n  transformedData = input.data;\n  sessionId = input.session_id || null;\n} else {\n  transformedData = input;\n  sessionId = null;\n}\n\nconsole.log('=== Transform Onboarding - Output ===');\nconsole.log('Session ID:', sessionId);\nconsole.log(JSON.stringify(transformedData, null, 2));\n\n// Return with session ID for memory\nreturn {\n  json: {\n    sessionId: sessionId,\n    ...transformedData\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        240
+      ],
+      "id": "bb768d49-f9c1-4ea0-817e-7311d187536f",
+      "name": "Transform Onboarding Form"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input data\nconst input = $input.first().json;\n\nconsole.log('=== Transform Assessment - Input ===');\nconsole.log(JSON.stringify(input, null, 2));\n\n// Extract data based on structure\nlet transformedData;\nlet sessionId;\n\nif (input.body?.data) {\n  transformedData = input.body.data;\n  sessionId = input.body.session_id || null;\n} else if (input.data) {\n  transformedData = input.data;\n  sessionId = input.session_id || null;\n} else {\n  transformedData = input;\n  sessionId = null;\n}\n\nconsole.log('=== Transform Assessment - Output ===');\nconsole.log('Session ID:', sessionId);\nconsole.log(JSON.stringify(transformedData, null, 2));\n\n// Return with session ID for memory\nreturn {\n  json: {\n    sessionId: sessionId,\n    ...transformedData\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        400
+      ],
+      "id": "93efb322-54a3-4a8f-ba88-bb273d2252c7",
+      "name": "Transform Assesment Form"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input data\nconst input = $input.first().json;\n\nconsole.log('=== Transform Feedback - Input ===');\nconsole.log(JSON.stringify(input, null, 2));\n\n// Extract data based on structure\nlet transformedData;\nlet sessionId;\n\nif (input.body?.data) {\n  transformedData = input.body.data;\n  sessionId = input.body.session_id || null;\n} else if (input.data) {\n  transformedData = input.data;\n  sessionId = input.session_id || null;\n} else {\n  transformedData = input;\n  sessionId = null;\n}\n\nconsole.log('=== Transform Feedback - Output ===');\nconsole.log('Session ID:', sessionId);\nconsole.log(JSON.stringify(transformedData, null, 2));\n\n// Return with session ID for memory\nreturn {\n  json: {\n    sessionId: sessionId,\n    ...transformedData\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        560
+      ],
+      "id": "e3cd2cb4-b3c8-4647-ad2c-7fd904e9a8dd",
+      "name": "Transform Feedback Form"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"error\": \"make sure to send form type\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -384,
+        720
+      ],
+      "id": "89065b64-e7d5-4178-972a-8740fb60e96a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Transform Onboarding Form').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        368
+      ],
+      "id": "d4d101cd-80ed-4d03-916b-507a7785b701",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0f7201b6-2908-4661-8eed-50e4fdb78119",
+              "leftValue": "={{ $json.body }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1120,
+        272
+      ],
+      "id": "d33a0453-9e5e-4eb7-a5d2-8a38b7c16dde",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following assessment data and generate a complete profile for database storage. \n\nINPUT DATA:{{ JSON.stringify($json.data, null, 2) }}\n\nExtract the required data and generate the complete JSON object that matches the StudentLongProfileForDB schema.",
+        "options": {
+          "systemMessage": "=You are an expert fitness assessment analyst and CoachPrep profile generator.\n\nYour task is to analyze the provided assessment data and generate a complete StudentLongProfileForDB object that will be stored in the database.\n\nCRITICAL OUTPUT RULES:\n1. You MUST return a single, valid JSON object that exactly matches the StudentLongProfileForDB schema.\n2. The output MUST include the FOUR top-level keys required for database insertion:\n   - student_id: Extract the student's ID from the 'student_id' field in the INPUT DATA.\n   - source_assessment_id: Extract the 'assessment_id' from the INPUT DATA.\n   - profile_json: A nested object containing ALL the detailed profile data (health, goals, assessments, etc.).\n   - summary_text: A plain text version of the profile_json.summary field.\n\n3. Inside profile_json, you MUST include:\n   - generated_at: Current ISO timestamp.\n   - llm_version: \"gpt-4o-long_v1\".\n   - summary: One clear paragraph describing the student's overall status.\n   - health: Object with medical_concerns and exercise_restrictions arrays (must exist, even if empty).\n   - Use data from 'tests' and 'summary_findings' to populate other fields.\n\n4. Numeric values MUST be returned as numbers (e.g., 42.5), not strings (\"42.5%\").\n5. If data is missing, use null for single values or empty arrays [] for lists.\n\nIMPORTANT: Return ONLY the JSON object. Do not include markdown, code blocks (```), or explanatory text."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        160,
+        176
+      ],
+      "id": "81931a00-7035-49ea-b787-80f2536ed0a0",
+      "name": "Long Profile Agent",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "tableId": "student_profiles_full"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        736,
+        176
+      ],
+      "id": "7eea57f9-d5e5-4f6d-ad43-72b710709942",
+      "name": "Add Long Profile",
+      "credentials": {
+        "supabaseApi": {
+          "id": "VKoabbJQnegsVFoB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "student_profiles_short"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        736,
+        656
+      ],
+      "id": "ab455088-be7e-4562-aab5-04e8e2211145",
+      "name": "Add Short Profile",
+      "credentials": {
+        "supabaseApi": {
+          "id": "VKoabbJQnegsVFoB",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a quick-reference profile for coaches based on this assessment data. \n\nINPUT DATA:{{ JSON.stringify($json.data, null, 2) }}\n\nAnalyze and generate the complete JSON object that matches the StudentShortProfileForDB schema.",
+        "options": {
+          "systemMessage": "=You are an expert fitness coach profile generator creating quick-reference profiles for coaches.\n\nYour task is to analyze the provided assessment data and generate a StudentShortProfileForDB object optimized for coaches who need quick context before a class.\n\nCRITICAL OUTPUT RULES:\n1. You MUST return a single, valid JSON object that exactly matches the StudentShortProfileForDB schema.\n2. The output MUST include the FOUR top-level keys required for database insertion:\n   - student_id: Extract the student's ID from the 'student_id' field in the INPUT DATA.\n   - context_key: Determine from the assessment type (e.g., 'mobility', 'balance') or use 'general'.\n   - short_profile: A nested object with all required fields (must_know, should_know, nice_to_know, etc.).\n   - summary_text: A plain text summary extracted from short_profile.quick_summary.\n\n3. Inside short_profile, you MUST include these REQUIRED fields:\n   - generated_at: Current ISO timestamp.\n   - llm_version: \"gpt-4o-short_v1\".\n   - context: Same value as the top-level context_key.\n   - must_know: Array of safety-critical items (MAX 5 items).\n   - should_know: Array of important context (MAX 5 items).\n   - nice_to_know: Array of preferences, strengths, goals (MAX 3 items).\n\n4. Numeric values MUST be returned as numbers.\n5. Include specific metrics when relevant (e.g., \"Left leg balance: 23s vs Right: 40s\").\n\nIMPORTANT: Return ONLY the JSON object. Do not include markdown, code blocks (```), or explanatory text."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        160,
+        656
+      ],
+      "id": "792d8135-00bc-4c57-b07f-e3fadad73f4d",
+      "name": "Student Short Profile",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        368
+      ],
+      "id": "6cab2026-bb6e-440e-8f00-5b5939a660bc",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        832
+      ],
+      "id": "e0226e74-8b91-4380-9abb-c44dce3d10b4",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// This script cleans the assessment data and wraps it in a single 'data' field \n// for efficient token consumption by the AI Agent.\n\nconst inputItem = $input.first().json;\n\n// --- Helper function to safely extract the response value ---\nfunction getResponseValue(response) {\n    if (response === null) return null;\n    \n    // Handle specific boolean response\n    if (typeof response.response === 'boolean') {\n        return response.response;\n    }\n    // Handle array response (multiselect)\n    if (Array.isArray(response.response)) {\n        return response.response;\n    }\n    // Return number/string response, or null if key is missing\n    if (response.response !== undefined) {\n        return response.response;\n    }\n    return null;\n}\n\n// --- 1. Distill Questions and Answers ---\nconst cleanedTests = inputItem.test_results.map(test => {\n    // Distill questions and answers\n    const cleanedQuestions = test.questions.map(question => ({\n        question_text: question.question_text,\n        question_type: question.question_type,\n        response: getResponseValue(question.response),\n        unit: question.validation_rules?.unit || null \n    }));\n\n    return {\n        test_name: test.test_name,\n        test_category: test.test_category,\n        completed_at: test.completed_at,\n        questions_and_answers: cleanedQuestions\n    };\n});\n\n// --- 2. Build the Final Optimized Payload ---\nconst optimizedPayload = {\n    // === FIX: Retrieve session_id and form_type directly from the input item ===\n    session_id: inputItem.sessionId || null, \n    form_type: inputItem.form_type || null, \n    // =========================================================================\n\n    // Essential Student/Coach Context\n    student_id: inputItem.assessment.student_id,\n    assessment_id: inputItem.assessment.id,\n    \n    student_profile: {\n        full_name: inputItem.assessment.student.full_name,\n        date_of_birth: inputItem.assessment.student.date_of_birth,\n        fitness_goal: inputItem.assessment.student.fitness_goal,\n    },\n    \n    coach_info: {\n        full_name: inputItem.assessment.coach.full_name,\n        specialties: inputItem.assessment.coach.specialties\n    },\n    \n    // Distilled Test Results\n    tests: cleanedTests,\n    \n    // Key Summary Findings (most valuable for LLM analysis)\n    summary_findings: {\n        bilateral_comparisons: inputItem.summary.bilateral_comparisons,\n        key_findings: inputItem.summary.key_findings,\n        recommendations: inputItem.summary.recommendations\n    }\n};\n\n// --- 3. Wrap in the required 'data' field and return ---\nreturn [{ \n    json: {\n        data: optimizedPayload \n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        400
+      ],
+      "id": "e4982fc9-6580-4267-9b5b-dd750cc5a2fb",
+      "name": "Extract Required Fields"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Transform Onboarding Form').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        832
+      ],
+      "id": "37f71b0d-e368-41b9-8829-fa7a41ce9122",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code is the final, robust parser designed to extract the structured JSON \n// from the AI Agent's raw output and map it to the student_profiles_full table.\n\nconst llmResponse = $input.first().json;\n\nlet finalParsedData;\nlet content = ''; // Initialize content as empty string for safety\nlet isSuccess = false;\n\ntry {\n    // --- 1. FIND THE RAW JSON STRING (Check multiple common paths for raw output) ---\n    if (llmResponse.output) {\n        // Case 1: Simple Agent output (often used when output parser is disabled/fails)\n        content = llmResponse.output;\n    } else if (llmResponse.message?.content) {\n        // Case 2: Standard OpenAI Chat Model message content\n        content = llmResponse.message.content; \n    } else {\n        // Case 3: Fallback—stringify the whole item for a last-ditch parse attempt\n        content = JSON.stringify(llmResponse);\n    }\n\n    // --- 2. AGGRESSIVELY CLEAN AND EXTRACT JSON STRING ---\n    let jsonString = content.trim();\n\n    // 2a. Remove markdown code blocks (e.g., ```json ... ```)\n    const jsonMatch = jsonString.match(/```json\\s*([\\s\\S]*?)\\s*```/) || jsonString.match(/```\\s*([\\s\\S]*?)\\s*```/);\n    if (jsonMatch) {\n        jsonString = jsonMatch[1].trim();\n    }\n    \n    // 2b. Remove extraneous quotes/escaping (CRITICAL FIX for double-encoded strings)\n    // Fix escaped quotes, newlines, and double backslashes\n    if (jsonString.startsWith('\"') && jsonString.endsWith('\"')) {\n        jsonString = jsonString.slice(1, -1)\n            .replace(/\\\\\"/g, '\"')    // Unescape quotes\n            .replace(/\\\\n/g, '\\n')   // Unescape newlines\n            .replace(/\\\\\\\\/g, '\\\\'); // Unescape double backslashes\n    }\n\n    // --- 3. FINAL PARSE ---\n    finalParsedData = JSON.parse(jsonString);\n    isSuccess = true;\n\n} catch (e) {\n    console.error(\"❌ Failed to extract/parse Long Profile JSON:\", e.message);\n    // isSuccess remains false, triggering the fallback.\n}\n\n// --- 4. FORMAT FOR SUPABASE student_profiles_full TABLE ---\nif (!isSuccess || !finalParsedData || !finalParsedData.student_id) {\n    // --- Fail-Safe / Fallback Item ---\n    // Use the failed item to return a standardized error object matching the DB schema\n    return [{ \n        json: { \n            student_id: \"00000000-0000-0000-0000-000000000000\",\n            profile_version: 1,\n            profile_json: { \n                generated_at: new Date().toISOString(), \n                summary: \"Profile parsing failed.\", \n                health: { medical_concerns: [], exercise_restrictions: [] } \n            },\n            summary_text: \"Profile parsing failed due to malformed LLM output.\",\n            source_assessment_id: null\n        } \n    }];\n}\n\n// --- 5. SUCCESSFUL RETURN ---\nreturn [{ \n    json: {\n        student_id: finalParsedData.student_id,\n        profile_version: 1, \n        profile_json: finalParsedData.profile_json,\n        summary_text: finalParsedData.summary_text,\n        source_assessment_id: finalParsedData.source_assessment_id || null\n    } \n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        176
+      ],
+      "id": "72c1613f-798e-4da2-8131-fe32a452f59b",
+      "name": "Parse Long Profile"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code extracts and formats the Short Profile into the structure required by the student_profiles_short table.\nconst llmResponse = $input.first().json;\n\nlet finalParsedData;\nlet content; \nlet isSuccess = false;\n\ntry {\n    // --- 1. EXTRACT RAW CONTENT (Safety Net for AI output) ---\n    if (llmResponse.message?.content) {\n        content = llmResponse.message.content; \n    } else {\n        content = JSON.stringify(llmResponse);\n    }\n\n    // --- 2. AGGRESSIVELY CLEAN AND EXTRACT JSON STRING ---\n    let jsonString = content.trim();\n\n    // Remove markdown code blocks (e.g., ```json ... ```)\n    const jsonMatch = jsonString.match(/```json\\s*([\\s\\S]*?)\\s*```/) || jsonString.match(/```\\s*([\\s\\S]*?)\\s*```/);\n    if (jsonMatch) {\n        jsonString = jsonMatch[1].trim();\n    }\n    \n    // Remove extraneous quotes/escaping if LLM double-encoded it\n    if (jsonString.startsWith('\"') && jsonString.endsWith('\"')) {\n        jsonString = jsonString.slice(1, -1).replace(/\\\\\"/g, '\"').replace(/\\\\n/g, '\\n').replace(/\\\\\\\\/g, '\\\\');\n    }\n\n    // --- 3. FINAL PARSE ---\n    finalParsedData = JSON.parse(jsonString);\n    isSuccess = true;\n\n} catch (e) {\n    console.error(\"Failed to extract/parse Short Profile JSON:\", e.message);\n}\n\nif (!isSuccess || !finalParsedData?.student_id) {\n    // --- Fallback Item ---\n    return [{ \n        json: { \n            student_id: \"00000000-0000-0000-0000-000000000000\",\n            context_key: \"general\",\n            short_profile: { generated_at: new Date().toISOString(), summary: \"Profile parsing failed.\" },\n            summary_text: \"Profile parsing failed.\"\n        } \n    }];\n}\n\n// --- 4. FORMAT FOR SUPABASE student_profiles_short TABLE ---\nreturn [{ \n    json: {\n        student_id: finalParsedData.student_id,\n        context_key: finalParsedData.context_key,\n        profile_version: 1, \n        short_profile: finalParsedData.short_profile,\n        summary_text: finalParsedData.summary_text\n        // created_at, updated_at, last_generated_at handled by DB defaults/triggers\n    } \n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        656
+      ],
+      "id": "1aad19c4-7cc9-4822-87f4-186a6cba6990",
+      "name": "Parse Short Profile"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if onboarding": {
+      "main": [
+        [
+          {
+            "node": "Transform Onboarding Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If assessment": {
+      "main": [
+        [
+          {
+            "node": "Transform Assesment Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If feedback": {
+      "main": [
+        [
+          {
+            "node": "Transform Feedback Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Body Only": {
+      "main": [
+        [
+          {
+            "node": "if onboarding",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If assessment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Onboarding Form": {
+      "main": [
+        [
+          {
+            "node": "Extract Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Assesment Form": {
+      "main": [
+        [
+          {
+            "node": "Extract Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Feedback Form": {
+      "main": [
+        [
+          {
+            "node": "Extract Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Long Profile Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Set Body Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Long Profile Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Long Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Student Short Profile": {
+      "main": [
+        [
+          {
+            "node": "Parse Short Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Long Profile Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Student Short Profile",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Required Fields": {
+      "main": [
+        [
+          {
+            "node": "Long Profile Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Student Short Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Student Short Profile",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Long Profile": {
+      "main": [
+        [
+          {
+            "node": "Add Long Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Short Profile": {
+      "main": [
+        [
+          {
+            "node": "Add Short Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "fitwithparirp.app.n8n.cloud",
+            "user-agent": "PostmanRuntime/7.48.0",
+            "content-length": "39249",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2401:4900:1c5b:487a:840c:3c68:13bd:8142",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "IN",
+            "cf-ray": "99373234c139a6ed-DEL",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "postman-token": "f095cf8b-b77f-4150-ace9-12a663b37499",
+            "x-forwarded-for": "2401:4900:1c5b:487a:840c:3c68:13bd:8142, 162.158.142.66",
+            "x-forwarded-host": "fitwithparirp.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-9-7bb7d4c57c-5brtv",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2401:4900:1c5b:487a:840c:3c68:13bd:8142"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "success": true,
+            "session_id": "123432",
+            "data": {
+              "form_type": "onboarding",
+              "assessment": {
+                "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "session_id": "c7d8e9f0-1a2b-3c4d-5e6f-7890abcdef12",
+                "student_id": "550e8400-e29b-41d4-a716-446655440000",
+                "coach_id": "660e8400-e29b-41d4-a716-446655440001",
+                "status": "completed",
+                "created_at": "2025-10-23T09:00:00Z",
+                "updated_at": "2025-10-23T09:45:00Z",
+                "completed_at": "2025-10-23T09:45:00Z",
+                "student": {
+                  "id": "550e8400-e29b-41d4-a716-446655440000",
+                  "full_name": "Sarah Johnson",
+                  "email": "sarah.johnson@example.com",
+                  "avatar_url": "https://example.com/avatars/sarah.jpg",
+                  "date_of_birth": "1992-05-15",
+                  "gender": "female",
+                  "fitness_goal": "Improve overall strength and mobility"
+                },
+                "coach": {
+                  "id": "660e8400-e29b-41d4-a716-446655440001",
+                  "full_name": "Dr. Mike Martinez",
+                  "email": "mike.martinez@fitwithpari.com",
+                  "avatar_url": "https://example.com/avatars/mike.jpg",
+                  "bio": "Certified Strength & Conditioning Specialist with 10 years of experience",
+                  "specialties": [
+                    "Movement Assessment",
+                    "Corrective Exercise",
+                    "Sports Performance"
+                  ]
+                }
+              },
+              "test_results": [
+                {
+                  "id": "tr-001-overhead-squat",
+                  "assessment_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "test_id": "test-overhead-squat",
+                  "test_name": "Overhead Squat Assessment",
+                  "test_description": "Evaluates overall body mechanics, mobility, and stability during a fundamental movement pattern",
+                  "test_category": "movement_screening",
+                  "display_order": 1,
+                  "status": "completed",
+                  "completed_at": "2025-10-23T09:15:00Z",
+                  "created_at": "2025-10-23T09:10:00Z",
+                  "updated_at": "2025-10-23T09:15:00Z",
+                  "metadata": {
+                    "duration_seconds": 300,
+                    "video_count": 2,
+                    "repetitions_performed": 5,
+                    "test_protocol": "NASM Overhead Squat Assessment"
+                  },
+                  "questions": [
+                    {
+                      "id": "q-os-001",
+                      "test_id": "test-overhead-squat",
+                      "question_text": "Does the client's feet turn out during the movement?",
+                      "question_type": "binary",
+                      "is_required": true,
+                      "display_order": 1,
+                      "help_text": "Observe if feet externally rotate (point outward) during the squat",
+                      "validation_rules": {
+                        "required": true
+                      },
+                      "metadata": {
+                        "body_region": "lower_body",
+                        "movement_phase": "descent",
+                        "compensation_pattern": "foot_pronation"
+                      },
+                      "response": {
+                        "id": "resp-os-001",
+                        "question_id": "q-os-001",
+                        "test_result_id": "tr-001-overhead-squat",
+                        "response": true,
+                        "created_at": "2025-10-23T09:12:00Z",
+                        "updated_at": "2025-10-23T09:12:00Z"
+                      }
+                    },
+                    {
+                      "id": "q-os-002",
+                      "test_id": "test-overhead-squat",
+                      "question_text": "Does the client's knees move inward (valgus collapse)?",
+                      "question_type": "ternary",
+                      "is_required": true,
+                      "display_order": 2,
+                      "help_text": "Check for medial knee displacement during squat",
+                      "options": [
+                        {
+                          "value": "none",
+                          "label": "No valgus",
+                          "score": 0
+                        },
+                        {
+                          "value": "mild",
+                          "label": "Mild valgus",
+                          "score": 1
+                        },
+                        {
+                          "value": "severe",
+                          "label": "Severe valgus",
+                          "score": 2
+                        }
+                      ],
+                      "validation_rules": {
+                        "required": true,
+                        "enum": [
+                          "none",
+                          "mild",
+                          "severe"
+                        ]
+                      },
+                      "metadata": {
+                        "body_region": "lower_body",
+                        "movement_phase": "descent",
+                        "compensation_pattern": "knee_valgus"
+                      },
+                      "response": {
+                        "id": "resp-os-002",
+                        "question_id": "q-os-002",
+                        "test_result_id": "tr-001-overhead-squat",
+                        "response": "mild",
+                        "created_at": "2025-10-23T09:12:30Z",
+                        "updated_at": "2025-10-23T09:12:30Z"
+                      }
+                    },
+                    {
+                      "id": "q-os-003",
+                      "test_id": "test-overhead-squat",
+                      "question_text": "Maximum squat depth achieved (inches from floor to hip joint)",
+                      "question_type": "numeric",
+                      "is_required": true,
+                      "display_order": 3,
+                      "help_text": "Measure the vertical distance from floor to the greater trochanter at lowest point",
+                      "validation_rules": {
+                        "required": true,
+                        "min": 0,
+                        "max": 48,
+                        "unit": "inches"
+                      },
+                      "metadata": {
+                        "body_region": "lower_body",
+                        "movement_phase": "bottom_position",
+                        "measurement_type": "depth"
+                      },
+                      "response": {
+                        "id": "resp-os-003",
+                        "question_id": "q-os-003",
+                        "test_result_id": "tr-001-overhead-squat",
+                        "response": 18.5,
+                        "created_at": "2025-10-23T09:13:00Z",
+                        "updated_at": "2025-10-23T09:13:00Z"
+                      }
+                    },
+                    {
+                      "id": "q-os-004",
+                      "test_id": "test-overhead-squat",
+                      "question_text": "Time to complete 5 repetitions",
+                      "question_type": "duration",
+                      "is_required": true,
+                      "display_order": 4,
+                      "help_text": "Record total time for 5 controlled repetitions",
+                      "validation_rules": {
+                        "required": true,
+                        "min_seconds": 10,
+                        "max_seconds": 120
+                      },
+                      "metadata": {
+                        "measurement_type": "tempo",
+                        "repetitions": 5
+                      },
+                      "response": {
+                        "id": "resp-os-004",
+                        "question_id": "q-os-004",
+                        "test_result_id": "tr-001-overhead-squat",
+                        "response": 45,
+                        "created_at": "2025-10-23T09:14:00Z",
+                        "updated_at": "2025-10-23T09:14:00Z"
+                      }
+                    },
+                    {
+                      "id": "q-os-005",
+                      "test_id": "test-overhead-squat",
+                      "question_text": "Overall movement quality rating",
+                      "question_type": "scale_4",
+                      "is_required": true,
+                      "display_order": 5,
+                      "help_text": "Rate the overall quality of the movement pattern",
+                      "options": [
+                        {
+                          "value": "poor",
+                          "label": "Poor - Multiple compensations",
+                          "score": 1
+                        },
+                        {
+                          "value": "fair",
+                          "label": "Fair - Some compensations",
+                          "score": 2
+                        },
+                        {
+                          "value": "good",
+                          "label": "Good - Minor compensations",
+                          "score": 3
+                        },
+                        {
+                          "value": "excellent",
+                          "label": "Excellent - No compensations",
+                          "score": 4
+                        }
+                      ],
+                      "validation_rules": {
+                        "required": true,
+                        "enum": [
+                          "poor",
+                          "fair",
+                          "good",
+                          "excellent"
+                        ]
+                      },
+                      "metadata": {
+                        "assessment_type": "qualitative"
+                      },
+                      "response": {
+                        "id": "resp-os-005",
+                        "question_id": "q-os-005",
+                        "test_result_id": "tr-001-overhead-squat",
+                        "response": "fair",
+                        "created_at": "2025-10-23T09:14:30Z",
+                        "updated_at": "2025-10-23T09:14:30Z"
+                      }
+                    },
+                    {
+                      "id": "q-os-006",
+                      "test_id": "test-overhead-squat",
+                      "question_text": "Additional observations or notes",
+                      "question_type": "textarea",
+                      "is_required": false,
+                      "display_order": 6,
+                      "help_text": "Record any additional observations, limitations, or concerns",
+                      "validation_rules": {
+                        "max_length": 1000
+                      },
+                      "metadata": {
+                        "field_type": "notes"
+                      },
+                      "response": {
+                        "id": "resp-os-006",
+                        "question_id": "q-os-006",
+                        "test_result_id": "tr-001-overhead-squat",
+                        "response": "Client shows good effort but limited ankle dorsiflexion. Recommend adding ankle mobility work to program. Also noted some upper back rounding during descent.",
+                        "created_at": "2025-10-23T09:15:00Z",
+                        "updated_at": "2025-10-23T09:15:00Z"
+                      }
+                    }
+                  ],
+                  "media_files": [
+                    {
+                      "id": "media-os-001",
+                      "test_result_id": "tr-001-overhead-squat",
+                      "file_type": "video",
+                      "file_url": "https://storage.example.com/assessments/a1b2c3d4/overhead-squat-front.mp4",
+                      "thumbnail_url": "https://storage.example.com/assessments/a1b2c3d4/overhead-squat-front-thumb.jpg",
+                      "file_size_bytes": 15728640,
+                      "duration_seconds": 30,
+                      "view_angle": "anterior",
+                      "caption": "Overhead Squat - Front View",
+                      "created_at": "2025-10-23T09:11:00Z",
+                      "metadata": {
+                        "resolution": "1920x1080",
+                        "fps": 30,
+                        "codec": "h264"
+                      }
+                    },
+                    {
+                      "id": "media-os-002",
+                      "test_result_id": "tr-001-overhead-squat",
+                      "file_type": "video",
+                      "file_url": "https://storage.example.com/assessments/a1b2c3d4/overhead-squat-side.mp4",
+                      "thumbnail_url": "https://storage.example.com/assessments/a1b2c3d4/overhead-squat-side-thumb.jpg",
+                      "file_size_bytes": 16777216,
+                      "duration_seconds": 30,
+                      "view_angle": "lateral",
+                      "caption": "Overhead Squat - Side View",
+                      "created_at": "2025-10-23T09:11:30Z",
+                      "metadata": {
+                        "resolution": "1920x1080",
+                        "fps": 30,
+                        "codec": "h264"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "tr-002-balance-left",
+                  "assessment_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "test_id": "test-single-leg-balance",
+                  "test_name": "Single Leg Balance Test - Left Leg",
+                  "test_description": "Assesses unilateral balance and stability",
+                  "test_category": "balance",
+                  "display_order": 2,
+                  "status": "completed",
+                  "completed_at": "2025-10-23T09:25:00Z",
+                  "created_at": "2025-10-23T09:20:00Z",
+                  "updated_at": "2025-10-23T09:25:00Z",
+                  "metadata": {
+                    "duration_seconds": 180,
+                    "video_count": 1,
+                    "test_side": "left",
+                    "test_protocol": "Eyes Open Single Leg Stance"
+                  },
+                  "questions": [
+                    {
+                      "id": "q-bal-001",
+                      "test_id": "test-single-leg-balance",
+                      "question_text": "Maximum balance time achieved (seconds)",
+                      "question_type": "duration",
+                      "is_required": true,
+                      "display_order": 1,
+                      "help_text": "Record how long the client maintained single leg stance without touching down",
+                      "validation_rules": {
+                        "required": true,
+                        "min_seconds": 0,
+                        "max_seconds": 60
+                      },
+                      "metadata": {
+                        "measurement_type": "endurance",
+                        "test_side": "left"
+                      },
+                      "response": {
+                        "id": "resp-bal-001",
+                        "question_id": "q-bal-001",
+                        "test_result_id": "tr-002-balance-left",
+                        "response": 23,
+                        "created_at": "2025-10-23T09:23:00Z",
+                        "updated_at": "2025-10-23T09:23:00Z"
+                      }
+                    },
+                    {
+                      "id": "q-bal-002",
+                      "test_id": "test-single-leg-balance",
+                      "question_text": "Compensations observed",
+                      "question_type": "multiselect",
+                      "is_required": false,
+                      "display_order": 2,
+                      "help_text": "Select all compensatory movements observed during the test",
+                      "options": [
+                        {
+                          "value": "hip_hike",
+                          "label": "Hip hike"
+                        },
+                        {
+                          "value": "trunk_lean",
+                          "label": "Trunk lean"
+                        },
+                        {
+                          "value": "arm_flailing",
+                          "label": "Arm flailing"
+                        },
+                        {
+                          "value": "excessive_sway",
+                          "label": "Excessive sway"
+                        },
+                        {
+                          "value": "foot_adjustment",
+                          "label": "Foot adjustments"
+                        },
+                        {
+                          "value": "none",
+                          "label": "No compensations"
+                        }
+                      ],
+                      "validation_rules": {
+                        "min_selections": 0,
+                        "max_selections": 6
+                      },
+                      "metadata": {
+                        "assessment_type": "qualitative"
+                      },
+                      "response": {
+                        "id": "resp-bal-002",
+                        "question_id": "q-bal-002",
+                        "test_result_id": "tr-002-balance-left",
+                        "response": [
+                          "hip_hike",
+                          "arm_flailing"
+                        ],
+                        "created_at": "2025-10-23T09:24:00Z",
+                        "updated_at": "2025-10-23T09:24:00Z"
+                      }
+                    }
+                  ],
+                  "media_files": [
+                    {
+                      "id": "media-bal-001",
+                      "test_result_id": "tr-002-balance-left",
+                      "file_type": "video",
+                      "file_url": "https://storage.example.com/assessments/a1b2c3d4/balance-left.mp4",
+                      "thumbnail_url": "https://storage.example.com/assessments/a1b2c3d4/balance-left-thumb.jpg",
+                      "file_size_bytes": 8388608,
+                      "duration_seconds": 25,
+                      "view_angle": "anterior",
+                      "caption": "Single Leg Balance - Left Leg",
+                      "created_at": "2025-10-23T09:22:00Z",
+                      "metadata": {
+                        "resolution": "1920x1080",
+                        "fps": 30,
+                        "codec": "h264"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "tr-003-balance-right",
+                  "assessment_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "test_id": "test-single-leg-balance",
+                  "test_name": "Single Leg Balance Test - Right Leg",
+                  "test_description": "Assesses unilateral balance and stability",
+                  "test_category": "balance",
+                  "display_order": 3,
+                  "status": "completed",
+                  "completed_at": "2025-10-23T09:32:00Z",
+                  "created_at": "2025-10-23T09:28:00Z",
+                  "updated_at": "2025-10-23T09:32:00Z",
+                  "metadata": {
+                    "duration_seconds": 180,
+                    "video_count": 1,
+                    "test_side": "right",
+                    "test_protocol": "Eyes Open Single Leg Stance"
+                  },
+                  "questions": [
+                    {
+                      "id": "q-bal-001",
+                      "test_id": "test-single-leg-balance",
+                      "question_text": "Maximum balance time achieved (seconds)",
+                      "question_type": "duration",
+                      "is_required": true,
+                      "display_order": 1,
+                      "help_text": "Record how long the client maintained single leg stance without touching down",
+                      "validation_rules": {
+                        "required": true,
+                        "min_seconds": 0,
+                        "max_seconds": 60
+                      },
+                      "metadata": {
+                        "measurement_type": "endurance",
+                        "test_side": "right"
+                      },
+                      "response": {
+                        "id": "resp-bal-003",
+                        "question_id": "q-bal-001",
+                        "test_result_id": "tr-003-balance-right",
+                        "response": 40,
+                        "created_at": "2025-10-23T09:30:00Z",
+                        "updated_at": "2025-10-23T09:30:00Z"
+                      }
+                    },
+                    {
+                      "id": "q-bal-002",
+                      "test_id": "test-single-leg-balance",
+                      "question_text": "Compensations observed",
+                      "question_type": "multiselect",
+                      "is_required": false,
+                      "display_order": 2,
+                      "help_text": "Select all compensatory movements observed during the test",
+                      "options": [
+                        {
+                          "value": "hip_hike",
+                          "label": "Hip hike"
+                        },
+                        {
+                          "value": "trunk_lean",
+                          "label": "Trunk lean"
+                        },
+                        {
+                          "value": "arm_flailing",
+                          "label": "Arm flailing"
+                        },
+                        {
+                          "value": "excessive_sway",
+                          "label": "Excessive sway"
+                        },
+                        {
+                          "value": "foot_adjustment",
+                          "label": "Foot adjustments"
+                        },
+                        {
+                          "value": "none",
+                          "label": "No compensations"
+                        }
+                      ],
+                      "validation_rules": {
+                        "min_selections": 0,
+                        "max_selections": 6
+                      },
+                      "metadata": {
+                        "assessment_type": "qualitative"
+                      },
+                      "response": {
+                        "id": "resp-bal-004",
+                        "question_id": "q-bal-002",
+                        "test_result_id": "tr-003-balance-right",
+                        "response": [
+                          "none"
+                        ],
+                        "created_at": "2025-10-23T09:31:00Z",
+                        "updated_at": "2025-10-23T09:31:00Z"
+                      }
+                    }
+                  ],
+                  "media_files": [
+                    {
+                      "id": "media-bal-002",
+                      "test_result_id": "tr-003-balance-right",
+                      "file_type": "video",
+                      "file_url": "https://storage.example.com/assessments/a1b2c3d4/balance-right.mp4",
+                      "thumbnail_url": "https://storage.example.com/assessments/a1b2c3d4/balance-right-thumb.jpg",
+                      "file_size_bytes": 9437184,
+                      "duration_seconds": 42,
+                      "view_angle": "anterior",
+                      "caption": "Single Leg Balance - Right Leg",
+                      "created_at": "2025-10-23T09:29:00Z",
+                      "metadata": {
+                        "resolution": "1920x1080",
+                        "fps": 30,
+                        "codec": "h264"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "tr-004-shoulder-mob",
+                  "assessment_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "test_id": "test-shoulder-mobility",
+                  "test_name": "Shoulder Mobility Assessment",
+                  "test_description": "Evaluates shoulder range of motion and mobility patterns",
+                  "test_category": "mobility",
+                  "display_order": 4,
+                  "status": "completed",
+                  "completed_at": "2025-10-23T09:42:00Z",
+                  "created_at": "2025-10-23T09:35:00Z",
+                  "updated_at": "2025-10-23T09:42:00Z",
+                  "metadata": {
+                    "duration_seconds": 240,
+                    "video_count": 0,
+                    "image_count": 1,
+                    "test_protocol": "Shoulder Flexion ROM"
+                  },
+                  "questions": [
+                    {
+                      "id": "q-sh-001",
+                      "test_id": "test-shoulder-mobility",
+                      "question_text": "Shoulder flexion range of motion - Right (degrees)",
+                      "question_type": "numeric",
+                      "is_required": true,
+                      "display_order": 1,
+                      "help_text": "Measure active shoulder flexion using goniometer",
+                      "validation_rules": {
+                        "required": true,
+                        "min": 0,
+                        "max": 180,
+                        "unit": "degrees"
+                      },
+                      "metadata": {
+                        "body_region": "upper_body",
+                        "movement_type": "flexion",
+                        "test_side": "right"
+                      },
+                      "response": {
+                        "id": "resp-sh-001",
+                        "question_id": "q-sh-001",
+                        "test_result_id": "tr-004-shoulder-mob",
+                        "response": 145,
+                        "created_at": "2025-10-23T09:38:00Z",
+                        "updated_at": "2025-10-23T09:38:00Z"
+                      }
+                    },
+                    {
+                      "id": "q-sh-002",
+                      "test_id": "test-shoulder-mobility",
+                      "question_text": "Shoulder flexion range of motion - Left (degrees)",
+                      "question_type": "numeric",
+                      "is_required": true,
+                      "display_order": 2,
+                      "help_text": "Measure active shoulder flexion using goniometer",
+                      "validation_rules": {
+                        "required": true,
+                        "min": 0,
+                        "max": 180,
+                        "unit": "degrees"
+                      },
+                      "metadata": {
+                        "body_region": "upper_body",
+                        "movement_type": "flexion",
+                        "test_side": "left"
+                      },
+                      "response": {
+                        "id": "resp-sh-002",
+                        "question_id": "q-sh-002",
+                        "test_result_id": "tr-004-shoulder-mob",
+                        "response": 175,
+                        "created_at": "2025-10-23T09:39:00Z",
+                        "updated_at": "2025-10-23T09:39:00Z"
+                      }
+                    },
+                    {
+                      "id": "q-sh-003",
+                      "test_id": "test-shoulder-mobility",
+                      "question_text": "Pain level during movement",
+                      "question_type": "scale_severity",
+                      "is_required": true,
+                      "display_order": 3,
+                      "help_text": "Rate pain during shoulder flexion (0 = no pain, 10 = severe pain)",
+                      "options": [
+                        {
+                          "value": 0,
+                          "label": "No pain"
+                        },
+                        {
+                          "value": 1,
+                          "label": "Minimal"
+                        },
+                        {
+                          "value": 2,
+                          "label": "Minimal"
+                        },
+                        {
+                          "value": 3,
+                          "label": "Mild"
+                        },
+                        {
+                          "value": 4,
+                          "label": "Mild"
+                        },
+                        {
+                          "value": 5,
+                          "label": "Moderate"
+                        },
+                        {
+                          "value": 6,
+                          "label": "Moderate"
+                        },
+                        {
+                          "value": 7,
+                          "label": "Severe"
+                        },
+                        {
+                          "value": 8,
+                          "label": "Severe"
+                        },
+                        {
+                          "value": 9,
+                          "label": "Very severe"
+                        },
+                        {
+                          "value": 10,
+                          "label": "Worst possible"
+                        }
+                      ],
+                      "validation_rules": {
+                        "required": true,
+                        "min": 0,
+                        "max": 10
+                      },
+                      "metadata": {
+                        "scale_type": "pain"
+                      },
+                      "response": {
+                        "id": "resp-sh-003",
+                        "question_id": "q-sh-003",
+                        "test_result_id": "tr-004-shoulder-mob",
+                        "response": 2,
+                        "created_at": "2025-10-23T09:40:00Z",
+                        "updated_at": "2025-10-23T09:40:00Z"
+                      }
+                    },
+                    {
+                      "id": "q-sh-004",
+                      "test_id": "test-shoulder-mobility",
+                      "question_text": "Quality of movement",
+                      "question_type": "select",
+                      "is_required": true,
+                      "display_order": 4,
+                      "help_text": "Assess the overall quality of the shoulder flexion movement",
+                      "options": [
+                        {
+                          "value": "smooth",
+                          "label": "Smooth and controlled"
+                        },
+                        {
+                          "value": "hesitant",
+                          "label": "Hesitant but controlled"
+                        },
+                        {
+                          "value": "compensated",
+                          "label": "Movement with compensations"
+                        },
+                        {
+                          "value": "restricted",
+                          "label": "Significantly restricted"
+                        }
+                      ],
+                      "validation_rules": {
+                        "required": true,
+                        "enum": [
+                          "smooth",
+                          "hesitant",
+                          "compensated",
+                          "restricted"
+                        ]
+                      },
+                      "metadata": {
+                        "assessment_type": "qualitative"
+                      },
+                      "response": {
+                        "id": "resp-sh-004",
+                        "question_id": "q-sh-004",
+                        "test_result_id": "tr-004-shoulder-mob",
+                        "response": "compensated",
+                        "created_at": "2025-10-23T09:41:00Z",
+                        "updated_at": "2025-10-23T09:41:00Z"
+                      }
+                    },
+                    {
+                      "id": "q-sh-005",
+                      "test_id": "test-shoulder-mobility",
+                      "question_text": "Clinical notes",
+                      "question_type": "textarea",
+                      "is_required": false,
+                      "display_order": 5,
+                      "help_text": "Additional observations about shoulder mobility",
+                      "validation_rules": {
+                        "max_length": 1000
+                      },
+                      "metadata": {
+                        "field_type": "notes"
+                      },
+                      "response": {
+                        "id": "resp-sh-005",
+                        "question_id": "q-sh-005",
+                        "test_result_id": "tr-004-shoulder-mob",
+                        "response": "Patient reports mild discomfort in right shoulder at end range. Notable scapular winging on right side. Recommend rotator cuff strengthening and scapular stabilization exercises.",
+                        "created_at": "2025-10-23T09:42:00Z",
+                        "updated_at": "2025-10-23T09:42:00Z"
+                      }
+                    }
+                  ],
+                  "media_files": [
+                    {
+                      "id": "media-sh-001",
+                      "test_result_id": "tr-004-shoulder-mob",
+                      "file_type": "image",
+                      "file_url": "https://storage.example.com/assessments/a1b2c3d4/shoulder-rom-measurement.jpg",
+                      "thumbnail_url": "https://storage.example.com/assessments/a1b2c3d4/shoulder-rom-measurement-thumb.jpg",
+                      "file_size_bytes": 2097152,
+                      "view_angle": "lateral",
+                      "caption": "Goniometer measurement - Right shoulder flexion",
+                      "created_at": "2025-10-23T09:38:30Z",
+                      "metadata": {
+                        "resolution": "3024x4032",
+                        "format": "jpeg"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "summary": {
+                "total_tests": 4,
+                "completed_tests": 4,
+                "total_questions": 16,
+                "answered_questions": 16,
+                "total_media_files": 5,
+                "bilateral_comparisons": [
+                  {
+                    "test_name": "Single Leg Balance Test",
+                    "metric": "Balance Duration",
+                    "left_value": 23,
+                    "right_value": 40,
+                    "unit": "seconds",
+                    "difference": 17,
+                    "percent_difference": "42.5%",
+                    "interpretation": "Right leg shows significantly better balance. Consider left leg strengthening."
+                  },
+                  {
+                    "test_name": "Shoulder Mobility Assessment",
+                    "metric": "Shoulder Flexion ROM",
+                    "left_value": 175,
+                    "right_value": 145,
+                    "unit": "degrees",
+                    "difference": 30,
+                    "percent_difference": "17.1%",
+                    "interpretation": "Right shoulder shows limited ROM. Recommend mobility work and investigation of underlying causes."
+                  }
+                ],
+                "key_findings": [
+                  "Overhead squat shows mild knee valgus and limited ankle mobility",
+                  "Significant bilateral balance deficit (42.5% difference) favoring right leg",
+                  "Right shoulder mobility limited to 145° (normal: 170-180°)",
+                  "Minimal pain reported during shoulder movement (2/10)",
+                  "Multiple compensatory patterns observed during movement screening"
+                ],
+                "recommendations": [
+                  "Ankle mobility exercises (calf stretching, dorsiflexion drills)",
+                  "Hip and glute strengthening to address knee valgus",
+                  "Left leg balance and stability work",
+                  "Right shoulder mobility and rotator cuff strengthening",
+                  "Scapular stabilization exercises",
+                  "Follow-up assessment in 6-8 weeks to track progress"
+                ]
+              }
+            },
+            "meta": {
+              "timestamp": "2025-10-23T09:45:00Z",
+              "request_id": "req_1729674300_abc123",
+              "version": "1.0.0"
+            }
+          },
+          "webhookUrl": "https://fitwithparirp.app.n8n.cloud/webhook-test/ai-agents/create-profiles",
+          "executionMode": "test"
+        }
+      }
+    ]
+  },
+  "versionId": "3fe9d792-d5c2-469c-87a6-fb8d985a074a",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-24T06:45:16.613Z",
+      "updatedAt": "2025-10-24T06:45:16.613Z",
+      "role": "workflow:owner",
+      "workflowId": "HtrlnGdyQDgQ4PxM",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
