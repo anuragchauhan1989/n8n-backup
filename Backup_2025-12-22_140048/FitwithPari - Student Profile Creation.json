@@ -1,0 +1,324 @@
+{
+  "createdAt": "2025-10-27T05:43:34.824Z",
+  "updatedAt": "2025-10-27T06:01:00.000Z",
+  "id": "FW4E4HYc6BceAZ4k",
+  "name": "FitwithPari - Student Profile Creation",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Receive Student Data",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "student-profile",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson",
+        "responseCode": 200
+      },
+      "webhookId": "student-profile-webhook"
+    },
+    {
+      "id": "validate-data",
+      "name": "Validate & Process Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Validate and process incoming student data\nconst data = $input.all()[0].json;\n\n// Define fitness level mapping\nconst fitnessLevels = {\n  'L1': 'Beginner',\n  'L2': 'Moderately Experienced',\n  'L3': 'Intermediate'\n};\n\n// Validate required fields\nif (!data.student_id || !data.name || !data.email) {\n  throw new Error('Missing required fields: student_id, name, or email');\n}\n\n// Process health conditions\nconst healthConditions = {\n  knee_issues: data.knee_issues || false,\n  back_issues: data.back_issues || false,\n  shoulder_issues: data.shoulder_issues || false,\n  wrist_issues: data.wrist_issues || false,\n  hip_discomfort: data.hip_discomfort || false,\n  ankle_mobility_limits: data.ankle_mobility_limits || false,\n  balance_limitations: data.balance_limitations || false,\n  diastasis_recti: data.diastasis_recti || false,\n  pelvic_floor_concerns: data.pelvic_floor_concerns || false,\n  high_blood_pressure: data.high_blood_pressure || false,\n  osteopenia: data.osteopenia || false,\n  osteoporosis: data.osteoporosis || false,\n  left_right_imbalance: data.left_right_imbalance || false,\n  flexibility_restrictions: data.flexibility_restrictions || false,\n  hypermobility: data.hypermobility || false\n};\n\n// Process movement patterns and restrictions\nconst movementData = {\n  tight_hip_flexors: data.tight_hip_flexors || false,\n  tight_hamstrings: data.tight_hamstrings || false,\n  limited_shoulder_mobility: data.limited_shoulder_mobility || false,\n  neck_tension: data.neck_tension || false,\n  weak_right_glute: data.weak_right_glute || false,\n  weak_left_glute: data.weak_left_glute || false,\n  coordination_challenges: data.coordination_challenges || false\n};\n\n// Fitness level\nconst fitnessLevel = data.fitness_level || 'L1';\nconst fitnessLevelName = fitnessLevels[fitnessLevel] || 'Beginner';\n\n// Exercise history\nconst exerciseHistory = data.exercise_history || [];\n\n// Create structured profile data\nconst studentProfile = {\n  student_id: data.student_id,\n  name: data.name,\n  email: data.email,\n  age: data.age || null,\n  fitness_level: fitnessLevel,\n  fitness_level_name: fitnessLevelName,\n  health_conditions: healthConditions,\n  movement_data: movementData,\n  exercise_history: exerciseHistory,\n  created_at: new Date().toISOString(),\n  updated_at: new Date().toISOString()\n};\n\n// Create short profile (minimal essential data for quick lookups)\nconst shortProfile = {\n  student_id: data.student_id,\n  name: data.name,\n  fitness_level: fitnessLevel,\n  fitness_level_name: fitnessLevelName,\n  critical_safety_flags: [\n    healthConditions.high_blood_pressure ? 'high_bp' : null,\n    healthConditions.osteoporosis ? 'osteoporosis' : null,\n    healthConditions.diastasis_recti ? 'diastasis' : null,\n    healthConditions.pelvic_floor_concerns ? 'pelvic_floor' : null\n  ].filter(flag => flag !== null),\n  created_at: new Date().toISOString()\n};\n\nreturn [\n  {\n    json: {\n      longProfile: studentProfile,\n      shortProfile: shortProfile,\n      validation_status: 'success'\n    }\n  }\n];"
+      }
+    },
+    {
+      "id": "insert-long-profile",
+      "name": "Insert Long Profile",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        680,
+        220
+      ],
+      "parameters": {
+        "operation": "insert",
+        "table": {
+          "value": "student_profiles_long",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "column": "student_id",
+              "type": "string"
+            },
+            {
+              "column": "name",
+              "type": "string"
+            },
+            {
+              "column": "email",
+              "type": "string"
+            },
+            {
+              "column": "age",
+              "type": "number"
+            },
+            {
+              "column": "fitness_level",
+              "type": "string"
+            },
+            {
+              "column": "fitness_level_name",
+              "type": "string"
+            },
+            {
+              "column": "health_conditions",
+              "type": "json"
+            },
+            {
+              "column": "movement_data",
+              "type": "json"
+            },
+            {
+              "column": "exercise_history",
+              "type": "json"
+            },
+            {
+              "column": "created_at",
+              "type": "dateTime"
+            },
+            {
+              "column": "updated_at",
+              "type": "dateTime"
+            }
+          ]
+        },
+        "dataMode": "autoMapInputData"
+      }
+    },
+    {
+      "id": "insert-short-profile",
+      "name": "Insert Short Profile",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        680,
+        380
+      ],
+      "parameters": {
+        "operation": "insert",
+        "table": {
+          "value": "student_profiles_short",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "column": "student_id",
+              "type": "string"
+            },
+            {
+              "column": "name",
+              "type": "string"
+            },
+            {
+              "column": "fitness_level",
+              "type": "string"
+            },
+            {
+              "column": "fitness_level_name",
+              "type": "string"
+            },
+            {
+              "column": "critical_safety_flags",
+              "type": "json"
+            },
+            {
+              "column": "created_at",
+              "type": "dateTime"
+            }
+          ]
+        },
+        "dataMode": "autoMapInputData"
+      }
+    },
+    {
+      "id": "prepare-long-profile",
+      "name": "Prepare Long Profile Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        140
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const data = $input.all()[0].json.longProfile;\n\nreturn [{\n  json: {\n    student_id: data.student_id,\n    name: data.name,\n    email: data.email,\n    age: data.age,\n    fitness_level: data.fitness_level,\n    fitness_level_name: data.fitness_level_name,\n    health_conditions: JSON.stringify(data.health_conditions),\n    movement_data: JSON.stringify(data.movement_data),\n    exercise_history: JSON.stringify(data.exercise_history),\n    created_at: data.created_at,\n    updated_at: data.updated_at\n  }\n}];"
+      }
+    },
+    {
+      "id": "prepare-short-profile",
+      "name": "Prepare Short Profile Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        460
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const data = $input.all()[0].json.shortProfile;\n\nreturn [{\n  json: {\n    student_id: data.student_id,\n    name: data.name,\n    fitness_level: data.fitness_level,\n    fitness_level_name: data.fitness_level_name,\n    critical_safety_flags: JSON.stringify(data.critical_safety_flags),\n    created_at: data.created_at\n  }\n}];"
+      }
+    },
+    {
+      "id": "merge-results",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        900,
+        300
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll"
+      }
+    },
+    {
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Student profiles created successfully',\n    student_id: items[0].json.student_id,\n    profiles_created: {\n      long_profile: true,\n      short_profile: true\n    },\n    timestamp: new Date().toISOString()\n  }\n}];"
+      }
+    }
+  ],
+  "connections": {
+    "Receive Student Data": {
+      "main": [
+        [
+          {
+            "node": "Validate & Process Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate & Process Input": {
+      "main": [
+        [
+          {
+            "node": "Prepare Long Profile Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Short Profile Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Long Profile Data": {
+      "main": [
+        [
+          {
+            "node": "Insert Long Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Short Profile Data": {
+      "main": [
+        [
+          {
+            "node": "Insert Short Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Long Profile": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Short Profile": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "80b71850-7acf-44b2-9460-0f2599eb74fa",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-27T05:43:34.827Z",
+      "updatedAt": "2025-10-27T05:43:34.827Z",
+      "role": "workflow:owner",
+      "workflowId": "FW4E4HYc6BceAZ4k",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
