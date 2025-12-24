@@ -1,0 +1,982 @@
+{
+  "createdAt": "2025-11-24T11:20:19.310Z",
+  "updatedAt": "2025-11-25T07:23:48.000Z",
+  "id": "q55JMA9sVfUO8ujw",
+  "name": "My workflow 125",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "de415e0e-858d-4c7d-8a64-238654e6d92c",
+      "name": "When chat message received",
+      "webhookId": "66646614-5146-4e39-aceb-e928255b3544"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an AI appointment booking assistant connected to Google Calendar via n8n.\n\nYour job is to:\n- Understand the user’s request to schedule a meeting or appointment.\n- Ask for missing details (date, time, purpose, duration, etc.) if not provided.\n- Once all details are available, use the Google Calendar tool to create the event.\n- Confirm the booking after the event is successfully added to the calendar.\n\nWhen creating an event, always use the following JSON keys:\n{\n  \"eventSummary\": \"Meeting with [user name or purpose]\",\n  \"eventStart\": \"YYYY-MM-DDTHH:MM:SS+05:30\",\n  \"eventEnd\": \"YYYY-MM-DDTHH:MM:SS+05:30\"\n}\n\nIf the user asks to check availability, use the same tool to check free slots.\n\nBe polite, helpful, and confirm the final appointment details before saving.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "77e34e3f-4ed0-4c54-b9cf-be834a6018c9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        0,
+        224
+      ],
+      "id": "da280a3f-57d4-471f-851a-0df9c3dc8730",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        240
+      ],
+      "id": "9b02e95e-662d-404b-8a5d-9b479c0ac6e4",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "girlu9744@gmail.com",
+          "mode": "list",
+          "cachedResultName": "girlu9744@gmail.com"
+        },
+        "timeMin": "={{ $fromAI(\"afterDate\") }}",
+        "timeMax": "={{ $fromAI(\"beforeDate\") }}",
+        "options": {
+          "timeZone": {
+            "__rl": true,
+            "value": "US/East-Indiana",
+            "mode": "list",
+            "cachedResultName": "US/East-Indiana"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        224
+      ],
+      "id": "5d4971e0-b7cb-474e-aea2-c3a157066f30",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "jYAk7dtz1zuJ5zEd",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "girlu9744@gmail.com",
+          "mode": "list",
+          "cachedResultName": "girlu9744@gmail.com"
+        },
+        "start": "={{ $fromAI(\"startDate\") }}",
+        "end": "={{ $fromAI(\"endDate\") }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $fromAI(\"userEmailAddress\") }}",
+            "girlu9744@gmail.com"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        160
+      ],
+      "id": "d7282b8e-6d3b-4b7e-89ff-4f1e02b32d27",
+      "name": "Create an event in Google Calendar"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "fcccbebc04f70afb2f23cdfe2a736547cad91574"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json[\"Company Name\"] }}"
+            },
+            {
+              "name": "gl",
+              "value": "={{ $json[\"Company Country \"] }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json[\"Company City\"] }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "83a60c2f-a6e3-4e95-8cf1-b9d8ef2ff98d",
+      "name": "2. Scrape Company Information",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1296,
+        256
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "fcccbebc04f70afb2f23cdfe2a736547cad91574"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=site:linkedin.com/in/ \"{{ $json.searchParameters.q }}\" (Founder OR \"Co-Founder\" OR CEO OR \"Chief Executive Officer\" OR President OR CTO OR Safety OR EHS OR \"Environmental Health\" OR \"Health Safety\" OR Operations OR Facilities OR Plant OR Engineering OR \"Field Services\" OR Maintenance) (Founder OR \"Co-Founder\" OR CEO OR President OR CTO OR Director OR Manager OR Coordinator OR VP OR \"Vice President\" OR Head OR Supervisor OR Regional)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "082e92d4-e71e-4fe7-bd2d-9bc0165917b5",
+      "name": "Linkedin Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1504,
+        240
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the text that contains the JSON block\nconst raw = $json[\"content\"][\"parts\"][0][\"text\"];\n\n// Extract JSON content between ```json and ```\nconst match = raw.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n\nif (!match) {\n  return [{ error: \"JSON block not found\" }];\n}\n\n// Parse the extracted JSON string\nconst parsed = JSON.parse(match[1]);\n\n// Clean and map to desired output format\nconst cleaned = parsed.map(item => {\n  const name = item.title.split(\" - \")[0]?.trim();\n  const postMatch = item.subtitle.match(/· (.*?) ·/);\n  const post = postMatch ? postMatch[1].trim() : \"\";\n\n  return {\n    Name: name,\n    Post: post,\n    Linkedin_URL: item.link\n  };\n});\n\nreturn cleaned;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        224
+      ],
+      "id": "7802d0ee-f788-45fb-89ec-b17605a44dcf",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4fdc8fa0-8933-4eae-bd99-33e1efcefa3a",
+              "name": "Data",
+              "value": "={{ $json.organic }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1728,
+        224
+      ],
+      "id": "8218225d-6869-48e8-a5b6-fb51dccec941",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert data validator and company researcher. You will be given a list of people from the same company with their names, job titles, and LinkedIn URLs. Your task is to rigorously verify the accuracy of each record and remove duplicates, fake profiles, or incorrect entries.\n\nCRITICAL VALIDATION RULES:\n1. Search the internet to verify each person actually works at the company\n2. Cross-check the person's location with the company's known office locations\n3. If there are multiple people claiming the SAME title (e.g., two CEOs), keep ONLY the most credible one based on:\n   - Profile completeness and detail\n   - Connection count and engagement\n   - Consistency with company's official information\n   - Location matching company headquarters or major offices\n4. Remove profiles that appear fake or unverified (low connections, minimal details, location mismatches)\n5. Verify LinkedIn URLs are valid and match the person's name\n\nInput Data:\nCompany Name: {{ $('On form submission').item.json['Company Name'] }}\nCompany Location:{{ $('On form submission').item.json['Company City'] }}, {{ $('On form submission').item.json['Company Country '] }}\nData of people: {{ $json.Data }}\n\nKeep only verified, relevant positions including:\n- C-Suite: Founder, Co-Founder, CEO, Chief Executive Officer, President, CTO, COO\n- Safety: Safety Director, Director Health & Safety, Director EHS, Health & Safety Coordinator, Safety Coordinator, Environmental Health & Safety Coordinator, VP Health & Safety, VP Safety, VP EHS, Vice President Corporate Safety\n- Operations: Head of Operations & Maintenance, Head of Operations Engineering, Plant Manager, Plant Director, Regional Operations Manager, Field Services Supervisor, Service Operations Manager, Director of Maintenance, COO\n- Facilities: Engineering & Facilities Director, Engineering & Facilities Manager, Facilities Manager, Facilities Director, Director of Engineering\n\nReturn ONLY verified profiles in this JSON format:\n[\n  {\n    \"title\": \"Full Name - Company Name\",\n    \"subtitle\": \"Location · Role · Company\",\n    \"link\": \"LinkedIn Profile URL\"\n  }\n]\n\nDo not include any extra text, explanation, or comments outside the JSON output. If a profile cannot be verified or appears fake, DO NOT include it."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        224
+      ],
+      "id": "8bd73c1d-2906-4834-b763-444f17e47a64",
+      "name": "Message a model"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17r784Nt_jhppWJlZ1e0ch-fvapLFVverUaLVMIUuDpA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17r784Nt_jhppWJlZ1e0ch-fvapLFVverUaLVMIUuDpA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.Name }}",
+            "Post": "={{ $json.Post }}",
+            "Linkedin_URL": "={{ $json.Linkedin_URL }}",
+            "Company Name": "={{ $('On form submission').item.json[\"Company Name\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Post",
+              "displayName": "Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Linkedin_URL",
+              "displayName": "Linkedin_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2320,
+        224
+      ],
+      "id": "1732e09b-a83f-42df-aeb0-513748d37234",
+      "name": "Append row in sheet"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1744,
+        576
+      ],
+      "id": "014b83c0-7807-4f50-913c-f0501a5f3f82",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "resource": "Actor runs"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        560
+      ],
+      "id": "1cad1319-ea90-4745-8bae-55f6d92dc9ff",
+      "name": "Run an Actor and get dataset",
+      "credentials": {
+        "apifyApi": {
+          "id": "4Xogg6oFsGNGcj6X",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "17r784Nt_jhppWJlZ1e0ch-fvapLFVverUaLVMIUuDpA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17r784Nt_jhppWJlZ1e0ch-fvapLFVverUaLVMIUuDpA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.email }}",
+            "row_number": "={{ $('Loop Over Items').item.json.row_number }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Post",
+              "displayName": "Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Linkedin_URL",
+              "displayName": "Linkedin_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2192,
+        528
+      ],
+      "id": "019b2b92-bc30-4c5b-8820-b2f18b1626ba",
+      "name": "Update row in sheet"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2496,
+        224
+      ],
+      "id": "c122aedc-b794-4993-9c03-bf92cfb41b3b",
+      "name": "Wait1",
+      "webhookId": "db6ac7af-7297-4966-b3ec-2713f6630ade"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0085c7fd-4c67-42af-a800-5d14d3ba4a1c",
+              "leftValue": "={{ $json.Email }}",
+              "rightValue": "NA",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "eaffff92-886f-41a1-8f11-872b9b47c68a",
+              "leftValue": "={{ $json.Linkedin_URL }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        576
+      ],
+      "id": "8619778f-8383-43b6-803d-80312a026799",
+      "name": "Filter1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2432,
+        656
+      ],
+      "id": "cbf1a8f3-80de-4fb0-9354-0c339a302cca",
+      "name": "Wait",
+      "webhookId": "44eb41a7-ac3a-4ee6-abf4-706d7701021f"
+    },
+    {
+      "parameters": {
+        "formTitle": "Give company details",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Company Name",
+              "placeholder": "AAA corp.",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company Country ",
+              "placeholder": "USA"
+            },
+            {
+              "fieldLabel": "Company City",
+              "placeholder": "Chicago"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        256
+      ],
+      "id": "b89b5ff8-70de-46d0-b7c5-00810b62d110",
+      "name": "On form submission",
+      "webhookId": "a5e5348d-2c86-4f69-bfee-d55fe20a7390"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1288844163,
+          "mode": "list",
+          "cachedResultName": "DATA",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=1288844163"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1168,
+        576
+      ],
+      "id": "2016770d-f7d0-42ca-a7b6-cab2c17c3ece",
+      "name": "Get row(s) in sheet"
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\nreturn items.filter(item => {\n  const row = item.json.row_number;\n  if (seen.has(row)) return false;\n  seen.add(row);\n  return true;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        576
+      ],
+      "id": "5e982620-9bd4-404e-8046-2f34b3af194f",
+      "name": "Remove Duplicate"
+    },
+    {
+      "parameters": {
+        "content": "## Company Research & Linkedin Profile Finder\n\n",
+        "height": 288,
+        "width": 1600,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1072,
+        144
+      ],
+      "typeVersion": 1,
+      "id": "1cc3c5e7-b373-4a98-80a7-edfcf148790a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "##    Find Email & Verify",
+        "height": 416,
+        "width": 1536,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1072,
+        512
+      ],
+      "typeVersion": 1,
+      "id": "93eb48b7-c8bb-4f39-b1a3-f04a0f3b719d",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorId": {
+          "__rl": true,
+          "value": "GlxYrQp6f3YAzH2W2",
+          "mode": "list",
+          "cachedResultName": "Leads Scraper - ✅  Up to 30k with EMAILS ✅ similar to Apollo (peakydev/leads-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/GlxYrQp6f3YAzH2W2/input"
+        },
+        "customBody": "{\n    \"includeWebResults\": false,\n    \"language\": \"en\",\n    \"locationQuery\": \"New York, USA\",\n    \"maxCrawledPlacesPerSearch\": 50,\n    \"maxImages\": 0,\n    \"maximumLeadsEnrichmentRecords\": 0,\n    \"scrapeContacts\": false,\n    \"scrapeDirectories\": false,\n    \"scrapeImageAuthors\": false,\n    \"scrapePlaceDetailPage\": false,\n    \"scrapeReviewsPersonalData\": true,\n    \"scrapeTableReservationProvider\": false,\n    \"searchStringsArray\": [\n        \"restaurant\"\n    ],\n    \"skipClosedPlaces\": false\n}"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        688
+      ],
+      "id": "2d8d2a81-ccfb-47ab-8a30-ed4bcd985895",
+      "name": "Run an Actor and get dataset1",
+      "credentials": {
+        "apifyApi": {
+          "id": "4Xogg6oFsGNGcj6X",
+          "name": "Apify account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Scrape Company Information": {
+      "main": [
+        [
+          {
+            "node": "Linkedin Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin Scraper": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter1": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "2. Scrape Company Information",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Run an Actor and get dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run an Actor and get dataset": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Run an Actor and get dataset1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "0773f1a4-269d-4edc-acef-acf76b026e32",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-24T11:20:19.321Z",
+      "updatedAt": "2025-11-24T11:20:19.321Z",
+      "role": "workflow:owner",
+      "workflowId": "q55JMA9sVfUO8ujw",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-10-09T17:12:39.941Z",
+      "updatedAt": "2025-10-09T17:12:39.941Z",
+      "id": "2Ok8Nm9mzM5YRyEE",
+      "name": "AI Agent"
+    }
+  ]
+}
