@@ -1,0 +1,767 @@
+{
+  "createdAt": "2025-12-01T07:31:38.167Z",
+  "updatedAt": "2025-12-02T18:42:02.000Z",
+  "id": "6waZmzrNiwEveQs7",
+  "name": "My workflow 126",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1aFwTsRFstKlkDrPWNIYjC81ppNCXqTsv",
+          "mode": "list",
+          "cachedResultName": "James: Meet Recordings",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1aFwTsRFstKlkDrPWNIYjC81ppNCXqTsv"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -16
+      ],
+      "id": "a723b5b3-7f2d-418c-822e-3b8c39bb5a92",
+      "name": "James: Meet Recordings"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "13T3FDqgu1542HalfOHe17j3WZyexjXTT",
+          "mode": "list",
+          "cachedResultName": "Arjun: Meet Recordings",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/13T3FDqgu1542HalfOHe17j3WZyexjXTT"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        144
+      ],
+      "id": "dcc07aa8-925d-4bc0-91a3-77658fe0f156",
+      "name": "Arjun: Meet Recordings",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OF1WKdd2PL1HcLqp",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1wTIjhZvq1pMQV7CI4afPJhv0Nub2E5DG",
+          "mode": "list",
+          "cachedResultName": "Oliver: Meet Recordings",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1wTIjhZvq1pMQV7CI4afPJhv0Nub2E5DG"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        304
+      ],
+      "id": "568e829b-eb62-4450-965d-07222c6657b8",
+      "name": "Oliver: Meet Recordings"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1E70LRTaIKAkFbAO5-XU446sf8q7ZhlsH",
+          "mode": "list",
+          "cachedResultName": "Sam: Meet Recordings",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1E70LRTaIKAkFbAO5-XU446sf8q7ZhlsH"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        480
+      ],
+      "id": "6558c37d-5b72-44f5-82c6-c75a3d8068ca",
+      "name": "Sam: Meet Recordings",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OF1WKdd2PL1HcLqp",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "={{ $json.id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        240
+      ],
+      "id": "4b966159-ec93-4048-a318-94992fd885d3",
+      "name": "Get a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "syCeyELUAtLU93HS",
+          "name": "Google Docs account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.folk.app/v1/people?email=siddiqui.developer@gmail.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        240
+      ],
+      "id": "adf327ca-f1cd-4c3c-b89c-7a46771b819a",
+      "name": "Get Person Details from folk"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "53bf5757-7ba4-4d9f-8fc0-93e71f22fc09",
+              "name": "data.items[0].customFieldValues[\"grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f\"][\"Google Drive Link\"]",
+              "value": "={{ $json.data.items[0].customFieldValues[\"grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f\"][\"Google Drive Link\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        240
+      ],
+      "id": "76ab5e84-43cc-4287-99ba-c56d6124bec1",
+      "name": "Extract Drive Link"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $json.data?.items?.[0];\nif (!item) {\n  return [{ json: { exploreFolderId: null, error: \"No items found\" }}];\n}\n\nconst groups = item.customFieldValues || {};\nconst groupKeys = Object.keys(groups);\n\nlet link = null;\n\n// Find the first non-null link\nfor (const key of groupKeys) {\n  const group = groups[key];\n  for (const fieldName in group) {\n    if (group[fieldName] && typeof group[fieldName] === \"string\") {\n      link = group[fieldName];\n      break;\n    }\n  }\n  if (link) break;\n}\n\n// If no valid link found\nif (!link || !link.includes(\"/folders/\")) {\n  return [{\n    json: {\n      exploreFolderId: null,\n      rawLink: link,\n      error: \"No valid drive link found\"\n    }\n  }];\n}\n\n// Extract folder ID\nconst folderId = link.split(\"/folders/\")[1]?.split(\"?\")[0] || null;\n\nreturn [{\n  json: {\n    exploreFolderId: folderId,\n    rawLink: link\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        240
+      ],
+      "id": "5a5b1170-4ba4-4892-b5de-d6f3b8fccd33",
+      "name": "Extracts the folder ID"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $('Get Person Details from folk').item.json.data.items[0].firstName }} {{ $('Get Person Details from folk').item.json.data.items[0].lastName }} & DQventures : Explore Stage ",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "={{ $json.exploreFolderId }}",
+            "mode": "id"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        544,
+        240
+      ],
+      "id": "6d1faf57-1a0c-4726-a5b1-49a074684c68",
+      "name": "Find Transcript Folder",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "MHpV3RFlQ0eIOJ0x",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        736,
+        240
+      ],
+      "id": "a9e84681-0e7f-474c-bbe5-8f70b4a78c2f",
+      "name": "Copy the transcript into this folder",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OF1WKdd2PL1HcLqp",
+          "name": "Google Drive account 3"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "James: Meet Recordings": {
+      "main": [
+        [
+          {
+            "node": "Get a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Arjun: Meet Recordings": {
+      "main": [
+        [
+          {
+            "node": "Get a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Oliver: Meet Recordings": {
+      "main": [
+        [
+          {
+            "node": "Get a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sam: Meet Recordings": {
+      "main": [
+        [
+          {
+            "node": "Get a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a document": {
+      "main": [
+        []
+      ]
+    },
+    "Get Person Details from folk": {
+      "main": [
+        [
+          {
+            "node": "Extract Drive Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Drive Link": {
+      "main": [
+        [
+          {
+            "node": "Extracts the folder ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extracts the folder ID": {
+      "main": [
+        [
+          {
+            "node": "Find Transcript Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Transcript Folder": {
+      "main": [
+        [
+          {
+            "node": "Copy the transcript into this folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "James: Meet Recordings": [
+      {
+        "json": {
+          "exportLinks": {
+            "application/rtf": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=rtf",
+            "application/vnd.oasis.opendocument.text": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=odt",
+            "text/html": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=html",
+            "application/pdf": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=pdf",
+            "text/x-markdown": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=markdown",
+            "text/markdown": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=markdown",
+            "application/epub+zip": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=epub",
+            "application/zip": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=zip",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=docx",
+            "text/plain": "https://docs.google.com/feeds/download/documents/export/Export?id=1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY&exportFormat=txt"
+          },
+          "parents": [
+            "1aFwTsRFstKlkDrPWNIYjC81ppNCXqTsv"
+          ],
+          "lastModifyingUser": {
+            "displayName": "james",
+            "kind": "drive#user",
+            "me": false,
+            "permissionId": "07773515671924149917",
+            "emailAddress": "james@dqventures.com",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjVXQv-2s8TAs-_NsxRUpNj_9GniA1WLRk8u9IBGmZ9-HpWOBw=s64"
+          },
+          "owners": [
+            {
+              "displayName": "james",
+              "kind": "drive#user",
+              "me": false,
+              "permissionId": "07773515671924149917",
+              "emailAddress": "james@dqventures.com",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjVXQv-2s8TAs-_NsxRUpNj_9GniA1WLRk8u9IBGmZ9-HpWOBw=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "15073532265745330876",
+              "type": "user",
+              "emailAddress": "futurefounders@dqventures.com",
+              "role": "writer",
+              "displayName": "DQventures Team",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjVHyO5eBKRFshtqKAPrACux44u1LGn2DRLmovggNNqV_1cvGOqPhCcpL0ThCd6KhCtu_golQg8CLJ8X1fohtMZtWa7Tj7J20kjvDGix5X4CpVUOm9QzlYkWCs7gkWxQUmH5K7w71ZxGmr5HBWyaKUtMOtAJUoVdW3jvbMIxKg6G6U2yPWk7I0sPsODyflWKFu6xdCeo39m-AQH9qkOWrKwaInX_cXnV5vxvvCoikq1Qg7lN9UfD16XAy-vVROhKESTTXtq7rjkk3ihcxRv2np_X0tJz_IoFclrNMH-HiFtBDiNZHs5hHoCAC5A3rDNGYAn-pZK9QvHGzRuieTGKs4-mhH0Suk3bUXGhfS4ZV6dmzyrU5TEMDKO4y4kiUnm6G3T_5zWyDv_G8sKLw1pxz3lJ2nvIYz5Il85ZRsmc0-FlQelYxv-w0ABNAe2Lp-ZyaQUr4f3iX9J4hOuZJNrIyK52T_Xv9C92OWossq8Dz_Hx-9-Fu4A6-8hkEvutMWpjCCnX1cEPUgGKq-nwHbMmCaZdYeXXSrA8g5cHAtOBczJeA5EshfNG84gMD0peZPpn4yWvk48DP6UTLaMe3wFb4Ym5gwk3NkcQqVeUONTmIA35KrZp6jX8S3ju0h2D3I_2uKNwpt-qkKS45M12KYT3MogfjCzgpk-gHWHRE7RQTMPTRfdX16Ckg-46JWg7gC5OIzI6LNfGEtB6JGNU2Mudfr8AtoIylQQuoCWIPuClRPLxrTqPebpAmIe334tajO2uLtxDqASvuTP0kYNuiXLT2y1eEP_JE7jzfUT5VjDWX6L1jcjq9uwQAZS_92ZN_GwGzCocwZsRpfaRCIDOfENdPs7c6mKQyID1O2o10PTu7UjxBMVpjyMRg47eQ64tKNsfuJIOaxCTTjUnlTmemXsc1u-2n7jy12JIeZh80jJbdiPqBYUKj4RkFNnuTVx1lExPvNAPeAAIuW6ThyL4cwSvHx_xlc0gktWb3EDtYz6McfFTDzP7xuE_6tcn2WC62x7td_Y9gF2b7FjaVsdxEyRb9HyOcukvNXqVdLZmZHHfjLA0NeizaPscBDo=s64",
+              "deleted": false,
+              "pendingOwner": false
+            },
+            {
+              "kind": "drive#permission",
+              "id": "07773515671924149917",
+              "type": "user",
+              "emailAddress": "james@dqventures.com",
+              "role": "owner",
+              "displayName": "james",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjVXQv-2s8TAs-_NsxRUpNj_9GniA1WLRk8u9IBGmZ9-HpWOBw=s64",
+              "deleted": false,
+              "pendingOwner": false
+            },
+            {
+              "kind": "drive#permission",
+              "id": "00159515784948254938",
+              "type": "user",
+              "emailAddress": "saboor@groweasysolutions.ca",
+              "role": "writer",
+              "displayName": "saboor",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjU1w40LQrqfWsK6dlZdvdJuor_47hMMt8TmZOMdV3Zk44LOJw=s64",
+              "deleted": false,
+              "pendingOwner": false
+            },
+            {
+              "kind": "drive#permission",
+              "id": "17910151333727194233",
+              "type": "user",
+              "emailAddress": "siddiqui.developer@gmail.com",
+              "role": "reader",
+              "displayName": "siddiqui.developer",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjVTlJKoPNaFlXaQxfCLQXDnrI_-Sq6vly7Ho6PqhD2vZ04QEciO=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": false,
+            "canChangeItemDownloadRestriction": false,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": false,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": false,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": false,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": false,
+            "canMoveItemOutOfDrive": false,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": false,
+            "canUntrash": false
+          },
+          "permissionIds": [
+            "15073532265745330876",
+            "07773515671924149917",
+            "00159515784948254938",
+            "17910151333727194233"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY",
+          "name": "DQventures weekly call: Explore Stage (Saboor Meherzad) - 2025/11/24 14:53 CET - Notes by Gemini",
+          "mimeType": "application/vnd.google-apps.document",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "11",
+          "webViewLink": "https://docs.google.com/document/d/1fX9-lnhsLv0hybCiKwgjnW2aq-kckkFpWpWoSN_tIJY/edit?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+          "hasThumbnail": true,
+          "thumbnailLink": "https://lh3.googleusercontent.com/drive-storage/AJQWtBMOJlud2G8fOTInoc_y1krbr9AqKF44bE5bu4sXfjUveZ4ej5DtbORXRShyAZfGLFL6vUnme7cjgkI8v2_7TRpKG9KISXJJ_S07J9jKFMBGxgDOt2TV3ep7oFTsNw=s220",
+          "thumbnailVersion": "2",
+          "viewedByMe": true,
+          "viewedByMeTime": "2025-12-02T06:32:15.347Z",
+          "createdTime": "2025-11-24T14:14:13.678Z",
+          "modifiedTime": "2025-11-24T14:14:26.556Z",
+          "modifiedByMe": false,
+          "shared": true,
+          "ownedByMe": false,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "size": "5600",
+          "quotaBytesUsed": "5600",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      }
+    ],
+    "Oliver: Meet Recordings": [
+      {
+        "json": {
+          "exportLinks": {
+            "application/rtf": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=rtf",
+            "application/vnd.oasis.opendocument.text": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=odt",
+            "text/html": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=html",
+            "application/pdf": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=pdf",
+            "text/x-markdown": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=markdown",
+            "text/markdown": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=markdown",
+            "application/epub+zip": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=epub",
+            "application/zip": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=zip",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=docx",
+            "text/plain": "https://docs.google.com/feeds/download/documents/export/Export?id=1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc&exportFormat=txt"
+          },
+          "parents": [
+            "1wTIjhZvq1pMQV7CI4afPJhv0Nub2E5DG"
+          ],
+          "lastModifyingUser": {
+            "displayName": "oliver",
+            "kind": "drive#user",
+            "me": false,
+            "permissionId": "05766216246290089672",
+            "emailAddress": "oliver@dqventures.com",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXuNBdvdlQ8BqasRi-Teyi7XDeddqrUS7uMhV5LKrsCydLLbA=s64"
+          },
+          "owners": [
+            {
+              "displayName": "oliver",
+              "kind": "drive#user",
+              "me": false,
+              "permissionId": "05766216246290089672",
+              "emailAddress": "oliver@dqventures.com",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXuNBdvdlQ8BqasRi-Teyi7XDeddqrUS7uMhV5LKrsCydLLbA=s64"
+            }
+          ],
+          "permissions": [
+            {
+              "kind": "drive#permission",
+              "id": "08344071316409747704",
+              "type": "user",
+              "emailAddress": "sam@dqventures.com",
+              "role": "writer",
+              "displayName": "Sam Middlehurst",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocInWB6l9FV3uI6QteA9hvGQEhr8WidPitIn-5NNrR8aTlzr7A=s64",
+              "deleted": false,
+              "pendingOwner": false
+            },
+            {
+              "kind": "drive#permission",
+              "id": "05766216246290089672",
+              "type": "user",
+              "emailAddress": "oliver@dqventures.com",
+              "role": "owner",
+              "displayName": "oliver",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXuNBdvdlQ8BqasRi-Teyi7XDeddqrUS7uMhV5LKrsCydLLbA=s64",
+              "deleted": false,
+              "pendingOwner": false
+            },
+            {
+              "kind": "drive#permission",
+              "id": "15073532265745330876",
+              "type": "user",
+              "emailAddress": "futurefounders@dqventures.com",
+              "role": "writer",
+              "displayName": "DQventures Team",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXluMbZWa6-VEa_TO7Kyun0QVFtd8h5-EjQzXX4S3NMavf3znatUDdV-X38X6zEJHZSrswjS9on6AMhiFHdyhv2fOyfh7p2UYwRerVa00KU8Z9gRLjDGPM1GU99uGoMaP6tVXq5_2U70WbwrNBlG8PUzzNAuK2tosnQirgB8_q1fUozpneY2F0eevlL0Ud8DNvtm9ULY3ntshCeDutIbfkIcbsDWjpXqQDL3HURceEMiKuzBpSoF5EoYNdF3lw82KkyID_bWS1G5npXRqi5hK-2ai6GYfPn-Jy_ebhL-H2Dkv7Pn-L1apyg2urX5SJlVoOfqukY2UinDiao8SYaeaimSGd22pnBy07H-4N_wsvEDS29HUv6DluSpMx4ikH5rsF_V2_AsLQFyGkUWAXAmHiNQQi40-T5NEFKOm_HiyoftalUpoTUZ9DAkfU8Qg9ftNV2JvA6Vq2FN1cGyjhQAnpR0FwEDdBZ7G9fH8kx_u7qGLf4v428tsjzJEnwSvhH3651XqheXqR3i198B-CSSKUg9WtOTwS_m5Cjk5SrVJKvKaksQHo3aM08f6TG1V47UKyMIWkcAKZun0hWINug9GVZIx-k9-rX90DNFmqZF4Ja2CB8HHF28x5S3VbzOtlxB3DScylP8VSVpP4_ZiyH_lj0y-l-mUpGhKJ7txHU5aOT97SeFRfGP_H2gWiYK6nB-TXZTSsEJOlVgfzQuh4iCga31GQy-7C1Rvydcu8wULZGt3XZtTGPDwdoNGRGvGZOGjVfZeYr3_lS71DUrLlC5ZFxz4vr8kw6EpSmqMtB-x5y4_vYVhSWCmMONQKJlhYyEqzhuvuC_Y1HpHJRlHvqxI395ymnJWZb0Lnbw3HQCoXPPm44EmfeK0rnefSOuT0GrXAueyQMVW-tX9FhJEDFRgzF0-F0FiMNJH9yvWPlH0zidvY0oYCbZvM75D2LDFSisNgfqBY7TsesA1QUppDa8rH686udpA93-YQSzgGbSlpYsgFvhRlK_9cetrkZTzuw2KXBKyLV-TdTXYv0C1h1p-hspl8DC2-SHmvzLZ0wX5ggyG43xTBfJds=s64",
+              "deleted": false,
+              "pendingOwner": false
+            },
+            {
+              "kind": "drive#permission",
+              "id": "08420994396030416652",
+              "type": "user",
+              "emailAddress": "darius@dqventures.com",
+              "role": "writer",
+              "displayName": "darius",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWVOWnVOqrwNnV0kQYkuNGFxzm3CUsl3HqobyLFBSigI7Y4ew=s64",
+              "deleted": false,
+              "pendingOwner": false
+            },
+            {
+              "kind": "drive#permission",
+              "id": "02849601237282511378",
+              "type": "user",
+              "emailAddress": "arjun@dqventures.com",
+              "role": "writer",
+              "displayName": "arjun",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXRbbfVTLW7lSinGr_4rGlAGi6DKRu1J7eYJxYDnoseV5NVgA=s64",
+              "deleted": false,
+              "pendingOwner": false
+            },
+            {
+              "kind": "drive#permission",
+              "id": "17910151333727194233",
+              "type": "user",
+              "emailAddress": "siddiqui.developer@gmail.com",
+              "role": "reader",
+              "displayName": "siddiqui.developer",
+              "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjVTlJKoPNaFlXaQxfCLQXDnrI_-Sq6vly7Ho6PqhD2vZ04QEciO=s64",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "spaces": [
+            "drive"
+          ],
+          "capabilities": {
+            "canAcceptOwnership": false,
+            "canAddChildren": false,
+            "canAddMyDriveParent": false,
+            "canChangeCopyRequiresWriterPermission": false,
+            "canChangeItemDownloadRestriction": false,
+            "canChangeSecurityUpdateEnabled": false,
+            "canChangeViewersCanCopyContent": false,
+            "canComment": true,
+            "canCopy": true,
+            "canDelete": false,
+            "canDisableInheritedPermissions": false,
+            "canDownload": true,
+            "canEdit": true,
+            "canEnableInheritedPermissions": true,
+            "canListChildren": false,
+            "canModifyContent": true,
+            "canModifyContentRestriction": true,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": false,
+            "canModifyLabels": false,
+            "canMoveChildrenWithinDrive": false,
+            "canMoveItemIntoTeamDrive": false,
+            "canMoveItemOutOfDrive": false,
+            "canMoveItemWithinDrive": true,
+            "canReadLabels": false,
+            "canReadRevisions": true,
+            "canRemoveChildren": false,
+            "canRemoveContentRestriction": false,
+            "canRemoveMyDriveParent": true,
+            "canRename": true,
+            "canShare": true,
+            "canTrash": false,
+            "canUntrash": false
+          },
+          "permissionIds": [
+            "08344071316409747704",
+            "05766216246290089672",
+            "15073532265745330876",
+            "08420994396030416652",
+            "02849601237282511378",
+            "17910151333727194233"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "kind": "drive#file",
+          "id": "1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc",
+          "name": "Next Steps DQ / Phillip - 2025/11/28 07:56 GMT+07:00 - Notes by Gemini",
+          "mimeType": "application/vnd.google-apps.document",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "version": "7",
+          "webViewLink": "https://docs.google.com/document/d/1D1yUiMAnUB9hPKWd8fGRHbVZ1ic4T2Y1T4zkKBLTAJc/edit?usp=drivesdk",
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+          "hasThumbnail": true,
+          "thumbnailLink": "https://lh3.googleusercontent.com/drive-storage/AJQWtBOeukDiAeTsARRPaBQycnL8UrABImsAuXzhUWiHkJFraTu0-K1HATAiIO5oX0m36W3SMoESt41jOzPsnIXiQuScMSbjZui9UiBLgby6iti3N-KEF8OV_XFuSxBqrw=s220",
+          "thumbnailVersion": "2",
+          "viewedByMe": false,
+          "createdTime": "2025-11-28T01:54:47.402Z",
+          "modifiedTime": "2025-11-28T01:55:06.048Z",
+          "modifiedByMe": false,
+          "shared": true,
+          "ownedByMe": false,
+          "viewersCanCopyContent": true,
+          "copyRequiresWriterPermission": false,
+          "writersCanShare": true,
+          "size": "32267",
+          "quotaBytesUsed": "32267",
+          "isAppAuthorized": false,
+          "inheritedPermissionsDisabled": false
+        }
+      }
+    ],
+    "Extract Drive Link": [
+      {
+        "json": {
+          "data": {
+            "items": [
+              {
+                "customFieldValues": {
+                  "grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f": {
+                    "Google Drive Link": "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxY?usp=drive_link"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "versionId": "d891039e-41e7-412f-b2df-395a3f2938cd",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-12-01T07:31:38.175Z",
+      "updatedAt": "2025-12-01T07:31:38.175Z",
+      "role": "workflow:owner",
+      "workflowId": "6waZmzrNiwEveQs7",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
