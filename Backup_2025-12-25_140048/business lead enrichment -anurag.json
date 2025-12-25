@@ -1,0 +1,132 @@
+{
+  "createdAt": "2025-09-24T06:42:52.488Z",
+  "updatedAt": "2025-09-30T07:37:29.000Z",
+  "id": "Sv4qvgkI11vYFn7l",
+  "name": "business lead enrichment -anurag",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b91247fa-acd9-419a-b34e-639b818f3ff0",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "0",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "70dffa5d-37dc-432a-b77c-86873a5c1f3a",
+      "name": "1. Read Companies from Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -240,
+        -32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -32
+      ],
+      "id": "0f6ad96d-930a-4f32-a1e8-5e50092d052e",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ed3fb53-6168-4d62-a799-abbf67384fb9",
+      "name": "Extract Company Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        176,
+        -32
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "1. Read Companies from Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Read Companies from Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Extract Company Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "36d54594-f997-4223-88a0-7c4c18f55075",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-24T06:42:52.497Z",
+      "updatedAt": "2025-09-24T06:42:52.497Z",
+      "role": "workflow:owner",
+      "workflowId": "Sv4qvgkI11vYFn7l",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
