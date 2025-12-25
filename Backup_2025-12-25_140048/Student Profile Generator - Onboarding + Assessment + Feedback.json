@@ -1,0 +1,308 @@
+{
+  "createdAt": "2025-10-22T09:57:44.917Z",
+  "updatedAt": "2025-10-24T13:45:07.000Z",
+  "id": "WwNltY6MfqdFzmWH",
+  "name": "Student Profile Generator - Onboarding + Assessment + Feedback",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "get-students",
+      "name": "Get Students to Process",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, full_name, email, phone, date_of_birth, current_program FROM public.students WHERE id IS NOT NULL ORDER BY created_at DESC LIMIT 10",
+        "options": {}
+      }
+    },
+    {
+      "id": "get-onboarding",
+      "name": "Get Onboarding Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        680,
+        180
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  s.id as student_id,\n  s.full_name,\n  s.email,\n  s.phone,\n  s.date_of_birth,\n  s.current_program,\n  s.created_at as onboarding_date\nFROM public.students s\nWHERE s.id = '{{ $json.id }}'",
+        "options": {}
+      }
+    },
+    {
+      "id": "get-assessments",
+      "name": "Get Assessment Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  fa.id as assessment_id,\n  fa.student_id,\n  fa.assessment_phase,\n  fa.location,\n  fa.weather_conditions,\n  fa.notes,\n  fa.summary,\n  fa.coach_observations,\n  fa.completed_at,\n  json_agg(\n    json_build_object(\n      'test_name', tt.test_name,\n      'test_slug', tt.test_slug,\n      'category', tt.category,\n      'status', tr.status,\n      'score', tr.score,\n      'notes', tr.notes,\n      'responses', (\n        SELECT json_agg(\n          json_build_object(\n            'question', tq.question_text,\n            'field_name', tq.field_name,\n            'question_type', tq.question_type,\n            'response_value', qr.response_value,\n            'response_numeric', qr.response_numeric,\n            'response_array', qr.response_array\n          )\n        )\n        FROM public.question_responses qr\n        JOIN public.test_questions tq ON qr.question_id = tq.id\n        WHERE qr.test_result_id = tr.id\n      )\n    )\n  ) as test_results\nFROM public.fitness_assessments fa\nLEFT JOIN public.test_results tr ON tr.assessment_id = fa.id\nLEFT JOIN public.test_templates tt ON tr.test_template_id = tt.id\nWHERE fa.student_id = '{{ $json.id }}'\nGROUP BY fa.id\nORDER BY fa.completed_at DESC",
+        "options": {}
+      }
+    },
+    {
+      "id": "get-feedback",
+      "name": "Get Feedback Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        680,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  s.metadata as student_metadata,\n  json_agg(\n    json_build_object(\n      'session_id', asess.id,\n      'assessment_phase', asess.assessment_phase,\n      'created_at', asess.created_at,\n      'metadata', asess.metadata\n    )\n  ) as session_history\nFROM public.students s\nLEFT JOIN public.assessment_sessions asess ON asess.student_id = s.id\nWHERE s.id = '{{ $json.id }}'\nGROUP BY s.id, s.metadata",
+        "options": {}
+      }
+    },
+    {
+      "id": "merge-data",
+      "name": "Merge Student Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const onboarding = $input.first().json;\nconst assessments = $input.all()[1]?.json || [];\nconst feedback = $input.all()[2]?.json || {};\n\n// Merge all data sources\nconst mergedData = {\n  student_id: onboarding.student_id,\n  full_name: onboarding.full_name,\n  email: onboarding.email,\n  phone: onboarding.phone,\n  date_of_birth: onboarding.date_of_birth,\n  current_program: onboarding.current_program,\n  onboarding_date: onboarding.onboarding_date,\n  \n  // Assessment data\n  assessments: assessments,\n  \n  // Feedback and metadata\n  student_metadata: feedback.student_metadata || {},\n  session_history: feedback.session_history || [],\n  \n  // Metadata for LLM context\n  _context: {\n    total_assessments: assessments.length,\n    latest_assessment_date: assessments[0]?.completed_at || null,\n    assessment_phases_completed: [...new Set(assessments.map(a => a.assessment_phase))]\n  }\n};\n\nreturn { json: mergedData };"
+      }
+    },
+    {
+      "id": "llm-summarizer",
+      "name": "LLM Profile Summarizer",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1120,
+        300
+      ],
+      "parameters": {
+        "prompt": "=You are a fitness profile analyst. Analyze the following student data and create a comprehensive profile summary.\n\n**Student Data:**\n{{ JSON.stringify($json, null, 2) }}\n\n**Instructions:**\nCreate a detailed JSON profile with the following structure:\n\n{\n  \"student_info\": {\n    \"id\": \"student UUID\",\n    \"name\": \"full name\",\n    \"contact\": { \"email\": \"\", \"phone\": \"\" },\n    \"demographics\": { \"date_of_birth\": \"\", \"age_group\": \"\" },\n    \"program\": \"current program\"\n  },\n  \"fitness_summary\": {\n    \"overall_status\": \"Brief overall fitness status\",\n    \"strengths\": [\"list of strengths identified\"],\n    \"areas_for_improvement\": [\"list of areas needing work\"],\n    \"progression\": \"Description of progress over time\"\n  },\n  \"assessment_insights\": {\n    \"baseline\": { \"summary\": \"\", \"key_metrics\": {} },\n    \"mid\": { \"summary\": \"\", \"key_metrics\": {} },\n    \"final\": { \"summary\": \"\", \"key_metrics\": {} }\n  },\n  \"recommendations\": {\n    \"immediate_focus\": [\"top 3 focus areas\"],\n    \"training_suggestions\": [\"specific training recommendations\"],\n    \"lifestyle_notes\": [\"lifestyle or habit recommendations\"]\n  },\n  \"coach_notes\": \"Consolidated coach observations and important notes\",\n  \"metadata\": {\n    \"profile_generated_at\": \"timestamp\",\n    \"data_sources\": [\"onboarding\", \"assessments\", \"feedback\"],\n    \"assessment_count\": 0,\n    \"latest_assessment_date\": \"\"\n  }\n}\n\nProvide ONLY valid JSON, no markdown or explanations.",
+        "options": {
+          "temperature": 0.3
+        }
+      }
+    },
+    {
+      "id": "openai-model",
+      "name": "OpenAI GPT-4",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        480
+      ],
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 4000
+        }
+      }
+    },
+    {
+      "id": "parse-json",
+      "name": "Parse LLM Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "let llmResponse = $json.output;\n\n// Extract JSON from markdown code blocks if present\nif (llmResponse.includes('```json')) {\n  llmResponse = llmResponse.match(/```json\\n([\\s\\S]*?)\\n```/)[1];\n} else if (llmResponse.includes('```')) {\n  llmResponse = llmResponse.match(/```\\n([\\s\\S]*?)\\n```/)[1];\n}\n\ntry {\n  const parsedProfile = JSON.parse(llmResponse);\n  \n  // Add generation timestamp\n  parsedProfile.metadata = parsedProfile.metadata || {};\n  parsedProfile.metadata.profile_generated_at = new Date().toISOString();\n  \n  return { json: parsedProfile };\n} catch (error) {\n  throw new Error(`Failed to parse LLM response as JSON: ${error.message}\\nResponse: ${llmResponse}`);\n}"
+      }
+    },
+    {
+      "id": "store-profile",
+      "name": "Store in student_profiles_full",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1560,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO public.student_profiles_full (\n  student_id,\n  profile_data,\n  generated_at,\n  data_sources\n) VALUES (\n  '{{ $('Merge Student Data').item.json.student_id }}',\n  '{{ JSON.stringify($json) }}'::jsonb,\n  NOW(),\n  ARRAY['onboarding', 'assessment', 'feedback']\n)\nON CONFLICT (student_id) \nDO UPDATE SET\n  profile_data = EXCLUDED.profile_data,\n  generated_at = EXCLUDED.generated_at,\n  updated_at = NOW()\nRETURNING *",
+        "options": {}
+      }
+    },
+    {
+      "id": "success-output",
+      "name": "Profile Generated",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        300
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Students to Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Students to Process": {
+      "main": [
+        [
+          {
+            "node": "Get Onboarding Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Assessment Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Feedback Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Onboarding Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Student Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Assessment Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Student Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Feedback Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Student Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Student Data": {
+      "main": [
+        [
+          {
+            "node": "LLM Profile Summarizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4": {
+      "main": [
+        [
+          {
+            "node": "LLM Profile Summarizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Profile Summarizer": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM Response": {
+      "main": [
+        [
+          {
+            "node": "Store in student_profiles_full",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store in student_profiles_full": {
+      "main": [
+        [
+          {
+            "node": "Profile Generated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "7f4343de-69e8-44a1-9b75-5bbf9cf38e13",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-22T09:57:44.920Z",
+      "updatedAt": "2025-10-22T09:57:44.920Z",
+      "role": "workflow:owner",
+      "workflowId": "WwNltY6MfqdFzmWH",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
