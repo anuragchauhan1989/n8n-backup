@@ -1,0 +1,134 @@
+{
+  "createdAt": "2025-12-19T08:41:51.193Z",
+  "updatedAt": "2025-12-22T16:05:21.000Z",
+  "id": "gQ9BXNP64OQUcngO",
+  "name": "My workflow 129",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1575a2cf-18c1-488b-9608-b3bce393d638",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\n\nconst lastValue = staticData.testValue ?? null;\n\nreturn [\n  {\n    json: {\n      fetched_from_previous_execution: lastValue,\n      fetched_at: new Date().toISOString(),\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "846a6ba8-5956-4ad9-b381-2947a415954e",
+      "name": "Load Previous Value"
+    },
+    {
+      "parameters": {
+        "jsCode": "const newValue = `test_${Date.now()}`;\n\nreturn [\n  {\n    json: {\n      previous_value: $input.first().json.fetched_from_previous_execution,\n      new_value_to_save: newValue,\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "1b5ff91d-89ad-40f2-bf7b-fe307c619864",
+      "name": "Generate New Value"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\n\nconst newValue = $input.first().json.new_value_to_save;\n\n// Persist value for next execution\nstaticData.testValue = newValue;\n\nreturn [\n  {\n    json: {\n      saved_value: newValue,\n      saved_at: new Date().toISOString(),\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        0
+      ],
+      "id": "b496d213-f3d8-4e60-bdcf-961e18d85c47",
+      "name": "Save Value for Next Execution Node"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Load Previous Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Previous Value": {
+      "main": [
+        [
+          {
+            "node": "Generate New Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate New Value": {
+      "main": [
+        [
+          {
+            "node": "Save Value for Next Execution Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Schedule Every 8 hours": {
+      "recurrenceRules": []
+    },
+    "global": {
+      "lastSeenTweetId": null,
+      "myVariable": "default_updated_updated_updated_updated_updated",
+      "testValue": "test_1766134635048"
+    },
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": {},
+  "versionId": "a92c2a5e-344e-48c9-951c-f8852b84c8b6",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-12-19T08:41:51.197Z",
+      "updatedAt": "2025-12-19T08:41:51.197Z",
+      "role": "workflow:owner",
+      "workflowId": "gQ9BXNP64OQUcngO",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
