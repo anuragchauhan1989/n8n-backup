@@ -1,0 +1,1206 @@
+{
+  "createdAt": "2025-11-03T13:35:17.145Z",
+  "updatedAt": "2025-11-06T12:02:24.000Z",
+  "id": "tkxHEtpqHdAFOrpA",
+  "name": "datamodel client",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "522589d7-7a13-4041-b97c-fff6dd4e3139",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {},
+            {}
+          ]
+        }
+      },
+      "id": "986239f7-cdd8-4783-a98b-b7add1edfa8a",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sbhcw0ZHDOyB8WkdAD1ititALjnrX4CVWkf-zV-EY5w",
+          "mode": "list",
+          "cachedResultName": "Artikel 24010",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sbhcw0ZHDOyB8WkdAD1ititALjnrX4CVWkf-zV-EY5w/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1232364177,
+          "mode": "list",
+          "cachedResultName": "data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sbhcw0ZHDOyB8WkdAD1ititALjnrX4CVWkf-zV-EY5w/edit#gid=1232364177"
+        },
+        "options": {}
+      },
+      "id": "79948039-fe0f-4a32-a600-2bbd5820b44a",
+      "name": "Read Sheet 1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        -16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ioAUf8DCcHd9Z8vh7pMB_jhuU0jWt7v1UF7EA-Drqck",
+          "mode": "list",
+          "cachedResultName": "Artikelen - Diverse soorten - Private Label",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ioAUf8DCcHd9Z8vh7pMB_jhuU0jWt7v1UF7EA-Drqck/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 110741973,
+          "mode": "list",
+          "cachedResultName": "data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ioAUf8DCcHd9Z8vh7pMB_jhuU0jWt7v1UF7EA-Drqck/edit#gid=110741973"
+        },
+        "options": {}
+      },
+      "id": "689bdcad-fe58-4fd4-bda3-e5d777d287d3",
+      "name": "Read Sheet 2",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1wuMl4m6QQ0S3YkdQT2PZLMAz9RFkPABBVlsLNjsFGMA",
+          "mode": "list",
+          "cachedResultName": "Verpakking Artikel 590602 - INT 8 vaks mini",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wuMl4m6QQ0S3YkdQT2PZLMAz9RFkPABBVlsLNjsFGMA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1341557646,
+          "mode": "list",
+          "cachedResultName": "data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wuMl4m6QQ0S3YkdQT2PZLMAz9RFkPABBVlsLNjsFGMA/edit#gid=1341557646"
+        },
+        "options": {}
+      },
+      "id": "53aaa956-1e2c-4187-b8a2-0bb360ec706c",
+      "name": "Read Sheet 3",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        224
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "18_A1azI7laTToQ6GTVwlIbJ1mmmldjaGz7z_KWk0iEQ",
+          "mode": "list",
+          "cachedResultName": "Hoofdartikelgroepen Daelmans Banket BV",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18_A1azI7laTToQ6GTVwlIbJ1mmmldjaGz7z_KWk0iEQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1841338518,
+          "mode": "list",
+          "cachedResultName": "data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18_A1azI7laTToQ6GTVwlIbJ1mmmldjaGz7z_KWk0iEQ/edit#gid=1841338518"
+        },
+        "options": {}
+      },
+      "id": "73eee41c-a826-409d-b6a3-0bdfb3c754b0",
+      "name": "Read Sheet 4",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        352
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sVisHAb650Kp721_V7IMRQznHMn0sphzqwVbo0G89Uk",
+          "mode": "list",
+          "cachedResultName": "Artikel 20252 - Abrikozencake - g'woon (Private Label)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sVisHAb650Kp721_V7IMRQznHMn0sphzqwVbo0G89Uk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1702658156,
+          "mode": "list",
+          "cachedResultName": "data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sVisHAb650Kp721_V7IMRQznHMn0sphzqwVbo0G89Uk/edit#gid=1702658156"
+        },
+        "options": {}
+      },
+      "id": "20273942-e61d-42b6-ba27-a8752703d808",
+      "name": "Read Sheet 5",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        480
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        416,
+        240
+      ],
+      "id": "3000836e-843c-4a08-a6d5-6557c21a1193",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This merges all items into a single object with all unique fields\nconst allItems = $input.all();\nconst mergedData = [];\n\n// Process each item\nfor (const item of allItems) {\n  const data = item.json;\n  mergedData.push(data);\n}\n\n// Return all items\nreturn mergedData.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        288
+      ],
+      "id": "56b46e80-5f5e-46d0-af6f-8a791f1e296d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1OuDHlwvrN-GaT4tC-0qAYXWpTHatTZKgh83NB1jk35g",
+          "mode": "list",
+          "cachedResultName": "Master",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OuDHlwvrN-GaT4tC-0qAYXWpTHatTZKgh83NB1jk35g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Blad1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OuDHlwvrN-GaT4tC-0qAYXWpTHatTZKgh83NB1jk35g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Bedrijf",
+              "displayName": "Bedrijf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Artikel",
+              "displayName": "Artikel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Omschrijving",
+              "displayName": "Omschrijving",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Zoekargument II",
+              "displayName": "Zoekargument II",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Label relatie",
+              "displayName": "Label relatie",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signalering",
+              "displayName": "Signalering",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EAN-code",
+              "displayName": "EAN-code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inhoud per HE (CE per doos)",
+              "displayName": "Inhoud per HE (CE per doos)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inhoud per CE (stuks)",
+              "displayName": "Inhoud per CE (stuks)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "netto Gewicht per CE (gram)",
+              "displayName": "netto Gewicht per CE (gram)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Gewicht",
+              "displayName": "Gewicht",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Eenheid",
+              "displayName": "Eenheid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Interne THT",
+              "displayName": "Interne THT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "THT productie",
+              "displayName": "THT productie",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pallet belading",
+              "displayName": "Pallet belading",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pallet hoeveelheid",
+              "displayName": "Pallet hoeveelheid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Artikelsoort",
+              "displayName": "Artikelsoort",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Artikelgroep",
+              "displayName": "Artikelgroep",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Eenheid_1",
+              "displayName": "Eenheid_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Partijgestuurd",
+              "displayName": "Partijgestuurd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Productsoort",
+              "displayName": "Productsoort",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Productklasse",
+              "displayName": "Productklasse",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Productlijn",
+              "displayName": "Productlijn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Producent",
+              "displayName": "Producent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Selectiecode",
+              "displayName": "Selectiecode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Aanmaakdatum",
+              "displayName": "Aanmaakdatum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Laatste mutatiedatum",
+              "displayName": "Laatste mutatiedatum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Datum en naam aanleggen",
+              "displayName": "Datum en naam aanleggen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Technisch coördinator",
+              "displayName": "Technisch coördinator",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Objective",
+              "displayName": "Objective",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Checkweger programma",
+              "displayName": "Checkweger programma",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Doosetiket extra info",
+              "displayName": "Doosetiket extra info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Doosetiket lay out no",
+              "displayName": "Doosetiket lay out no",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Doosnummer",
+              "displayName": "Doosnummer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Levertijd in werkdagen",
+              "displayName": "Levertijd in werkdagen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pallet soort",
+              "displayName": "Pallet soort",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pallets stapelen",
+              "displayName": "Pallets stapelen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pallet wikkelen",
+              "displayName": "Pallet wikkelen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Min. THT uitlever",
+              "displayName": "Min. THT uitlever",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "THT Datum formaat",
+              "displayName": "THT Datum formaat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "THT afrondingsmethode:",
+              "displayName": "THT afrondingsmethode:",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Plaats THT",
+              "displayName": "Plaats THT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Data",
+              "displayName": "Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "submittedAt",
+              "displayName": "submittedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "formMode",
+              "displayName": "formMode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        288,
+        672
+      ],
+      "id": "39b29972-5b93-4fb6-8136-af102b33e6c3",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Data",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Data",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -384,
+        672
+      ],
+      "id": "9d028ab9-1fba-4d11-b164-a4b9a2027e89",
+      "name": "On form submission",
+      "webhookId": "8c9a2d65-b3b0-4b40-9ff3-3479e2f20e0a"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        48,
+        672
+      ],
+      "id": "e7b01452-5fcd-4868-bcd7-c023a22b7783",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "let results = [];\n\nfor (const item of $input.all()) {\n    for (key of Object.keys(item.binary)) {\n        results.push({\n            json: {\n                fileName: item.binary[key].fileName\n            },\n            binary: {\n                data: item.binary[key],\n            }\n        });\n    }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        672
+      ],
+      "id": "6c491c8b-8b0b-4b72-ac16-6f9da6dda3b7",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ik geef je al de informatie uit een excel bij product informatie. Hier is alle product informatie te vinden:  {{ $json[\"All data\"] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Je bent mijn specialist in het analyseren van productinformatie.\n\nAnalyseer de volledige dataset op de volgende punten:\n\nControleer of er in de dataset een kolom aanwezig is die een unieke identifier bevat (zoals een SKU, artikelnummer of productcode).\n\nControleer of er in de dataset een kolom aanwezig is die de productnaam bevat.\n\nGeef vervolgens advies over hoe het productdatamodel geoptimaliseerd kan worden. Denk hierbij aan verbeteringen in structuur, naamgeving, dataconsistentie en uitbreidbaarheid (zoals categorieën, varianten, prijsinformatie, voorraadstatus, enzovoort).\n\nGeef je antwoord in het volgende vaste format (houd je strikt aan deze structuur):\n\nUnieke identifier: [Aanwezig/Niet aanwezig] met als kolomnaam [kolomnaam of \"n.v.t.\"]\nProductnaam: [Aanwezig/Niet aanwezig] met als kolomnaam [kolomnaam of \"n.v.t.\"]\nAdvies voor optimalisatie van het productdatamodel: [concreet advies in maximaal 3 zinnen]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        672
+      ],
+      "id": "2c51185e-8d53-4357-91d1-4509e004f8b6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        880
+      ],
+      "id": "4775aae0-0d83-4aa0-999f-5aadf4864536",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "LDBiViZayjBc1njV",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1OuDHlwvrN-GaT4tC-0qAYXWpTHatTZKgh83NB1jk35g",
+          "mode": "list",
+          "cachedResultName": "Master",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OuDHlwvrN-GaT4tC-0qAYXWpTHatTZKgh83NB1jk35g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Blad1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OuDHlwvrN-GaT4tC-0qAYXWpTHatTZKgh83NB1jk35g/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        496,
+        672
+      ],
+      "id": "ffe5e0ba-9f21-4103-98c8-1be250df37c8",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        736,
+        672
+      ],
+      "id": "55a3958a-d7ab-4715-a852-de5aff83f3a4",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a849bbf8-dac3-46a8-8022-041da24847cb",
+              "name": "All data",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        672
+      ],
+      "id": "9911513a-ee4c-4234-a469-09858283e6b9",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=Is er een unieke idenftifier aanwezig:{{ $json.output['Unieke identifier'] }} \n\nIs er een unieke idenftifier aanwezig:{{ $json.output.Productnaam }}\n\nAdvies: {{ $json.output.Advies }}"
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [
+        1856,
+        672
+      ],
+      "id": "9594a337-9c1c-4da3-a274-1cd601efa47b",
+      "name": "Form",
+      "webhookId": "efb53928-0e4b-48c2-805b-e87e3f22cbc5"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"Unieke identifier\": \"SKU\",\n\t\"Productnaam\": \"Koek\",\n    \"Advies\": \"datamodel\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1536,
+        880
+      ],
+      "id": "d1cbd0a0-726a-4c23-be7e-84e511314fe3",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        1088
+      ],
+      "id": "b0bc2ed2-17b8-4af0-af91-df7bf80f3c1a",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "LDBiViZayjBc1njV",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Sheet 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Sheet 2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Sheet 3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Sheet 4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Sheet 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Sheet 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Sheet 2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Sheet 3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Sheet 4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Sheet 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sheet 1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sheet 2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Read Sheet 3": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Read Sheet 4": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Read Sheet 5": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "741e9a64-ec03-4b37-943d-2cf609f62713",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-03T13:35:17.151Z",
+      "updatedAt": "2025-11-03T13:35:17.151Z",
+      "role": "workflow:owner",
+      "workflowId": "tkxHEtpqHdAFOrpA",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
