@@ -1,0 +1,690 @@
+{
+  "createdAt": "2025-10-10T10:25:38.795Z",
+  "updatedAt": "2025-10-10T11:32:27.000Z",
+  "id": "QiQ7ksl3GUxQME6v",
+  "name": "My workflow 28",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg",
+          "mode": "list",
+          "cachedResultName": "KIWI - Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 31908932,
+          "mode": "list",
+          "cachedResultName": "List of Items",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg/edit#gid=31908932"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -880,
+        960
+      ],
+      "id": "018a0da2-e0bb-46b7-a7ea-12ad7ee1f1fe",
+      "name": "items list"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * NORMALIZE ITEMS for the packer.\n * - Maps your headers\n * - Parses Weight \"150g\" → grams\n * - Parses Size (LxBxH) like \"110x70x30\" → mm\n * - Fills missing (w,d,h) via PACK_DIM_BY_TYPE\n * - Computes discounted price from MRP using order quantity threshold\n */\n\nconst CFG = {\n  ORDER_QTY: 200,  // set your current order quantity here\n  DISCOUNT_THRESHOLD: 200,\n  COLS: {\n    category: 'Category',\n    name: 'Item Name',\n    weight: 'Weight',\n    type: 'Type Of Packaging',\n    size: 'Size (LxBxH)',              // \"110x70x30\" (mm) if present\n    mrp: 'MRP',\n    discAbove: 'Above 200 pieces Discount on MRP ',\n    discBelow: 'Below 200 pieces Discount on MRP ',\n  },\n  // Fallback dimensions (mm) when \"Size (LxBxH)\" is empty.\n  // >>>> FILL THESE ONCE based on your real packs <<<<\n  PACK_DIM_BY_TYPE: {\n    'Plastic Round Box': { w: 80, d: 80, h: 60 },   // TODO: update\n    'Small Square':      { w: 90, d: 90, h: 35 },   // TODO: update\n    'Luicella Bottle':   { w: 60, d: 60, h: 180 },  // TODO: update\n    'Tin box':           { w: 100, d: 100, h: 35 }, // TODO: update\n  }\n};\n\nfunction getRow(obj){\n  // Handles shapes like {json:{...}} and plain {...}\n  return obj?.json && typeof obj.json === 'object' ? obj.json : obj;\n}\n\nfunction num(x){\n  if (x === null || x === undefined) return 0;\n  const cleaned = String(x).replace(/[, ]/g, '');\n  const n = Number(cleaned);\n  return Number.isFinite(n) ? n : 0;\n}\n\nfunction parseWeightToGrams(s) {\n  if (!s) return 0;\n  const m = String(s).trim().match(/([\\d.]+)/);\n  return m ? Math.round(parseFloat(m[1])) : 0; // default assume grams as per your data\n}\n\nfunction parseSizeLxBxH(s) {\n  // Accept \"LxBxH\" with x or × separators; ignore units if any\n  if (!s) return null;\n  const m = String(s).replace(/[^\\d.x×]/g,'').split(/[x×]/).map(v => v.trim()).filter(Boolean);\n  if (m.length !== 3) return null;\n  const L = Number(m[0]), B = Number(m[1]), H = Number(m[2]);\n  if ([L,B,H].some(v => !Number.isFinite(v) || v <= 0)) return null;\n  return { w: L, d: B, h: H }; // treat L→w, B→d, H→h\n}\n\nfunction dimFromType(type) {\n  if (!type) return null;\n  const k = String(type).trim();\n  const found = CFG.PACK_DIM_BY_TYPE[k];\n  return found ? { ...found } : null;\n}\n\nfunction chooseDiscount(row){\n  const above = num(row[CFG.COLS.discAbove]); // e.g., 0.40\n  const below = num(row[CFG.COLS.discBelow]); // e.g., 0.35\n  const useAbove = CFG.ORDER_QTY >= CFG.DISCOUNT_THRESHOLD;\n  const disc = useAbove ? above : (below || above || 0);\n  return (disc >= 0 && disc <= 1) ? disc : 0;\n}\n\nconst incoming = $('Tap (original items)').first().json.items;\nconst rows = incoming.flatMap(x => {\n  const payload = getRow(x);\n  // You pasted a sample that itself wraps rows in { items: [ {json:{...}}, ... ] }\n  if (payload && Array.isArray(payload.items)) {\n    return payload.items.map(getRow);\n  }\n  return [payload];\n});\n\n// Build normalized items\nconst out = [];\nfor (const r of rows) {\n  if (!r) continue;\n\n  const name = String(r[CFG.COLS.name] ?? '').trim();\n  const category = String(r[CFG.COLS.category] ?? '').trim();\n  const type = String(r[CFG.COLS.type] ?? '').trim();\n  const mrp = num(r[CFG.COLS.mrp]);\n  const weight_g = parseWeightToGrams(r[CFG.COLS.weight]);\n\n  // Dimensions priority: explicit \"Size (LxBxH)\" → fallback to PACK_DIM_BY_TYPE\n  let dims = parseSizeLxBxH(r[CFG.COLS.size]) || dimFromType(type);\n  if (!dims) {\n    // If still missing, skip with a warning-like placeholder (packer needs dims)\n    continue;\n  }\n\n  const disc = chooseDiscount(r);\n  const priceAfterDiscount = Math.round(mrp * (1 - disc));\n\n  out.push({\n    id: name || `${category}-${mrp}`,  // make id stable; you can switch to \"S. No.\" if unique\n    name,\n    category,\n    type,\n    w: dims.w, d: dims.d, h: dims.h,  // mm\n    weight: weight_g,                 // grams\n    mrp,\n    price: priceAfterDiscount,        // used if you want price bands\n    qty: 9999,                        // unlimited unless you add a \"Qty Available\" column\n  });\n}\n\nif (!out.length) {\n  return [{ json: { error: 'No items with usable dimensions. Fill PACK_DIM_BY_TYPE or Size (LxBxH).' } }];\n}\n\nreturn [{ json: { items: out, units: { dims: 'mm', weight: 'g' } } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bdfd0d4e-0e5a-432f-91a9-53cecb9c9f2c",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg",
+          "mode": "list",
+          "cachedResultName": "KIWI - Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 290808651,
+          "mode": "list",
+          "cachedResultName": "Packaging Material ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg/edit#gid=290808651"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -432,
+        960
+      ],
+      "id": "081e4efd-8982-43e0-9ab4-7da982c6e2a4",
+      "name": "packaging sheet"
+    },
+    {
+      "parameters": {
+        "jsCode": "/************* MAP your \"packaging sheet\" columns here *************/\nconst BOXMAP = {\n  id: 'Box ID',\n  name: 'Box Name',\n  W: 'Inner Width (mm)',\n  D: 'Inner Depth (mm)',\n  H: 'Inner Height (mm)',\n  maxWeight: 'Max Weight (g)',\n};\n\n// Business rules (tweak as needed)\nconst CFG = {\n  priceMin: 0,\n  priceMax: 9999999,\n  maxCombosPerBox: 10,  // how many combos to output per box\n  beamWidth: 5,         // variety/speed knob\n};\n\nfunction n(x){ const v = Number(String(x ?? '').replace(/[, ]/g,'')); return Number.isFinite(v) ? v : 0; }\n\n/******************* 3D PACKER (ESL + Guillotine) *******************/\nfunction orientations(it){\n  const { w,d,h } = it, uniq=new Set();\n  const perms = [[w,d,h],[w,h,d],[d,w,h],[d,h,w],[h,w,d],[h,d,w]];\n  return perms.map(([W,D,H])=>({...it,w:W,d:D,h:H}))\n    .filter(o=>{ const k=`${o.w}x${o.d}x${o.h}`; if(uniq.has(k)) return false; uniq.add(k); return true;});\n}\nfunction byVolumeDesc(a,b){ return (b.w*b.d*b.h)-(a.w*a.d*a.h); }\nfunction fits(a,b){ return a.w<=b.w && a.d<=b.d && a.h<=b.h; }\nfunction splitSpace(S,p){\n  const out=[];\n  if (S.w-p.w>0) out.push({x:S.x+p.w,y:S.y,z:S.z,w:S.w-p.w,d:S.d,h:S.h});\n  if (S.d-p.d>0) out.push({x:S.x,y:S.y+p.d,z:S.z,w:p.w,d:S.d-p.d,h:S.h});\n  if (S.h-p.h>0) out.push({x:S.x,y:S.y,z:S.z+p.h,w:p.w,d:p.d,h:S.h-p.h});\n  return out;\n}\nfunction pruneSpaces(spaces){\n  return spaces.filter((s,i)=>!spaces.some((t,j)=>\n    j!==i && s.x>=t.x && s.y>=t.y && s.z>=t.z &&\n    s.x+s.w<=t.x+t.w && s.y+s.d<=t.y+t.d && s.z+s.h<=t.z+t.h\n  ));\n}\nfunction packIntoBox(items, box, maxCombos=1, beam=1){\n  const expanded=[];\n  for (const it of items) for (let k=0;k<(it.qty||1);k++) expanded.push({...it, uid:`${it.id}#${k}`});\n  expanded.sort(byVolumeDesc);\n  let beams=[{spaces:[{x:0,y:0,z:0,w:box.W,d:box.D,h:box.H}],placed:[],weight:0}];\n  for (const it of expanded){\n    const next=[];\n    for (const state of beams){\n      next.push(state); // skip\n      let best=null;\n      for (const o of orientations(it)){\n        for (let si=0; si<state.spaces.length; si++){\n          const S=state.spaces[si];\n          if (!fits(o,S)) continue;\n          const score=(S.h-o.h)+(S.w-o.w)+(S.d-o.d);\n          if (!best || score<best.score) best={o,si,score,S};\n        }\n      }\n      if (best && state.weight + it.weight <= box.maxWeight){\n        const {o,si,S}=best;\n        const newSpaces=state.spaces.slice(); newSpaces.splice(si,1);\n        const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n        const pruned=pruneSpaces(newSpaces);\n        next.push({\n          spaces: pruned,\n          placed: [...state.placed, { id: it.id, name: it.name, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z, weight: it.weight, mrp: it.mrp, category: it.category }],\n          weight: state.weight + it.weight\n        });\n      }\n    }\n    beams = next\n      .map(b=>{\n        const pv=b.placed.reduce((s,p)=>s+p.w*p.d*p.h,0);\n        const fv=b.spaces.reduce((s,S)=>s+S.w*S.d*S.h,0);\n        return { ...b, _score:(pv*100000)-fv - (b.weight>box.maxWeight?1e12:0) };\n      })\n      .sort((a,b)=>b._score-a._score)\n      .slice(0, beam);\n  }\n  const res=[];\n  for (const b of beams.slice(0, maxCombos)) if (b.placed.length) res.push({ items:b.placed, totalWeight:b.weight });\n  return res;\n}\n/***************** END PACKER *****************/\n\n// Gather both inputs and separate boxes vs items payload.\nconst inputs = $input.all();\nconst itemsPayload = (inputs.find(i => i.json && i.json.items)?.json?.items) || [];\nconst boxRows = inputs\n  .filter(i => i.json && !i.json.items) // rows from \"packaging sheet\"\n  .map(i => i.json);\n\n// (Optional) pre-filter items by theme/category here\nconst items = itemsPayload;\n\nfunction groupCounts(placed){\n  const m=new Map();\n  for (const p of placed){\n    const key=p.id;\n    if (!m.has(key)) m.set(key,{ id:p.id, name:p.name, category:p.category, qty:0, mrp:p.mrp });\n    m.get(key).qty += 1;\n  }\n  return [...m.values()];\n}\nfunction priceOf(grouped){ return grouped.reduce((s,g)=>s + (g.mrp||0)*g.qty, 0); }\nfunction volumeOfBox(b){ return b.W*b.D*b.H; }\nfunction volumeOfPlaced(placed){ return placed.reduce((s,p)=>s+p.w*p.d*p.h,0); }\n\nconst out=[];\nfor (const r of boxRows){\n  const box = {\n    id: String(r[BOXMAP.id] ?? '').trim(),\n    name: String(r[BOXMAP.name] ?? '').trim(),\n    W: n(r[BOXMAP.W]),\n    D: n(r[BOXMAP.D]),\n    H: n(r[BOXMAP.H]),\n    maxWeight: Math.max(1, n(r[BOXMAP.maxWeight]) || 9_999_999),\n  };\n  if (!box.id || !box.W || !box.D || !box.H) continue;\n\n  const combos = packIntoBox(items, box, CFG.maxCombosPerBox, CFG.beamWidth)\n    .map((c, idx)=>{\n      const grouped = groupCounts(c.items);\n      const price = priceOf(grouped);\n      const fillPct = Math.round((volumeOfPlaced(c.items)/volumeOfBox(box))*1000)/10;\n      return {\n        boxId: box.id,\n        boxName: box.name,\n        comboIndex: idx+1,\n        totalWeight_g: c.totalWeight,\n        totalMRP: price,\n        fillPct,\n        skus: grouped,\n      };\n    })\n    .filter(x => x.totalMRP >= CFG.priceMin && x.totalMRP <= CFG.priceMax);\n\n  for (const combo of combos){\n    const skuLine = combo.skus.map(s => `${s.id} x${s.qty}`).join(', ');\n    out.push({\n      json: {\n        BoxID: combo.boxId,\n        BoxName: combo.boxName,\n        Combo: combo.comboIndex,\n        FillPercent: combo.fillPct,\n        TotalWeight_g: combo.totalWeight_g,\n        TotalMRP: combo.totalMRP,\n        SKUs: skuLine,\n      }\n    });\n  }\n}\n\nreturn out.length ? out : [{ json: { info: 'No combos produced. Check column mappings & constraints.' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "2a9edd94-15f0-4246-97fb-8dc59d2c3418",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * COST-AWARE 3D PACKER (n8n Code Node)\n * - Multi-objective: maximize fill% AND minimize discounted cost per volume\n * - Shelf-aware placement to reduce leftover height gaps\n * - Gap-filling pass with small items\n * - Returns options in your requested JSON structure\n *\n * Execution: Run Once for All Items\n * Upstreams:\n *   1) Normalize Items → ONE item: { json: { items: [...] } }\n *   2) packaging sheet → MANY rows (or wrapper { packaging: [ {json:{...}}, ... ] })\n */\n\n/* =========================\n   1) CONFIG & COLUMN MAPS\n   ========================= */\nconst BOXMAP = {\n  id:       'Item Name',\n  name:     'Item Name',\n  sizeInch: 'Size (Inch.)',\n  mrp:      'MRP',\n  discAbove:'Above 200 pieces Discount on MRP ',\n  discBelow:'Below 200 pieces Discount on MRP ',\n};\n\nconst CFG = {\n  ORDER_QTY: 199,                     // < DISCOUNT_THRESHOLD → 35% like your example (set 200 for 40%)\n  DISCOUNT_THRESHOLD: 200,\n  DEFAULT_INCH_HEIGHT: 3,\n  MM_PER_INCH: 25.4,\n\n  // Search/quality knobs\n  maxCombosPerBox: 6,                 // how many options to keep per box\n  beamWidth: 6,                       // larger = more variety, slower\n  // performance guards\n  MAX_UNITS_PER_SKU: 4,               // cap per-SKU expansion within a box\n  MAX_TOTAL_EXPANDED_UNITS: 180,      // cap total units expanded within a box\n\n  // Cost-vs-fill tradeoff in the score:\n  // score = fillRatio - LAMBDA * (discountedCost / placedVolume_mm3)\n  LAMBDA_COST_PER_MM3: 0.00000008,    // tune this: raise to prefer cheaper packs over tiny extra fill\n\n  // Gap filling pass (small items)\n  GAPFILL_MAX_TRIES: 200,             // limit attempts to keep runtime predictable\n\n  // Optional: defaults for boxes with missing sizes (in inches)\n  BOX_DEFAULTS_BY_NAME: {\n    // 'Khatta Box': { L: 10, B: 10, H: 4 },\n  },\n\n  DEBUG: false,\n};\n\n/* =========================\n   2) HELPERS\n   ========================= */\nfunction n(x){ const v=Number(String(x??'').replace(/[, ]/g,'')); return Number.isFinite(v)?v:0; }\nfunction rowOf(x){ return x?.json && typeof x.json==='object' ? x.json : x; }\nfunction r2(v){ return Math.round((v + Number.EPSILON) * 100) / 100; }\n\nfunction parseInches(s){\n  if(!s) return null;\n  const parts = String(s).replace(/[^\\d.x×.]/g,'').split(/[x×]/).map(v=>v.trim()).filter(Boolean);\n  if(parts.length<2 || parts.length>3) return null;\n  const nums = parts.map(Number);\n  if(nums.some(v=>!Number.isFinite(v)||v<=0)) return null;\n  const [L,B,H] = nums.length===3 ? nums : [nums[0], nums[1], CFG.DEFAULT_INCH_HEIGHT];\n  return { L, B, H };\n}\nfunction inchToMm(v){ return Math.round(v * CFG.MM_PER_INCH); }\nfunction dimsFromBoxRow(r){\n  const name = String(r[BOXMAP.name]??'').trim();\n  let s = parseInches(r[BOXMAP.sizeInch]);\n  if(!s && name && CFG.BOX_DEFAULTS_BY_NAME[name]) s = CFG.BOX_DEFAULTS_BY_NAME[name];\n  if(!s) return null;\n  return { W: inchToMm(s.L), D: inchToMm(s.B), H: inchToMm(s.H) };\n}\n\n// Choose discount fraction based on order size threshold\nfunction chooseDiscount(r){\n  const above = n(r[BOXMAP.discAbove]);\n  const below = n(r[BOXMAP.discBelow]);\n  const useAbove = CFG.ORDER_QTY >= CFG.DISCOUNT_THRESHOLD;\n  const d = useAbove ? above : (below || above || 0);\n  return (d>=0 && d<=1) ? d : 0;\n}\n\n/* =========================\n   3) GEOMETRY UTILS\n   ========================= */\nfunction orientations(it){\n  const { w,d,h } = it, uniq=new Set();\n  const perms = [[w,d,h],[w,h,d],[d,w,h],[d,h,w],[h,w,d],[h,d,w]];\n  return perms.map(([W,D,H])=>({...it,w:W,d:D,h:H}))\n    .filter(o=>{ const k=`${o.w}x${o.d}x${o.h}`; if(uniq.has(k)) return false; uniq.add(k); return true; });\n}\nfunction byVolumeDesc(a,b){ return (b.w*b.d*b.h)-(a.w*a.d*a.h); }\nfunction byVolumeAsc(a,b){ return (a.w*a.d*a.h)-(b.w*b.d*b.h); }\nfunction fits(a,b){ return a.w<=b.w && a.d<=b.d && a.h<=b.h; }\nfunction splitSpace(S,p){\n  // Guillotine split: create right, front, top spaces\n  const out=[];\n  if (S.w-p.w>0) out.push({x:S.x+p.w,y:S.y,z:S.z,w:S.w-p.w,d:S.d,h:S.h});\n  if (S.d-p.d>0) out.push({x:S.x,y:S.y+p.d,z:S.z,w:p.w,d:S.d-p.d,h:S.h});\n  if (S.h-p.h>0) out.push({x:S.x,y:S.y,z:S.z+p.h,w:p.w,d:p.d,h:S.h-p.h});\n  return out;\n}\nfunction pruneSpaces(spaces){\n  // remove dominated spaces contained in others\n  return spaces.filter((s,i)=>!spaces.some((t,j)=>\n    j!==i && s.x>=t.x && s.y>=t.y && s.z>=t.z &&\n    s.x+s.w<=t.x+t.w && s.y+s.d<=t.y+t.d && s.z+s.h<=t.z+t.h\n  ));\n}\n\n/* =========================\n   4) COST-AWARE PACKER\n   =========================\n   score = fillRatio - λ * (discountedCost / placedVolume)\n   Also shelf-aware: penalize leftover height to form layers.\n*/\nfunction packIntoBoxCostAware(items, box, discFrac, maxCombos=1, beam=1){\n  const boxVol = Math.max(1, box.W*box.D*box.H);\n\n  // Expand items with caps (prevents combinatorial explosion)\n  const expanded=[];\n  for (const it of items){\n    const unitVol = Math.max(1, it.w*it.d*it.h);\n    const byVolumeCap = Math.max(1, Math.floor(boxVol / unitVol));        // how many could even fit by volume\n    const available = Math.max(1, it.qty || 1);\n    const perSkuCap = Math.min(available, byVolumeCap, CFG.MAX_UNITS_PER_SKU);\n    // Decide unit discounted price to use in scoring\n    const unitDiscounted = (it.price != null) ? it.price : r2((it.mrp ?? 0) * (1 - discFrac));\n\n    for (let k=0; k<perSkuCap; k++){\n      expanded.push({ ...it, unitDiscounted, uid:`${it.id}#${k}` });\n      if (expanded.length >= CFG.MAX_TOTAL_EXPANDED_UNITS) break;\n    }\n    if (expanded.length >= CFG.MAX_TOTAL_EXPANDED_UNITS) break;\n  }\n\n  // Large items first (base packing)\n  expanded.sort(byVolumeDesc);\n\n  // Beam: state = { spaces, placed[], totalCost, placedVol }\n  let beams=[{\n    spaces:[{x:0,y:0,z:0,w:box.W,d:box.D,h:box.H}],\n    placed:[],\n    totalCost:0,\n    placedVol:0\n  }];\n\n  function stateScore(st){\n    const fillRatio = st.placedVol / boxVol;                           // 0..1\n    const costPerVol = st.placedVol ? (st.totalCost / st.placedVol) : 0;\n    // Shelf awareness: prefer lower leftover height in the primary space\n    const main = st.spaces[0];\n    const heightPenalty = main ? (main.h / box.H)*0.02 : 0;            // small nudging\n    return fillRatio - CFG.LAMBDA_COST_PER_MM3*costPerVol - heightPenalty;\n  }\n\n  for (const it of expanded){\n    const next=[];\n    for (const st of beams){\n      // Option A: skip this unit\n      next.push(st);\n\n      // Option B: place in best-fitting space/orientation\n      let best=null;\n      for (const o of orientations(it)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S = st.spaces[si];\n          if (!fits(o,S)) continue;\n          // Shelf-aware score: prefer low leftover height, then tighter footprint\n          const shelfScore = (S.h-o.h)*2 + (S.w-o.w) + (S.d-o.d);\n          if (!best || shelfScore < best.shelfScore) best = { o, si, S, shelfScore };\n        }\n      }\n      if (best){\n        const {o,si,S}=best;\n        const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n        const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n        const pruned=pruneSpaces(newSpaces);\n        const placedVol = o.w*o.d*o.h;\n        next.push({\n          spaces: pruned,\n          placed: [...st.placed, { ...it, w:o.w, d:o.d, h:o.h, x:S.x, y:S.y, z:S.z }],\n          totalCost: st.totalCost + it.unitDiscounted,\n          placedVol: st.placedVol + placedVol\n        });\n      }\n    }\n    // Keep best beam states\n    beams = next\n      .map(b => ({ ...b, _score: stateScore(b) }))\n      .sort((a,b)=>b._score - a._score)\n      .slice(0, beam);\n  }\n\n  // --- Gap-filling pass with small items (volume ascending) ---\n  const fillers = expanded.slice().sort(byVolumeAsc);\n  for (const it of fillers){\n    let tries = 0;\n    for (const st of beams){\n      if (tries >= CFG.GAPFILL_MAX_TRIES) break;\n      // Try ONE placement per beam for this item (keep it cheap)\n      let placedSomething = false;\n      for (const o of orientations(it)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S = st.spaces[si];\n          if (!fits(o,S)) continue;\n          const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n          const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n          const pruned=pruneSpaces(newSpaces);\n          const placedVol = o.w*o.d*o.h;\n\n          st.spaces = pruned;\n          st.placed.push({ ...it, w:o.w, d:o.d, h:o.h, x:S.x, y:S.y, z:S.z });\n          st.totalCost += it.unitDiscounted;\n          st.placedVol += placedVol;\n\n          placedSomething = true;\n          tries++;\n          break;\n        }\n        if (placedSomething || tries >= CFG.GAPFILL_MAX_TRIES) break;\n      }\n    }\n  }\n\n  // Deduplicate near-identical combos by composition signature\n  const seen = new Set();\n  const unique = [];\n  for (const st of beams.sort((a,b)=>b._score - a._score)){\n    const sigMap = new Map();\n    for (const p of st.placed){\n      sigMap.set(p.id, (sigMap.get(p.id)||0)+1);\n    }\n    const signature = JSON.stringify([...sigMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])));\n    if (seen.has(signature)) continue;\n    seen.add(signature);\n    unique.push(st);\n    if (unique.length >= maxCombos) break;\n  }\n\n  return unique;\n}\n\n/* =========================\n   5) INPUTS (two branches)\n   ========================= */\n\nconst CONVERTED_ITEMS = $input.first().json.items ?? [];\n\n// Packaging rows from packaging sheet node(s)\nconst packagingInputs = $('Tap (Packaging)').first().json.packaging;\nconst PACKAGING_BOX_ROWS = packagingInputs.flatMap(entry => {\n  const r = rowOf(entry);\n  if (r && Array.isArray(r.packaging)) return r.packaging.map(rowOf);\n  return [r];\n});\n\n// Aliases\nconst items   = CONVERTED_ITEMS;\nconst boxRows = PACKAGING_BOX_ROWS;\n\nif (CFG.DEBUG) {\n  console.log('items.count =', items.length);\n  console.log('boxRows.count =', boxRows.length);\n}\n\n/* =========================\n   6) NAME / GROUP / PRICING HELPERS\n   ========================= */\nfunction groupCounts(placed){\n  const m = new Map();\n  for (const p of placed){\n    if (!m.has(p.id)){\n      m.set(p.id,{\n        id: p.id,\n        name: p.name,\n        category: p.category,\n        weight: p.weight,  // grams\n        qty: 0,\n        mrp: p.mrp,\n        // unit discounted was computed for scoring; for output we recompute below to respect discFrac if price missing\n      });\n    }\n    m.get(p.id).qty += 1;\n  }\n  return [...m.values()];\n}\nfunction prettyName(g){\n  const grams = g.weight ? `${g.weight}g` : '';\n  const cat = (g.category || '').trim().toLowerCase();\n  const map = new Map([\n    ['cashew',  'Any Flavoured Cashew'],\n    ['almond',  'Any Flavoured Almond'],\n    ['kishmish','Any Flavoured Raisin'],\n    ['raisin',  'Any Flavoured Raisin'],\n    ['walnut',  'Any Flavoured Walnut'],\n  ]);\n  if (map.has(cat)){\n    const base = `${map.get(cat)} ${grams}`.trim();\n    return g.qty > 1 ? `${base} x${g.qty}` : base;\n  }\n  const base = `${g.name || g.id}${grams ? ` ${grams}` : ''}`.trim();\n  return g.qty > 1 ? `${base} x${g.qty}` : base;\n}\n\n/* =========================\n   7) BUILD OUTPUT (options JSON with separate quantity)\n   ========================= */\n\n// round to 2 decimals\n// const r2 = v => Math.round((v + Number.EPSILON) * 100) / 100;\n\n// collapse identical SKUs and keep fields we need\nfunction groupCounts(placed){\n  const m = new Map();\n  for (const p of placed){\n    if (!m.has(p.id)){\n      m.set(p.id,{\n        id: p.id,\n        name: p.name,\n        category: p.category,\n        weight: p.weight,  // grams\n        qty: 0,\n        mrp: p.mrp,\n        price: p.price,    // per-unit discounted if provided by normalize step\n      });\n    }\n    m.get(p.id).qty += 1;\n  }\n  return [...m.values()];\n}\n\n// base name without \"xN\"\nfunction baseName(g){\n  const grams = g.weight ? `${g.weight}g` : '';\n  const cat = (g.category || '').trim().toLowerCase();\n  const map = new Map([\n    ['cashew',  'Any Flavoured Cashew'],\n    ['almond',  'Any Flavoured Almond'],\n    ['kishmish','Any Flavoured Raisin'],\n    ['raisin',  'Any Flavoured Raisin'],\n    ['walnut',  'Any Flavoured Walnut'],\n  ]);\n  if (map.has(cat)) return `${map.get(cat)}${grams ? ` ${grams}` : ''}`.trim();\n  return `${g.name || g.id}${grams ? ` ${grams}` : ''}`.trim();\n}\n\nconst optionsDict = {};\nlet optionIndex = 1;\n\nfor (const packRow of boxRows){\n  if (!packRow) continue;\n\n  const boxName = String(packRow[BOXMAP.name] ?? '').trim();\n  const dims = dimsFromBoxRow(packRow);\n  if (!boxName || !dims) continue;\n\n  // discount for this packaging row\n  const discFrac = chooseDiscount(packRow);           // e.g., 0.35 or 0.40\n  const box = { id: boxName, name: boxName, W: dims.W, D: dims.D, H: dims.H, maxWeight: 9_999_999 };\n\n  // packaging price (counts as a line with quantity=1)\n  const packMrp  = n(packRow[BOXMAP.mrp]);\n  const packDisc = r2(packMrp * (1 - discFrac));\n\n  // run cost-aware packer (from previous code)\n  const combos = packIntoBoxCostAware(items, box, discFrac, CFG.maxCombosPerBox, CFG.beamWidth);\n\n  for (const st of combos){\n    const grouped = groupCounts(st.placed);\n\n    // start with packaging line\n    const itemsList = [\n      { name: boxName, quantity: 1, MRP: r2(packMrp), discounted_price: r2(packDisc) }\n    ];\n\n    // totals (include packaging)\n    let totalMrp  = packMrp;\n    let totalDisc = packDisc;\n\n    for (const g of grouped){\n      const q           = g.qty || 1;\n      const perUnitMrp  = r2(g.mrp ?? 0);\n      const perUnitDisc = r2(g.price != null ? g.price : perUnitMrp * (1 - discFrac));\n      const lineMrp     = r2(perUnitMrp  * q);\n      const lineDisc    = r2(perUnitDisc * q);\n\n      itemsList.push({\n        name: baseName(g),        // no \"xN\" here\n        quantity: q,              // NEW FIELD\n        MRP: lineMrp,             // line total = per-unit × quantity\n        discounted_price: lineDisc\n      });\n\n      totalMrp  = r2(totalMrp + lineMrp);\n      totalDisc = r2(totalDisc + lineDisc);\n    }\n\n    optionsDict[`option_${optionIndex}`] = {\n      box_name: boxName,\n      items: itemsList,\n      total: {\n        MRP: r2(totalMrp),\n        discounted_price: r2(totalDisc)\n      }\n    };\n\n    optionIndex += 1;\n  }\n}\n\n// return a single item with your options dictionary\nreturn [{ json: optionsDict }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        256
+      ],
+      "id": "0f00af8b-bda8-4651-930f-10a3a39b17bd",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "path": "fetch-kiwi-options",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1216,
+        960
+      ],
+      "id": "1137651c-ea7d-4a45-b216-de7864437175",
+      "name": "Webhook",
+      "webhookId": "f477c675-19e6-4314-afbc-9bbcbe696a81"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        928,
+        960
+      ],
+      "id": "8ccdb875-1d55-4709-aa2f-01a4c078254e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1216,
+        1152
+      ],
+      "id": "ade00161-55b0-47ff-a0b9-a58cf2aeaaca",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * COST-AWARE 3D PACKER (n8n Code Node)\n * - Some options per box are category-seeded (Cashew/Almond/Raisin), others are unconstrained\n * - Round-robin candidate expansion for fair SKU coverage\n * - Shelf-aware placement + gap filling\n * - Output JSON: { option_1: { box_name, items:[{name,quantity,MRP,discounted_price}], total:{MRP,discounted_price} }, ... }\n */\n\n/* =========================\n   1) CONFIG & COLUMN MAPS\n   ========================= */\nconst BOXMAP = {\n  id:       'Item Name',\n  name:     'Item Name',\n  sizeInch: 'Size (Inch.)',\n  mrp:      'MRP',\n  discAbove:'Above 200 pieces Discount on MRP ',\n  discBelow:'Below 200 pieces Discount on MRP ',\n};\n\nconst CFG = {\n  // Discount regime\n  ORDER_QTY: 199,                     // < DISCOUNT_THRESHOLD → 35% (use 200 for 40%)\n  DISCOUNT_THRESHOLD: 200,\n\n  // Units / parsing\n  DEFAULT_INCH_HEIGHT: 3,\n  MM_PER_INCH: 25.4,\n\n  // Variety & quality\n  maxCombosPerBox: 6,                 // final number of options kept per box (merged)\n  beamWidth: 6,\n\n  // Performance guards\n  MAX_UNITS_PER_SKU: 4,               // per-SKU cap during search\n  MAX_TOTAL_EXPANDED_UNITS: 180,      // global cap during search\n\n  // Scoring (higher is better):\n  // score = fillRatio - LAMBDA * (discountedCost / placedVolume_mm3) - smallHeightPenalty\n  LAMBDA_COST_PER_MM3: 0.00000008,\n\n  // Gap filling\n  GAPFILL_MAX_TRIES: 200,\n\n  // \"Nice to have\" — seeded combos per box (NOT all)\n  MUST_HAVE_ONE_EACH: ['cashew','almond','kishmish'], // kishmish ~ raisin\n  SEEDED_OPTIONS_PER_BOX: 2,                           // how many seeded options to attempt per box\n\n  // Optional: default sizes for packaging rows with blank Size (Inch.)\n  BOX_DEFAULTS_BY_NAME: {\n    // 'Khatta Box': { L: 10, B: 10, H: 4 },\n  },\n\n  // Optional: Always add these (not physically packed; appended as priced lines)\n  ADD_ONS: [\n    // { name: 'Mithai Candle 3pcs', mrp: 120, qty: 1 },\n    // { name: 'Diya 2pcs',          mrp:  50, qty: 1 },\n  ],\n\n  DEBUG: false,\n};\n\n/* =========================\n   2) HELPERS\n   ========================= */\nfunction n(x){ const v=Number(String(x??'').replace(/[, ]/g,'')); return Number.isFinite(v)?v:0; }\nfunction r2(v){ return Math.round((v + Number.EPSILON) * 100) / 100; }\nfunction rowOf(x){ return x?.json && typeof x.json==='object' ? x.json : x; }\n\nfunction parseInches(s){\n  if(!s) return null;\n  const parts = String(s).replace(/[^\\d.x×.]/g,'').split(/[x×]/).map(v=>v.trim()).filter(Boolean);\n  if(parts.length<2 || parts.length>3) return null;\n  const nums = parts.map(Number);\n  if(nums.some(v=>!Number.isFinite(v)||v<=0)) return null;\n  const [L,B,H] = nums.length===3 ? nums : [nums[0], nums[1], CFG.DEFAULT_INCH_HEIGHT];\n  return { L, B, H };\n}\nfunction inchToMm(v){ return Math.round(v * CFG.MM_PER_INCH); }\nfunction dimsFromBoxRow(r){\n  const name = String(r[BOXMAP.name]??'').trim();\n  let s = parseInches(r[BOXMAP.sizeInch]);\n  if(!s && name && CFG.BOX_DEFAULTS_BY_NAME[name]) s = CFG.BOX_DEFAULTS_BY_NAME[name];\n  if(!s) return null;\n  return { W: inchToMm(s.L), D: inchToMm(s.B), H: inchToMm(s.H) };\n}\nfunction chooseDiscount(r){\n  const above = n(r[BOXMAP.discAbove]);\n  const below = n(r[BOXMAP.discBelow]);\n  const useAbove = CFG.ORDER_QTY >= CFG.DISCOUNT_THRESHOLD;\n  const d = useAbove ? above : (below || above || 0);\n  return (d>=0 && d<=1) ? d : 0;\n}\nfunction normCat(s){\n  let c = String(s||'').trim().toLowerCase();\n  if (c === 'kishmish') c = 'raisin';\n  return c;\n}\n\n/* =========================\n   3) GEOMETRY UTILS\n   ========================= */\nfunction orientations(it){\n  const { w,d,h } = it, uniq=new Set();\n  const perms = [[w,d,h],[w,h,d],[d,w,h],[d,h,w],[h,w,d],[h,d,w]];\n  return perms.map(([W,D,H])=>({...it,w:W,d:D,h:H}))\n    .filter(o=>{ const k=`${o.w}x${o.d}x${o.h}`; if(uniq.has(k)) return false; uniq.add(k); return true; });\n}\nfunction byVolumeDesc(a,b){ return (b.w*b.d*b.h)-(a.w*a.d*a.h); }\nfunction byVolumeAsc(a,b){ return (a.w*a.d*a.h)-(b.w*b.d*b.h); }\nfunction fits(a,b){ return a.w<=b.w && a.d<=b.d && a.h<=b.h; }\nfunction splitSpace(S,p){\n  const out=[];\n  if (S.w-p.w>0) out.push({x:S.x+p.w,y:S.y,z:S.z,w:S.w-p.w,d:S.d,h:S.h});\n  if (S.d-p.d>0) out.push({x:S.x,y:S.y+p.d,z:S.z,w:p.w,d:S.d-p.d,h:S.h});\n  if (S.h-p.h>0) out.push({x:S.x,y:S.y,z:S.z+p.h,w:p.w,d:p.d,h:S.h-p.h});\n  return out;\n}\nfunction pruneSpaces(spaces){\n  return spaces.filter((s,i)=>!spaces.some((t,j)=>\n    j!==i && s.x>=t.x && s.y>=t.y && s.z>=t.z &&\n    s.x+s.w<=t.x+t.w && s.y+s.d<=t.y+t.d && s.z+s.h<=t.z+t.h\n  ));\n}\n\n/* =========================\n   4) CORE PACKER (seeded or vanilla depending on seedCats)\n   ========================= */\nfunction packCostAware(items, box, discFrac, maxCombos=1, beam=1, seedCats=null){\n  const boxVol = Math.max(1, box.W*box.D*box.H);\n\n  // Derive per-SKU caps & unit discounted\n  const allCands = items.map(it => {\n    const unitVol = Math.max(1, it.w * it.d * it.h);\n    const byVolumeCap = Math.max(1, Math.floor(boxVol / unitVol));\n    const available   = Math.max(1, it.qty || 1);\n    const cap         = Math.min(available, byVolumeCap, CFG.MAX_UNITS_PER_SKU);\n    const unitDiscounted = (it.price != null) ? it.price : r2((it.mrp ?? 0) * (1 - discFrac));\n    return { it, unitVol, cap, unitDiscounted, cat: normCat(it.category) };\n  }).filter(c => c.cap > 0);\n\n  // --- Initial beams ---\n  let beams=[{\n    spaces:[{x:0,y:0,z:0,w:box.W,d:box.D,h:box.H}],\n    placed:[],\n    totalCost:0,\n    placedVol:0\n  }];\n\n  // Helpers for placement/scoring\n  function tryPlaceOnce(states, item){\n    let next=[], ok=false;\n    for (const st of states){\n      let best=null;\n      for (const o of orientations(item)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S=st.spaces[si];\n          if (!fits(o,S)) continue;\n          const shelfScore=(S.h-o.h)*2 + (S.w-o.w) + (S.d-o.d);\n          if (!best || shelfScore<best.shelfScore) best={o,si,S,shelfScore};\n        }\n      }\n      if (best){\n        const {o,si,S}=best;\n        const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n        const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n        const pruned=pruneSpaces(newSpaces);\n        next.push({\n          spaces: pruned,\n          placed: [...st.placed, { ...item, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z }],\n          totalCost: st.totalCost + (item.unitDiscounted ?? 0),\n          placedVol: st.placedVol + (o.w*o.d*o.h)\n        });\n        ok=true;\n      } else {\n        next.push(st);\n      }\n    }\n    return ok ? next : null;\n  }\n  function pickSeedForCategory(cat){\n    const pool = allCands.filter(c => c.cat===cat);\n    pool.sort((a,b)=>{\n      if (a.unitVol!==b.unitVol) return a.unitVol-b.unitVol;                 // smallest first\n      const av=a.unitDiscounted/a.unitVol, bv=b.unitDiscounted/b.unitVol;\n      return av-bv;                                                           // cheaper per mm³ next\n    });\n    return pool;\n  }\n  function stateScore(st){\n    const fillRatio = st.placedVol / boxVol;\n    const costPerVol = st.placedVol ? (st.totalCost / st.placedVol) : 0;\n    const main = st.spaces[0];\n    const heightPenalty = main ? (main.h / box.H)*0.02 : 0; // slight nudge to close layers\n    return fillRatio - CFG.LAMBDA_COST_PER_MM3*costPerVol - heightPenalty;\n  }\n\n  // --- Optional seeding (only when seedCats provided) ---\n  const usedSeedCountById = new Map();\n  if (Array.isArray(seedCats) && seedCats.length){\n    for (const mustRaw of seedCats){\n      const must = normCat(mustRaw);\n      const pool = pickSeedForCategory(must);\n      if (!pool.length) continue;\n      let seeded=false;\n      for (const c of pool){\n        const placed = tryPlaceOnce(beams, { ...c.it, unitDiscounted: c.unitDiscounted });\n        if (placed){\n          beams = placed;\n          usedSeedCountById.set(c.it.id, (usedSeedCountById.get(c.it.id)||0)+1);\n          seeded = true;\n          break;\n        }\n      }\n      // If none fit, skip this requirement for this box\n    }\n  }\n\n  // --- Build expanded pool (round-robin), subtracting any seeded unit(s) ---\n  const candidates = allCands.map(c=>{\n    const used = usedSeedCountById.get(c.it.id)||0;\n    return { ...c, cap: Math.max(0, c.cap - used) };\n  }).filter(c => c.cap>0);\n\n  const totalCap = Math.max(CFG.MAX_TOTAL_EXPANDED_UNITS, candidates.length);\n  const expanded=[];\n  if (candidates.length>0){\n    let round=0;\n    while (expanded.length<totalCap){\n      let pushed=false;\n      for (const c of candidates){\n        if (round < c.cap){\n          expanded.push({ ...c.it, unitDiscounted: c.unitDiscounted, uid:`${c.it.id}#${round+(usedSeedCountById.get(c.it.id)||0)}` });\n          pushed=true;\n          if (expanded.length>=totalCap) break;\n        }\n      }\n      if (!pushed) break;\n      round++;\n    }\n  }\n\n  // Sort large-first for base packing\n  expanded.sort(byVolumeDesc);\n\n  // Base packing\n  for (const it of expanded){\n    const next=[];\n    for (const st of beams){\n      // Option A: skip\n      next.push(st);\n\n      // Option B: place\n      let best=null;\n      for (const o of orientations(it)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S=st.spaces[si];\n          if (!fits(o,S)) continue;\n          const shelfScore=(S.h-o.h)*2 + (S.w-o.w) + (S.d-o.d);\n          if (!best || shelfScore<best.shelfScore) best={o,si,S,shelfScore};\n        }\n      }\n      if (best){\n        const {o,si,S}=best;\n        const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n        const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n        const pruned=pruneSpaces(newSpaces);\n        next.push({\n          spaces: pruned,\n          placed: [...st.placed, { ...it, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z }],\n          totalCost: st.totalCost + (it.unitDiscounted ?? 0),\n          placedVol: st.placedVol + (o.w*o.d*o.h)\n        });\n      }\n    }\n    beams = next.map(b=>({ ...b, _score: stateScore(b) }))\n                .sort((a,b)=>b._score-a._score)\n                .slice(0, beam);\n  }\n\n  // Gap filling: smallest-first, one placement attempt per beam per filler\n  const fillers = expanded.slice().sort(byVolumeAsc);\n  let tries=0;\n  for (const it of fillers){\n    for (const st of beams){\n      if (tries>=CFG.GAPFILL_MAX_TRIES) break;\n      let placed=false;\n      for (const o of orientations(it)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S=st.spaces[si];\n          if (!fits(o,S)) continue;\n          const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n          const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n          const pruned=pruneSpaces(newSpaces);\n          st.spaces=pruned;\n          st.placed.push({ ...it, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z });\n          st.totalCost += (it.unitDiscounted ?? 0);\n          st.placedVol += (o.w*o.d*o.h);\n          placed=true; tries++; break;\n        }\n        if (placed || tries>=CFG.GAPFILL_MAX_TRIES) break;\n      }\n    }\n    if (tries>=CFG.GAPFILL_MAX_TRIES) break;\n  }\n\n  // Deduplicate by composition signature and keep top N\n  const seen=new Set(), unique=[];\n  for (const st of beams.sort((a,b)=>b._score-a._score)){\n    const sigMap=new Map();\n    for (const p of st.placed) sigMap.set(p.id,(sigMap.get(p.id)||0)+1);\n    const signature=JSON.stringify([...sigMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])));\n    if (seen.has(signature)) continue;\n    seen.add(signature);\n    unique.push(st);\n    if (unique.length>=maxCombos) break;\n  }\n  return unique;\n}\n\n/* =========================\n   5) INPUTS (two branches) — use $input.all()\n   ========================= */\nconst CONVERTED_ITEMS = $input.first().json.items ?? [];\n\n// Packaging rows from packaging sheet node(s)\nconst PACKAGING_BOX_ROWS = $('Tap (Packaging)').first().json.packaging\n  .flatMap(entry => {\n    const r = rowOf(entry);\n    if (r && Array.isArray(r.packaging)) return r.packaging.map(rowOf);\n    return [r];\n  });\n\n// Aliases\nconst items   = CONVERTED_ITEMS;\nconst boxRows = PACKAGING_BOX_ROWS;\n\nif (CFG.DEBUG) {\n  console.log('DEBUG items.count =', items.length);\n  console.log('DEBUG boxRows.count =', boxRows.length);\n}\n\n/* =========================\n   6) GROUPING & NAMING (quantity separated)\n   ========================= */\nfunction groupCounts(placed){\n  const m=new Map();\n  for (const p of placed){\n    if(!m.has(p.id)){\n      m.set(p.id,{\n        id: p.id,\n        name: p.name,\n        category: p.category,\n        weight: p.weight,  // grams\n        qty: 0,\n        mrp: p.mrp,\n        price: p.price,    // per-unit discounted (optional from normalize)\n      });\n    }\n    m.get(p.id).qty += 1;\n  }\n  return [...m.values()];\n}\nfunction baseName(g){\n  const grams = g.weight ? `${g.weight}g` : '';\n  const cat = normCat(g.category);\n  const map = new Map([\n    ['cashew',  'Any Flavoured Cashew'],\n    ['almond',  'Any Flavoured Almond'],\n    ['raisin',  'Any Flavoured Raisin'],\n    ['walnut',  'Any Flavoured Walnut'],\n  ]);\n  if (map.has(cat)) return `${map.get(cat)}${grams ? ` ${grams}` : ''}`.trim();\n  return `${g.name || g.id}${grams ? ` ${grams}` : ''}`.trim();\n}\n\n/* =========================\n   7) BUILD OUTPUT (merge seeded + vanilla options)\n   ========================= */\nfunction dedupeBySignature(states){\n  const seen = new Set();\n  const out = [];\n  for (const st of states){\n    const sigMap = new Map();\n    for (const p of (st.placed||[])) sigMap.set(p.id,(sigMap.get(p.id)||0)+1);\n    const signature = JSON.stringify([...sigMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])));\n    if (seen.has(signature)) continue;\n    seen.add(signature);\n    out.push(st);\n  }\n  return out;\n}\n\nconst optionsDict = {};\nlet optionIndex = 1;\n\nfor (const packRow of boxRows){\n  if (!packRow) continue;\n\n  const boxName = String(packRow[BOXMAP.name] ?? '').trim();\n  const dims = dimsFromBoxRow(packRow);\n  if (!boxName || !dims) continue;\n\n  const discFrac = chooseDiscount(packRow); // e.g., 0.35 or 0.40\n  const box = { id: boxName, name: boxName, W: dims.W, D: dims.D, H: dims.H, maxWeight: 9_999_999 };\n\n  // Generate BOTH seeded and vanilla options, then merge\n  const seededCombos  = packCostAware(items, box, discFrac, Math.max(1, CFG.SEEDED_OPTIONS_PER_BOX), CFG.beamWidth, CFG.MUST_HAVE_ONE_EACH);\n  const vanillaCombos = packCostAware(items, box, discFrac, CFG.maxCombosPerBox, CFG.beamWidth, null);\n\n  let merged = [...seededCombos, ...vanillaCombos];\n  merged.sort((a,b)=> (b._score||0)-(a._score||0));\n  merged = dedupeBySignature(merged).slice(0, CFG.maxCombosPerBox);\n\n  // Packaging price (quantity=1)\n  const packMrp  = n(packRow[BOXMAP.mrp]);\n  const packDisc = r2(packMrp * (1 - discFrac));\n\n  for (const st of merged){\n    const grouped = groupCounts(st.placed);\n\n    // Start with packaging line\n    const itemsList = [\n      { name: boxName, quantity: 1, MRP: r2(packMrp), discounted_price: r2(packDisc) }\n    ];\n\n    let totalMrp  = packMrp;\n    let totalDisc = packDisc;\n\n    // Optional: add-ons (priced, not packed)\n    for (const a of (CFG.ADD_ONS || [])){\n      const q   = a.qty ?? 1;\n      const lm  = r2((a.mrp ?? 0) * q);\n      const ld  = r2((a.mrp ?? 0) * (1 - discFrac) * q);\n      itemsList.push({ name: a.name, quantity: q, MRP: lm, discounted_price: ld });\n      totalMrp  = r2(totalMrp + lm);\n      totalDisc = r2(totalDisc + ld);\n    }\n\n    // Packed lines\n    for (const g of grouped){\n      const q           = g.qty || 1;\n      const unitMrp     = r2(g.mrp ?? 0);\n      const unitDisc    = r2(g.price != null ? g.price : unitMrp * (1 - discFrac));\n      const lineMrp     = r2(unitMrp  * q);\n      const lineDisc    = r2(unitDisc * q);\n\n      itemsList.push({\n        name: baseName(g),\n        quantity: q,\n        MRP: lineMrp,\n        discounted_price: lineDisc\n      });\n\n      totalMrp  = r2(totalMrp + lineMrp);\n      totalDisc = r2(totalDisc + lineDisc);\n    }\n\n    optionsDict[`option_${optionIndex}`] = {\n      box_name: boxName,\n      items: itemsList,\n      total: { MRP: r2(totalMrp), discounted_price: r2(totalDisc) }\n    };\n    optionIndex += 1;\n  }\n}\n\n// Fallback when nothing produced\nif (Object.keys(optionsDict).length === 0) {\n  return [{ json: { info: 'No combos produced. Check packaging sizes (or set BOX_DEFAULTS_BY_NAME) and item dimensions.' } }];\n}\n\n// Return a single item with the full options dictionary\nreturn [{ json: optionsDict }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        240
+      ],
+      "id": "2d85f218-d870-41fa-9ebe-15a95281ae53",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1200
+      ],
+      "id": "fda9ad8c-d663-4e59-92ba-c58f58b63692",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3100bbb2-e160-451f-bc41-6fba9ddffa0d",
+              "name": "prompt",
+              "value": "=#Role: Technical Illustrator / CAD-style Blueprint Generator  ##Objective: Produce a precise, scale-accurate blueprint (technical drawing) showing how to arrange all items inside a packaging box for a given hamper option.  ##Context:  Units: millimetres (mm) only.  Box (inner) dimensions & meta:  Name: {{ $json.box_name }}  Width X:   Depth Y: {{box_D_mm}}  Height Z: {{box_H_mm}}  Origin: front-left-bottom corner of the box at (0,0,0). Axes: X left→right, Y front→back, Z bottom→top.  Packing metrics:  Fill: {{fill_percent}}%  Total MRP: ₹{{total_mrp}}  Total discounted price ({{discount_pct}}% off as configured): ₹{{total_discounted}}  Legend (category → color):  Cashew: blue  Almond: orange  Raisin/Kishmish: green  Walnut: purple  Chips/Blend & Mix/Other: grey  Layout data (authoritative; do not infer/alter): {{ JSON.stringify($json.items) }}    (Each item has: id, label, category, x_mm, y_mm, z_mm, w_mm, d_mm, h_mm. All coordinates are relative to the box origin.)  #Instructions: ##Instruction 1 : Create orthographic drawings to scale:  Primary TOP view (plan) with inner box outline. Add dimension lines (X and Y) with arrows and mm labels.  Smaller FRONT and RIGHT elevations to show Z placement and stack heights.  Include a small isometric thumbnail for spatial context (no perspective distortion).  ##Instruction 2 : Render items exactly per the layout data:  For each item instance, draw a rectangle in TOP view at (x_mm, y_mm) sized (w_mm × d_mm).  Use category color for the outline; keep fills transparent; thin, crisp strokes.  Add a concise label (inside or just outside the rectangle): {{short_item_label}} (truncate if needed).  In FRONT/RIGHT views, show vertical placement (z_mm) and height (h_mm) with consistent alignment.  Ensure no overlaps and maintain exact coordinates and sizes.  ##Instruction 3 : Polish, consistency, and output:  Keep a clean blueprint/CAD style: white background, thin strokes, no textures or heavy shadows.  Title: “{{ $json.box_name }} · {{option_key}} · Top/Front/Right + Iso · Units: mm”.  If helpful, add light guide ticks for major rows/columns.  Export as a high-resolution PNG (and/or SVG) suitable for print and docs.  #Notes: ##Note 1 Do not guess or change item sizes/positions. If an item would exceed box bounds, indicate it with a thin red dashed outline and list it under a small “Out-of-bounds” callout.  ##Note 2 If any legend category is absent in this option, omit it from the legend. If categories exceed five, keep colors but add a keyed list under the title.  ##Note 3 Optional parameters (if provided) to respect:  Clearance (inner padding) in mm: {{clearance_mm}} (subtract evenly from box dimensions before drawing).  Exploded iso spacing in mm: {{explode_spacing_mm}} (only for the isometric thumbnail).  Wall thickness in mm: {{wall_thickness_mm}} (draw inner cavity; all coordinates remain referenced to inner origin).",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        1216
+      ],
+      "id": "bca4dbbd-f1ea-4020-9013-385419af0bf6",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        688,
+        1200
+      ],
+      "id": "2b573b17-2c51-44ad-93ce-0bdcb7819f88",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        1216
+      ],
+      "id": "42971f3b-c8c8-4378-8a32-0d9f493002b7",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * COST-AWARE 3D PACKER (n8n Code Node)\n * - Multi-objective: maximize fill% AND minimize discounted cost per volume\n * - Must-include seeding for categories (e.g., Cashew, Almond, Raisin/Kishmish)\n * - Round-robin candidate expansion (fair coverage across SKUs)\n * - Shelf-aware placement + gap filling\n * - Output JSON per your spec with { name, quantity, MRP, discounted_price } line totals\n *\n * Execution: Run Once for All Items\n * Upstreams:\n *   1) Normalize Items → ONE item: { json: { items: [...] } }\n *   2) Packaging sheet → MANY rows (or wrapper { packaging: [ {json:{...}}, ... ] })\n */\n\n/* =========================\n   1) CONFIG & COLUMN MAPS\n   ========================= */\nconst BOXMAP = {\n  id:       'Item Name',\n  name:     'Item Name',\n  sizeInch: 'Size (Inch.)',\n  mrp:      'MRP',\n  discAbove:'Above 200 pieces Discount on MRP ',\n  discBelow:'Below 200 pieces Discount on MRP ',\n};\n\nconst CFG = {\n  // Discount regime\n  ORDER_QTY: 199,                     // < DISCOUNT_THRESHOLD → 35% (use 200 for 40%)\n  DISCOUNT_THRESHOLD: 200,\n\n  // Units / parsing\n  DEFAULT_INCH_HEIGHT: 3,\n  MM_PER_INCH: 25.4,\n\n  // Search quality & variety\n  maxCombosPerBox: 6,                 // options to keep per box\n  beamWidth: 6,                       // larger → slower, more variety\n\n  // Performance guards\n  MAX_UNITS_PER_SKU: 4,               // per-SKU cap per box during search\n  MAX_TOTAL_EXPANDED_UNITS: 180,      // global cap per box\n\n  // Scoring (higher is better):\n  // score = fillRatio - LAMBDA * (discountedCost / placedVolume_mm3) - smallHeightPenalty\n  LAMBDA_COST_PER_MM3: 0.00000008,\n\n  // Gap filling\n  GAPFILL_MAX_TRIES: 200,\n\n  // Must-include categories (normalized to lower-case; \"kishmish\" is treated as \"raisin\")\n  MUST_HAVE_ONE_EACH: ['cashew','almond','kishmish'],\n\n  // Optional: default sizes for packaging rows that have blank \"Size (Inch.)\"\n  BOX_DEFAULTS_BY_NAME: {\n    // 'Khatta Box': { L: 10, B: 10, H: 4 },\n  },\n\n  // Optional: Always add these (not physically packed; appended as priced lines)\n  ADD_ONS: [\n    // { name: 'Mithai Candle 3pcs', mrp: 120, qty: 1 },\n    // { name: 'Diya 2pcs',          mrp:  50, qty: 1 },\n  ],\n\n  DEBUG: false,\n};\n\n/* =========================\n   2) HELPERS\n   ========================= */\nfunction n(x){ const v=Number(String(x??'').replace(/[, ]/g,'')); return Number.isFinite(v)?v:0; }\nfunction r2(v){ return Math.round((v + Number.EPSILON) * 100) / 100; }\nfunction rowOf(x){ return x?.json && typeof x.json==='object' ? x.json : x; }\n\nfunction parseInches(s){\n  if(!s) return null;\n  const parts = String(s).replace(/[^\\d.x×.]/g,'').split(/[x×]/).map(v=>v.trim()).filter(Boolean);\n  if(parts.length<2 || parts.length>3) return null;\n  const nums = parts.map(Number);\n  if(nums.some(v=>!Number.isFinite(v)||v<=0)) return null;\n  const [L,B,H] = nums.length===3 ? nums : [nums[0], nums[1], CFG.DEFAULT_INCH_HEIGHT];\n  return { L, B, H };\n}\nfunction inchToMm(v){ return Math.round(v * CFG.MM_PER_INCH); }\nfunction dimsFromBoxRow(r){\n  const name = String(r[BOXMAP.name]??'').trim();\n  let s = parseInches(r[BOXMAP.sizeInch]);\n  if(!s && name && CFG.BOX_DEFAULTS_BY_NAME[name]) s = CFG.BOX_DEFAULTS_BY_NAME[name];\n  if(!s) return null;\n  return { W: inchToMm(s.L), D: inchToMm(s.B), H: inchToMm(s.H) };\n}\nfunction chooseDiscount(r){\n  const above = n(r[BOXMAP.discAbove]);\n  const below = n(r[BOXMAP.discBelow]);\n  const useAbove = CFG.ORDER_QTY >= CFG.DISCOUNT_THRESHOLD;\n  const d = useAbove ? above : (below || above || 0);\n  return (d>=0 && d<=1) ? d : 0;\n}\n\n// Category normalization (e.g., \"kishmish\" → \"raisin\")\nfunction normCat(s){\n  let c = String(s||'').trim().toLowerCase();\n  if (c === 'kishmish') c = 'raisin';\n  return c;\n}\n\n/* =========================\n   3) GEOMETRY UTILS\n   ========================= */\nfunction orientations(it){\n  const { w,d,h } = it, uniq=new Set();\n  const perms = [[w,d,h],[w,h,d],[d,w,h],[d,h,w],[h,w,d],[h,d,w]];\n  return perms.map(([W,D,H])=>({...it,w:W,d:D,h:H}))\n    .filter(o=>{ const k=`${o.w}x${o.d}x${o.h}`; if(uniq.has(k)) return false; uniq.add(k); return true; });\n}\nfunction byVolumeDesc(a,b){ return (b.w*b.d*b.h)-(a.w*a.d*a.h); }\nfunction byVolumeAsc(a,b){ return (a.w*a.d*a.h)-(b.w*b.d*b.h); }\nfunction fits(a,b){ return a.w<=b.w && a.d<=b.d && a.h<=b.h; }\nfunction splitSpace(S,p){\n  const out=[];\n  if (S.w-p.w>0) out.push({x:S.x+p.w,y:S.y,z:S.z,w:S.w-p.w,d:S.d,h:S.h});\n  if (S.d-p.d>0) out.push({x:S.x,y:S.y+p.d,z:S.z,w:p.w,d:S.d-p.d,h:S.h});\n  if (S.h-p.h>0) out.push({x:S.x,y:S.y,z:S.z+p.h,w:p.w,d:p.d,h:S.h-p.h});\n  return out;\n}\nfunction pruneSpaces(spaces){\n  return spaces.filter((s,i)=>!spaces.some((t,j)=>\n    j!==i && s.x>=t.x && s.y>=t.y && s.z>=t.z &&\n    s.x+s.w<=t.x+t.w && s.y+s.d<=t.y+t.d && s.z+s.h<=t.z+t.h\n  ));\n}\n\n/* =========================\n   4) COST-AWARE PACKER (seeded + round-robin + gap-filling)\n   ========================= */\nfunction packIntoBoxCostAware(items, box, discFrac, maxCombos=1, beam=1){\n  const boxVol = Math.max(1, box.W*box.D*box.H);\n\n  // Derive per-SKU caps & unit discounted\n  const allCands = items.map(it => {\n    const unitVol = Math.max(1, it.w * it.d * it.h);\n    const byVolumeCap = Math.max(1, Math.floor(boxVol / unitVol));\n    const available   = Math.max(1, it.qty || 1);\n    const cap         = Math.min(available, byVolumeCap, CFG.MAX_UNITS_PER_SKU);\n    const unitDiscounted = (it.price != null) ? it.price : r2((it.mrp ?? 0) * (1 - discFrac));\n    return { it, unitVol, cap, unitDiscounted, cat: normCat(it.category) };\n  }).filter(c => c.cap > 0);\n\n  // --- Start with empty beam state ---\n  let beams=[{\n    spaces:[{x:0,y:0,z:0,w:box.W,d:box.D,h:box.H}],\n    placed:[],\n    totalCost:0,\n    placedVol:0\n  }];\n\n  // Place exactly one item (best feasible) for each must-have category (if possible)\n  function tryPlaceOnce(states, item){\n    let next=[], ok=false;\n    for (const st of states){\n      let best=null;\n      for (const o of orientations(item)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S=st.spaces[si];\n          if (!fits(o,S)) continue;\n          const shelfScore=(S.h-o.h)*2 + (S.w-o.w) + (S.d-o.d);\n          if (!best || shelfScore<best.shelfScore) best={o,si,S,shelfScore};\n        }\n      }\n      if (best){\n        const {o,si,S}=best;\n        const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n        const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n        const pruned=pruneSpaces(newSpaces);\n        next.push({\n          spaces: pruned,\n          placed: [...st.placed, { ...item, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z }],\n          totalCost: st.totalCost + (item.unitDiscounted ?? 0),\n          placedVol: st.placedVol + (o.w*o.d*o.h)\n        });\n        ok=true;\n      } else {\n        next.push(st);\n      }\n    }\n    return ok ? next : null;\n  }\n\n  function pickSeedForCategory(cat){\n    const pool = allCands.filter(c => c.cat===cat);\n    pool.sort((a,b)=>{\n      if (a.unitVol!==b.unitVol) return a.unitVol-b.unitVol;                 // smallest first\n      const av=a.unitDiscounted/a.unitVol, bv=b.unitDiscounted/b.unitVol;\n      return av-bv;                                                           // cheaper per mm³\n    });\n    return pool;\n  }\n\n  const usedSeedCountById = new Map();\n  for (const mustRaw of (CFG.MUST_HAVE_ONE_EACH || [])){\n    const must = normCat(mustRaw);\n    const pool = pickSeedForCategory(must);\n    if (!pool.length) continue;\n    let seeded=false;\n    for (const c of pool){\n      const placed = tryPlaceOnce(beams, { ...c.it, unitDiscounted: c.unitDiscounted });\n      if (placed){\n        beams = placed;\n        usedSeedCountById.set(c.it.id, (usedSeedCountById.get(c.it.id)||0)+1);\n        seeded = true;\n        break;\n      }\n    }\n    // If none fit, skip this requirement for this box\n  }\n\n  // Build expanded pool (round-robin), subtracting 1 already used for any seeded SKU\n  const candidates = allCands.map(c=>{\n    const used = usedSeedCountById.get(c.it.id)||0;\n    return { ...c, cap: Math.max(0, c.cap - used) };\n  }).filter(c => c.cap>0);\n\n  const totalCap = Math.max(CFG.MAX_TOTAL_EXPANDED_UNITS, candidates.length);\n  const expanded=[];\n  if (candidates.length>0){\n    let round=0;\n    while (expanded.length<totalCap){\n      let pushed=false;\n      for (const c of candidates){\n        if (round < c.cap){\n          expanded.push({ ...c.it, unitDiscounted: c.unitDiscounted, uid:`${c.it.id}#${round+(usedSeedCountById.get(c.it.id)||0)}` });\n          pushed=true;\n          if (expanded.length>=totalCap) break;\n        }\n      }\n      if (!pushed) break;\n      round++;\n    }\n  }\n\n  // Sort large-first for base packing\n  expanded.sort(byVolumeDesc);\n\n  function stateScore(st){\n    const fillRatio = st.placedVol / boxVol;\n    const costPerVol = st.placedVol ? (st.totalCost / st.placedVol) : 0;\n    const main = st.spaces[0];\n    const heightPenalty = main ? (main.h / box.H)*0.02 : 0; // slight nudge to close layers\n    return fillRatio - CFG.LAMBDA_COST_PER_MM3*costPerVol - heightPenalty;\n  }\n\n  // Base packing\n  for (const it of expanded){\n    const next=[];\n    for (const st of beams){\n      // Option A: skip\n      next.push(st);\n\n      // Option B: place\n      let best=null;\n      for (const o of orientations(it)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S=st.spaces[si];\n          if (!fits(o,S)) continue;\n          const shelfScore=(S.h-o.h)*2 + (S.w-o.w) + (S.d-o.d);\n          if (!best || shelfScore<best.shelfScore) best={o,si,S,shelfScore};\n        }\n      }\n      if (best){\n        const {o,si,S}=best;\n        const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n        const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n        const pruned=pruneSpaces(newSpaces);\n        next.push({\n          spaces: pruned,\n          placed: [...st.placed, { ...it, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z }],\n          totalCost: st.totalCost + (it.unitDiscounted ?? 0),\n          placedVol: st.placedVol + (o.w*o.d*o.h)\n        });\n      }\n    }\n    beams = next.map(b=>({ ...b, _score: stateScore(b) }))\n                .sort((a,b)=>b._score-a._score)\n                .slice(0, beam);\n  }\n\n  // Gap filling: smallest-first, one placement attempt per beam per filler\n  const fillers = expanded.slice().sort(byVolumeAsc);\n  let tries=0;\n  for (const it of fillers){\n    for (const st of beams){\n      if (tries>=CFG.GAPFILL_MAX_TRIES) break;\n      let placed=false;\n      for (const o of orientations(it)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S=st.spaces[si];\n          if (!fits(o,S)) continue;\n          const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n          const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n          const pruned=pruneSpaces(newSpaces);\n          st.spaces=pruned;\n          st.placed.push({ ...it, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z });\n          st.totalCost += (it.unitDiscounted ?? 0);\n          st.placedVol += (o.w*o.d*o.h);\n          placed=true; tries++; break;\n        }\n        if (placed || tries>=CFG.GAPFILL_MAX_TRIES) break;\n      }\n    }\n    if (tries>=CFG.GAPFILL_MAX_TRIES) break;\n  }\n\n  // Deduplicate by composition signature and keep top N\n  const seen=new Set(), unique=[];\n  for (const st of beams.sort((a,b)=>b._score-a._score)){\n    const sigMap=new Map();\n    for (const p of st.placed) sigMap.set(p.id,(sigMap.get(p.id)||0)+1);\n    const signature=JSON.stringify([...sigMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])));\n    if (seen.has(signature)) continue;\n    seen.add(signature);\n    unique.push(st);\n    if (unique.length>=maxCombos) break;\n  }\n  return unique;\n}\n\n/* =========================\n   5) INPUTS (two branches) — use $input.all()\n   ========================= */\nconst CONVERTED_ITEMS = $input.first().json.items ?? [];\n\n// Packaging rows from packaging sheet node(s)\nconst PACKAGING_BOX_ROWS = $('Tap (Packaging)').first().json.packaging\n  .flatMap(entry => {\n    const r = rowOf(entry);\n    if (r && Array.isArray(r.packaging)) return r.packaging.map(rowOf);\n    return [r];\n  });\n\n// Aliases\nconst items   = CONVERTED_ITEMS;\nconst boxRows = PACKAGING_BOX_ROWS;\n\nif (CFG.DEBUG) {\n  console.log('DEBUG items.count =', items.length);\n  console.log('DEBUG boxRows.count =', boxRows.length);\n}\n\n/* =========================\n   6) GROUPING & NAMING (quantity separated)\n   ========================= */\nfunction groupCounts(placed){\n  const m=new Map();\n  for (const p of placed){\n    if(!m.has(p.id)){\n      m.set(p.id,{\n        id: p.id,\n        name: p.name,\n        category: p.category,\n        weight: p.weight,  // grams\n        qty: 0,\n        mrp: p.mrp,\n        price: p.price,    // per-unit discounted (optional from normalize)\n      });\n    }\n    m.get(p.id).qty += 1;\n  }\n  return [...m.values()];\n}\nfunction baseName(g){\n  const grams = g.weight ? `${g.weight}g` : '';\n  const cat = normCat(g.category);\n  const map = new Map([\n    ['cashew',  'Any Flavoured Cashew'],\n    ['almond',  'Any Flavoured Almond'],\n    ['raisin',  'Any Flavoured Raisin'],\n    ['walnut',  'Any Flavoured Walnut'],\n  ]);\n  if (map.has(cat)) return `${map.get(cat)}${grams ? ` ${grams}` : ''}`.trim();\n  return `${g.name || g.id}${grams ? ` ${grams}` : ''}`.trim();\n}\n\n/* =========================\n   7) BUILD OUTPUT (options JSON with separate quantity)\n   ========================= */\nconst optionsDict = {};\nlet optionIndex = 1;\n\nfor (const packRow of boxRows){\n  if (!packRow) continue;\n\n  const boxName = String(packRow[BOXMAP.name] ?? '').trim();\n  const dims = dimsFromBoxRow(packRow);\n  if (!boxName || !dims) continue;\n\n  const discFrac = chooseDiscount(packRow); // e.g., 0.35 or 0.40\n  const box = { id: boxName, name: boxName, W: dims.W, D: dims.D, H: dims.H, maxWeight: 9_999_999 };\n\n  // Packaging line (quantity=1)\n  const packMrp  = n(packRow[BOXMAP.mrp]);\n  const packDisc = r2(packMrp * (1 - discFrac));\n\n  // Generate combos\n  const combos = packIntoBoxCostAware(items, box, discFrac, CFG.maxCombosPerBox, CFG.beamWidth);\n\n  for (const st of combos){\n    const grouped = groupCounts(st.placed);\n\n    // Start with packaging line\n    const itemsList = [\n      { name: boxName, quantity: 1, MRP: r2(packMrp), discounted_price: r2(packDisc) }\n    ];\n\n    let totalMrp  = packMrp;\n    let totalDisc = packDisc;\n\n    // (Optional) Always-on add-ons (priced, not packed)\n    for (const a of (CFG.ADD_ONS || [])){\n      const q   = a.qty ?? 1;\n      const lm  = r2((a.mrp ?? 0) * q);\n      const ld  = r2((a.mrp ?? 0) * (1 - discFrac) * q);\n      itemsList.push({ name: a.name, quantity: q, MRP: lm, discounted_price: ld });\n      totalMrp  = r2(totalMrp + lm);\n      totalDisc = r2(totalDisc + ld);\n    }\n\n    // Packed items\n    for (const g of grouped){\n      const q           = g.qty || 1;\n      const unitMrp     = r2(g.mrp ?? 0);\n      const unitDisc    = r2(g.price != null ? g.price : unitMrp * (1 - discFrac));\n      const lineMrp     = r2(unitMrp  * q);\n      const lineDisc    = r2(unitDisc * q);\n\n      itemsList.push({\n        name: baseName(g),\n        quantity: q,\n        MRP: lineMrp,\n        discounted_price: lineDisc\n      });\n\n      totalMrp  = r2(totalMrp + lineMrp);\n      totalDisc = r2(totalDisc + lineDisc);\n    }\n\n    optionsDict[`option_${optionIndex}`] = {\n      box_name: boxName,\n      items: itemsList,\n      total: { MRP: r2(totalMrp), discounted_price: r2(totalDisc) }\n    };\n    optionIndex += 1;\n  }\n}\n\n// Fallback when nothing produced\nif (Object.keys(optionsDict).length === 0) {\n  return [{ json: { info: 'No combos produced. Check packaging sizes (or set BOX_DEFAULTS_BY_NAME) and item dimensions.' } }];\n}\n\n// Return a single item with the full options dictionary\nreturn [{ json: optionsDict }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        256
+      ],
+      "id": "8d1a4485-72ee-459b-8a49-98a7c76f66a6",
+      "name": "no limit for walnut"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * COST-AWARE 3D PACKER (n8n Code Node)\n * - Multi-objective: maximize fill% AND minimize discounted cost/volume\n * - Some options per box are category-seeded (Cashew/Almond/Raisin), others are unconstrained\n * - Category caps + diversity penalty to avoid overusing one category (e.g., walnut)\n * - Gap-filling pass for small items\n * - Output shape:\n *   {\n *     option_1: { box_name, items:[{name, quantity, MRP, discounted_price}], total:{MRP, discounted_price} },\n *     option_2: { ... },\n *     ...\n *   }\n */\n\n/* =========================\n   1) CONFIG & COLUMN MAPS\n   ========================= */\nconst BOXMAP = {\n  id:       'Item Name',\n  name:     'Item Name',\n  sizeInch: 'Size (Inch.)',\n  mrp:      'MRP',\n  discAbove:'Above 200 pieces Discount on MRP ',\n  discBelow:'Below 200 pieces Discount on MRP ',\n};\n\nconst CFG = {\n  // --- Discount regime (choose Above/Below threshold column) ---\n  ORDER_QTY: 199,                     // < DISCOUNT_THRESHOLD → 35% (use 200 for 40%)\n  DISCOUNT_THRESHOLD: 200,\n\n  // --- Units / parsing (packaging sizes are provided in inches) ---\n  DEFAULT_INCH_HEIGHT: 3,             // if box size has only LxB, assume 3\" height\n  MM_PER_INCH: 25.4,\n\n  // --- Variety & quality ---\n  maxCombosPerBox: 6,                 // final number of options kept per box (merged)\n  beamWidth: 6,                        // wider = better variety, slower\n\n  // --- Performance guards (keep runtime bounded) ---\n  MAX_UNITS_PER_SKU: 4,               // per-SKU cap within a single box search\n  MAX_TOTAL_EXPANDED_UNITS: 180,      // global candidate expansion cap\n\n  // --- Scoring (higher is better) ---\n  // score = fillRatio - LAMBDA * (discountedCost / placedVolume_mm3) - smallHeightPenalty - diversityPenalty\n  LAMBDA_COST_PER_MM3: 0.00000008,    // lower = prefer denser fill; higher = prefer cheaper per mm³\n\n  // --- Gap filling ---\n  GAPFILL_MAX_TRIES: 200,\n\n  // --- “Nice to have” category seeding (NOT forced for every option) ---\n  MUST_HAVE_ONE_EACH: ['cashew','almond','kishmish'], // kishmish normalized to 'raisin'\n  SEEDED_OPTIONS_PER_BOX: 2,                           // try to produce this many seeded options/box\n\n  // --- Optional defaults for packaging rows with blank Size (Inch.) ---\n  BOX_DEFAULTS_BY_NAME: {\n    // 'Khatta Box': { L: 10, B: 10, H: 4 },\n  },\n\n  // --- Optional priced add-ons (not physically packed) ---\n  ADD_ONS: [\n    // { name: 'Mithai Candle 3pcs', mrp: 120, qty: 1 },\n    // { name: 'Diya 2pcs',          mrp:  50, qty: 1 },\n  ],\n\n  // --- How to handle duplicate display names (e.g., many walnut SKUs map to one label) ---\n  // 'collapse' → merge lines (sum qty + totals) ;  'first-one' → keep first and drop the rest\n  DISPLAY_DEDUP_STRATEGY: 'collapse',\n\n  // --- Category anti-saturation (customize freely) ---\n  CATEGORY_MAX_UNITS: {               // cap per category within a single option\n    walnut: 2,                        // e.g., at most 2 “Any Flavoured Walnut …”\n    // almond: 3,\n    // cashew: 3,\n    // raisin: 2,\n  },\n  CATEGORY_REPEAT_PENALTY: 0.015,     // tiny penalty per extra unit beyond 1 per category (diversity nudge)\n\n  DEBUG: false,\n};\n\n/* =========================\n   2) HELPERS\n   ========================= */\nfunction n(x){ const v=Number(String(x??'').replace(/[, ]/g,'')); return Number.isFinite(v)?v:0; }\nfunction r2(v){ return Math.round((v + Number.EPSILON) * 100) / 100; }\nfunction rowOf(x){ return x?.json && typeof x.json==='object' ? x.json : x; }\n\nfunction parseInches(s){\n  if(!s) return null;\n  const parts = String(s).replace(/[^\\d.x×.]/g,'').split(/[x×]/).map(v=>v.trim()).filter(Boolean);\n  if(parts.length<2 || parts.length>3) return null;\n  const nums = parts.map(Number);\n  if(nums.some(v=>!Number.isFinite(v)||v<=0)) return null;\n  const [L,B,H] = nums.length===3 ? nums : [nums[0], nums[1], CFG.DEFAULT_INCH_HEIGHT];\n  return { L, B, H };\n}\nfunction inchToMm(v){ return Math.round(v * CFG.MM_PER_INCH); }\nfunction dimsFromBoxRow(r){\n  const name = String(r[BOXMAP.name]??'').trim();\n  let s = parseInches(r[BOXMAP.sizeInch]);\n  if(!s && name && CFG.BOX_DEFAULTS_BY_NAME[name]) s = CFG.BOX_DEFAULTS_BY_NAME[name];\n  if(!s) return null;\n  return { W: inchToMm(s.L), D: inchToMm(s.B), H: inchToMm(s.H) };\n}\nfunction chooseDiscount(r){\n  const above = n(r[BOXMAP.discAbove]);\n  const below = n(r[BOXMAP.discBelow]);\n  const useAbove = CFG.ORDER_QTY >= CFG.DISCOUNT_THRESHOLD;\n  const d = useAbove ? above : (below || above || 0);\n  return (d>=0 && d<=1) ? d : 0;\n}\nfunction normCat(s){\n  let c = String(s||'').trim().toLowerCase();\n  if (c === 'kishmish') c = 'raisin';\n  return c;\n}\n\n/* =========================\n   3) GEOMETRY UTILS\n   ========================= */\nfunction orientations(it){\n  const { w,d,h } = it, uniq=new Set();\n  const perms = [[w,d,h],[w,h,d],[d,w,h],[d,h,w],[h,w,d],[h,d,w]];\n  return perms.map(([W,D,H])=>({...it,w:W,d:D,h:H}))\n    .filter(o=>{ const k=`${o.w}x${o.d}x${o.h}`; if(uniq.has(k)) return false; uniq.add(k); return true; });\n}\nfunction byVolumeDesc(a,b){ return (b.w*b.d*b.h)-(a.w*a.d*a.h); }\nfunction byVolumeAsc(a,b){ return (a.w*a.d*a.h)-(b.w*b.d*b.h); }\nfunction fits(a,b){ return a.w<=b.w && a.d<=b.d && a.h<=b.h; }\nfunction splitSpace(S,p){\n  // Guillotine split: right, front, top\n  const out=[];\n  if (S.w-p.w>0) out.push({x:S.x+p.w,y:S.y,z:S.z,w:S.w-p.w,d:S.d,h:S.h});\n  if (S.d-p.d>0) out.push({x:S.x,y:S.y+p.d,z:S.z,w:p.w,d:S.d-p.d,h:S.h});\n  if (S.h-p.h>0) out.push({x:S.x,y:S.y,z:S.z+p.h,w:p.w,d:p.d,h:S.h-p.h});\n  return out;\n}\nfunction pruneSpaces(spaces){\n  // remove dominated spaces contained in others\n  return spaces.filter((s,i)=>!spaces.some((t,j)=>\n    j!==i && s.x>=t.x && s.y>=t.y && s.z>=t.z &&\n    s.x+s.w<=t.x+t.w && s.y+s.d<=t.y+t.d && s.z+s.h<=t.z+t.h\n  ));\n}\n\n/* =========================\n   4) CORE PACKER (seeded or vanilla depending on seedCats)\n   ========================= */\nfunction packCostAware(items, box, discFrac, maxCombos=1, beam=1, seedCats=null){\n  const boxVol = Math.max(1, box.W*box.D*box.H);\n\n  // Derive per-SKU caps, unit discounted, category\n  const allCands = items\n    .filter(it => it && it.w>0 && it.d>0 && it.h>0) // safety: only pack items with real sizes\n    .map(it => {\n      const unitVol = Math.max(1, it.w * it.d * it.h);\n      const byVolumeCap = Math.max(1, Math.floor(boxVol / unitVol));\n      const available   = Math.max(1, it.qty || 1);\n      const cap         = Math.min(available, byVolumeCap, CFG.MAX_UNITS_PER_SKU);\n      const unitDiscounted = (it.price != null) ? it.price : r2((it.mrp ?? 0) * (1 - discFrac));\n      return { it, unitVol, cap, unitDiscounted, cat: normCat(it.category) };\n    })\n    .filter(c => c.cap > 0);\n\n  // --- Initial beam state ---\n  let beams=[{\n    spaces:[{x:0,y:0,z:0,w:box.W,d:box.D,h:box.H}],\n    placed:[],\n    totalCost:0,\n    placedVol:0,\n    skuCounts:{},          // for optional per-SKU limits\n    catCounts:{}           // for CATEGORY_MAX_UNITS + diversity scoring\n  }];\n\n  // --- Helpers for placement/scoring ---\n  function exceedsCatLimit(state, item){\n    const cat = normCat(item.category);\n    const lim = CFG.CATEGORY_MAX_UNITS?.[cat];\n    if (lim == null) return false;\n    const current = state.catCounts[cat] || 0;\n    return (current + 1) > lim;\n  }\n  function withCountsIncrement(state, item){\n    const cat = normCat(item.category);\n    const skuCounts = { ...state.skuCounts, [item.id]: (state.skuCounts[item.id]||0) + 1 };\n    const catCounts = { ...state.catCounts, [cat]: (state.catCounts[cat]||0) + 1 };\n    return { skuCounts, catCounts };\n  }\n  function tryPlaceOnce(states, item){\n    let next=[], ok=false;\n    for (const st of states){\n      // Respect per-category cap\n      if (exceedsCatLimit(st, item)){ next.push(st); continue; }\n\n      let best=null;\n      for (const o of orientations(item)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S=st.spaces[si];\n          if (!fits(o,S)) continue;\n          const shelfScore=(S.h-o.h)*2 + (S.w-o.w) + (S.d-o.d);\n          if (!best || shelfScore<best.shelfScore) best={o,si,S,shelfScore};\n        }\n      }\n      if (best){\n        const {o,si,S}=best;\n        const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n        const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n        const pruned=pruneSpaces(newSpaces);\n        const { skuCounts, catCounts } = withCountsIncrement(st, item);\n\n        next.push({\n          spaces: pruned,\n          placed: [...st.placed, { ...item, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z }],\n          totalCost: st.totalCost + (item.unitDiscounted ?? 0),\n          placedVol: st.placedVol + (o.w*o.d*o.h),\n          skuCounts,\n          catCounts\n        });\n        ok=true;\n      } else {\n        next.push(st);\n      }\n    }\n    return ok ? next : null;\n  }\n  function stateScore(st){\n    const fillRatio = st.placedVol / boxVol;\n    const costPerVol = st.placedVol ? (st.totalCost / st.placedVol) : 0;\n    const main = st.spaces[0];\n    const heightPenalty = main ? (main.h / box.H)*0.02 : 0; // nudge to close layers\n\n    // Category diversity penalty: each extra unit beyond 1 in a category adds a tiny penalty\n    const reps = Object.values(st.catCounts || {}).reduce((s,c)=> s + Math.max(0, c - 1), 0);\n    const diversityPenalty = CFG.CATEGORY_REPEAT_PENALTY * reps;\n\n    return fillRatio - CFG.LAMBDA_COST_PER_MM3*costPerVol - heightPenalty - diversityPenalty;\n  }\n\n  // --- Optional seeding (only when seedCats provided) ---\n  const usedSeedCountById = new Map();\n  if (Array.isArray(seedCats) && seedCats.length){\n    for (const mustRaw of seedCats){\n      const must = normCat(mustRaw);\n      // pick small & cheap per mm³ first\n      const pool = allCands.filter(c => c.cat===must)\n                           .sort((a,b)=>{\n                              if (a.unitVol!==b.unitVol) return a.unitVol-b.unitVol;\n                              return (a.unitDiscounted/a.unitVol) - (b.unitDiscounted/b.unitVol);\n                           });\n      if (!pool.length) continue;\n\n      for (const c of pool){\n        const placed = tryPlaceOnce(beams, { ...c.it, unitDiscounted: c.unitDiscounted });\n        if (placed){\n          beams = placed;\n          usedSeedCountById.set(c.it.id, (usedSeedCountById.get(c.it.id)||0)+1);\n          break; // seed next category\n        }\n      }\n      // If none fit, we quietly skip this seed\n    }\n  }\n\n  // --- Build expanded pool (round-robin), subtract any seeded unit(s) ---\n  const candidates = allCands\n    .map(c=>({ ...c, cap: Math.max(0, (c.cap - (usedSeedCountById.get(c.it.id)||0))) }))\n    .filter(c => c.cap>0);\n\n  const totalCap = Math.max(CFG.MAX_TOTAL_EXPANDED_UNITS, candidates.length);\n  const expanded=[];\n  if (candidates.length>0){\n    let round=0;\n    while (expanded.length<totalCap){\n      let pushed=false;\n      for (const c of candidates){\n        if (round < c.cap){\n          expanded.push({ ...c.it, unitDiscounted: c.unitDiscounted, uid:`${c.it.id}#${round+(usedSeedCountById.get(c.it.id)||0)}` });\n          pushed=true;\n          if (expanded.length>=totalCap) break;\n        }\n      }\n      if (!pushed) break; // all exhausted\n      round++;\n    }\n  }\n\n  // --- Base packing (large-first) with beam search ---\n  expanded.sort(byVolumeDesc);\n  for (const it of expanded){\n    const next=[];\n    for (const st of beams){\n      // Option A: skip\n      next.push(st);\n\n      // Option B: place (respect cat cap)\n      if (exceedsCatLimit(st, it)) continue;\n\n      let best=null;\n      for (const o of orientations(it)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S=st.spaces[si];\n          if (!fits(o,S)) continue;\n          const shelfScore=(S.h-o.h)*2 + (S.w-o.w) + (S.d-o.d);\n          if (!best || shelfScore<best.shelfScore) best={o,si,S,shelfScore};\n        }\n      }\n      if (best){\n        const {o,si,S}=best;\n        const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n        const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n        const pruned=pruneSpaces(newSpaces);\n        const { skuCounts, catCounts } = withCountsIncrement(st, it);\n\n        next.push({\n          spaces: pruned,\n          placed: [...st.placed, { ...it, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z }],\n          totalCost: st.totalCost + (it.unitDiscounted ?? 0),\n          placedVol: st.placedVol + (o.w*o.d*o.h),\n          skuCounts,\n          catCounts\n        });\n      }\n    }\n    // keep best K beams\n    beams = next.map(b=>({ ...b, _score: stateScore(b) }))\n                .sort((a,b)=>b._score-a._score)\n                .slice(0, beam);\n  }\n\n  // --- Gap filling: smallest-first, bounded tries ---\n  const fillers = expanded.slice().sort(byVolumeAsc);\n  let tries=0;\n  for (const it of fillers){\n    for (const st of beams){\n      if (tries>=CFG.GAPFILL_MAX_TRIES) break;\n      if (exceedsCatLimit(st, it)) continue;\n\n      let placed=false;\n      for (const o of orientations(it)){\n        for (let si=0; si<st.spaces.length; si++){\n          const S=st.spaces[si];\n          if (!fits(o,S)) continue;\n\n          const newSpaces=st.spaces.slice(); newSpaces.splice(si,1);\n          const splits=splitSpace(S,o); for (const ns of splits) newSpaces.push(ns);\n          const pruned=pruneSpaces(newSpaces);\n          const { skuCounts, catCounts } = withCountsIncrement(st, it);\n\n          st.spaces = pruned;\n          st.placed.push({ ...it, w:o.w,d:o.d,h:o.h, x:S.x,y:S.y,z:S.z });\n          st.totalCost += (it.unitDiscounted ?? 0);\n          st.placedVol += (o.w*o.d*o.h);\n          st.skuCounts = skuCounts;\n          st.catCounts = catCounts;\n\n          placed=true; tries++; break;\n        }\n        if (placed || tries>=CFG.GAPFILL_MAX_TRIES) break;\n      }\n    }\n    if (tries>=CFG.GAPFILL_MAX_TRIES) break;\n  }\n\n  // --- Deduplicate by composition signature and keep top N ---\n  const seen=new Set(), unique=[];\n  for (const st of beams.sort((a,b)=>b._score-a._score)){\n    const sigMap=new Map();\n    for (const p of st.placed) sigMap.set(p.id,(sigMap.get(p.id)||0)+1);\n    const signature=JSON.stringify([...sigMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])));\n    if (seen.has(signature)) continue;\n    seen.add(signature);\n    unique.push(st);\n    if (unique.length>=maxCombos) break;\n  }\n  return unique;\n}\n\n/* =========================\n   5) INPUTS (two branches)\n   ========================= */\n\n// Items payload from Normalize Items node (this node is connected to it)\nconst ITEMS_FROM_NORMALIZE = $input.first().json.items ?? [];\n\n// Packaging rows from the named node \"Code2\" (not necessarily connected)\nconst PACKAGING_NODE = $('Tap (Packaging)').first();\nconst PACKAGING_BOX_ROWS = (PACKAGING_NODE?.json?.packaging || [])\n  .flatMap(entry => {\n    const r = rowOf(entry);\n    if (r && Array.isArray(r.packaging)) return r.packaging.map(rowOf);\n    return [r];\n  });\n\n// Aliases\nconst items   = ITEMS_FROM_NORMALIZE;\nconst boxRows = PACKAGING_BOX_ROWS;\n\nif (CFG.DEBUG) {\n  console.log('DEBUG items.count =', items.length);\n  console.log('DEBUG boxRows.count =', boxRows.length);\n}\n\n/* =========================\n   6) GROUPING & NAMING (quantity separated)\n   ========================= */\nfunction groupCounts(placed){\n  const m=new Map();\n  for (const p of placed){\n    if(!m.has(p.id)){\n      m.set(p.id,{\n        id: p.id,\n        name: p.name,\n        category: p.category,\n        weight: p.weight,  // grams\n        qty: 0,\n        mrp: p.mrp,\n        price: p.price,    // per-unit discounted (optional from normalize)\n      });\n    }\n    m.get(p.id).qty += 1;\n  }\n  return [...m.values()];\n}\nfunction baseName(g){\n  const grams = g.weight ? `${g.weight}g` : '';\n  const cat = normCat(g.category);\n  const map = new Map([\n    ['cashew',  'Any Flavoured Cashew'],\n    ['almond',  'Any Flavoured Almond'],\n    ['raisin',  'Any Flavoured Raisin'],\n    ['walnut',  'Any Flavoured Walnut'],\n  ]);\n  if (map.has(cat)) return `${map.get(cat)}${grams ? ` ${grams}` : ''}`.trim();\n  return `${g.name || g.id}${grams ? ` ${grams}` : ''}`.trim();\n}\n\n/* =========================\n   7) DISPLAY DEDUPE (merge same printed label)\n   ========================= */\nfunction consolidateByDisplayName(lines){\n  if (CFG.DISPLAY_DEDUP_STRATEGY === 'first-one'){\n    const seen = new Set();\n    const out = [];\n    for (const ln of lines){\n      if (seen.has(ln.name)) continue;\n      seen.add(ln.name);\n      out.push({ ...ln });\n    }\n    return out;\n  }\n  // default: collapse (sum qty + totals)\n  const map = new Map(); const order = [];\n  for (const ln of lines){\n    if (!map.has(ln.name)){\n      map.set(ln.name, { ...ln });\n      order.push(ln.name);\n    } else {\n      const acc = map.get(ln.name);\n      acc.quantity         = (acc.quantity || 0) + (ln.quantity || 0);\n      acc.MRP              = r2((acc.MRP || 0) + (ln.MRP || 0));\n      acc.discounted_price = r2((acc.discounted_price || 0) + (ln.discounted_price || 0));\n    }\n  }\n  return order.map(k => map.get(k));\n}\n\n/* =========================\n   8) BUILD OUTPUT (seeded + vanilla merged)\n   ========================= */\nfunction dedupeBySignature(states){\n  const seen = new Set(); const out = [];\n  for (const st of states){\n    const sigMap = new Map();\n    for (const p of (st.placed||[])) sigMap.set(p.id,(sigMap.get(p.id)||0)+1);\n    const signature = JSON.stringify([...sigMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])));\n    if (seen.has(signature)) continue;\n    seen.add(signature);\n    out.push(st);\n  }\n  return out;\n}\n\nconst optionsDict = {};\nlet optionIndex = 1;\n\nfor (const packRow of boxRows){\n  if (!packRow) continue;\n\n  const boxName = String(packRow[BOXMAP.name] ?? '').trim();\n  const dims = dimsFromBoxRow(packRow);\n  if (!boxName || !dims) continue; // skip rows without usable dimensions\n\n  const discFrac = chooseDiscount(packRow); // e.g., 0.35 or 0.40\n  const box = { id: boxName, name: boxName, W: dims.W, D: dims.D, H: dims.H, maxWeight: 9_999_999 };\n\n  // Generate BOTH seeded and vanilla options, merge, then keep top N\n  const seededCombos  = CFG.SEEDED_OPTIONS_PER_BOX > 0\n    ? packCostAware(items, box, discFrac, Math.max(1, CFG.SEEDED_OPTIONS_PER_BOX), CFG.beamWidth, CFG.MUST_HAVE_ONE_EACH)\n    : [];\n  const vanillaCombos = packCostAware(items, box, discFrac, CFG.maxCombosPerBox, CFG.beamWidth, null);\n\n  let merged = [...seededCombos, ...vanillaCombos]\n                .sort((a,b)=> (b._score||0)-(a._score||0));\n  merged = dedupeBySignature(merged).slice(0, CFG.maxCombosPerBox);\n\n  // Packaging price (quantity=1)\n  const packMrp  = n(packRow[BOXMAP.mrp]);\n  const packDisc = r2(packMrp * (1 - discFrac));\n\n  for (const st of merged){\n    const grouped = groupCounts(st.placed);\n\n    // Start with packaging line\n    const itemsList = [\n      { name: boxName, quantity: 1, MRP: r2(packMrp), discounted_price: r2(packDisc) }\n    ];\n\n    let totalMrp  = packMrp;\n    let totalDisc = packDisc;\n\n    // Optional: priced add-ons (not packed)\n    for (const a of (CFG.ADD_ONS || [])){\n      const q   = a.qty ?? 1;\n      const lm  = r2((a.mrp ?? 0) * q);\n      const ld  = r2((a.mrp ?? 0) * (1 - discFrac) * q);\n      itemsList.push({ name: a.name, quantity: q, MRP: lm, discounted_price: ld });\n      totalMrp  = r2(totalMrp + lm);\n      totalDisc = r2(totalDisc + ld);\n    }\n\n    // Packed lines (raw)\n    const rawPackedLines = [];\n    for (const g of grouped){\n      const q           = g.qty || 1;\n      const unitMrp     = r2(g.mrp ?? 0);\n      const unitDisc    = r2(g.price != null ? g.price : unitMrp * (1 - discFrac));\n      const lineMrp     = r2(unitMrp  * q);\n      const lineDisc    = r2(unitDisc * q);\n\n      rawPackedLines.push({\n        name: baseName(g),          // e.g., \"Any Flavoured Walnut 80g\"\n        quantity: q,\n        MRP: lineMrp,               // line total\n        discounted_price: lineDisc  // line total\n      });\n    }\n\n    // Merge same display names to a single line\n    const consolidatedPacked = consolidateByDisplayName(rawPackedLines);\n\n    // Append consolidated lines and update totals\n    for (const ln of consolidatedPacked){\n      itemsList.push(ln);\n      totalMrp  = r2(totalMrp + ln.MRP);\n      totalDisc = r2(totalDisc + ln.discounted_price);\n    }\n\n    optionsDict[`option_${optionIndex}`] = {\n      box_name: boxName,\n      items: itemsList,\n      total: { MRP: r2(totalMrp), discounted_price: r2(totalDisc) }\n    };\n    optionIndex += 1;\n  }\n}\n\n// Fallback when nothing produced\nif (Object.keys(optionsDict).length === 0) {\n  return [{ json: { info: 'No combos produced. Check packaging sizes (or set BOX_DEFAULTS_BY_NAME) and item dimensions in Normalize Items.' } }];\n}\n\n// Return a single item with all options\nreturn [{ json: optionsDict }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        960
+      ],
+      "id": "bfa0aabb-a7cd-4433-9e48-374830698af7",
+      "name": "final algorithm"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  items: $input.all()\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        960
+      ],
+      "id": "51822514-4ae7-4800-9eef-0168e56176b8",
+      "name": "Tap (original items)"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  packaging: $input.all()\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        960
+      ],
+      "id": "0b25056e-ab79-4f1a-88a4-49035cc673ea",
+      "name": "Tap (Packaging)"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * NORMALIZE ITEMS (from \"item sheet\")\n * - Uses your fields exactly as posted\n * - Weight \"150g\" → grams\n * - Size (LxBxH) if present → mm; else fallback by Type Of Packaging\n * - Computes price after discount based on ORDER_QTY threshold\n */\n\nconst CFG = {\n  ORDER_QTY: 200,                 // change per order\n  DISCOUNT_THRESHOLD: 200,\n  COLS: {\n    category: 'Category',\n    name: 'Item Name',\n    weight: 'Weight',\n    packType: 'Type Of Packaging',\n    size: 'Size (LxBxH)',         // may be empty\n    mrp: 'MRP',\n    discAbove: 'Above 200 pieces Discount on MRP ',\n    discBelow: 'Below 200 pieces Discount on MRP ',\n  },\n  // Fallback dims in mm when Size is empty; please update once.\n  PACK_DIM_BY_TYPE: {\n    'Plastic Round Box': { w: 80, d: 80, h: 60 },\n    'Small Square':      { w: 90, d: 90, h: 35 },\n    'Luicella Bottle':   { w: 60, d: 60, h: 180 },\n    'Tin box':           { w: 100, d: 100, h: 35 },\n  }\n};\n\nfunction rowOf(x){ return x?.json && typeof x.json==='object' ? x.json : x; }\nfunction num(x){ const n = Number(String(x??'').replace(/[, ]/g,'')); return Number.isFinite(n)?n:0; }\nfunction parseWeightToGrams(s){ if(!s) return 0; const m=String(s).match(/([\\d.]+)/); return m?Math.round(parseFloat(m[1])):0; }\n\nfunction parseSizeLxBxH_mm(s){\n  if(!s) return null;\n  const parts = String(s).replace(/[^\\d.x×]/g,'').split(/[x×]/).map(v=>v.trim()).filter(Boolean);\n  if(parts.length!==3) return null;\n  const [L,B,H] = parts.map(Number);\n  if([L,B,H].some(v=>!Number.isFinite(v)||v<=0)) return null;\n  return { w:L, d:B, h:H };\n}\n\nfunction fallbackDims(type){\n  const t = String(type||'').trim();\n  return CFG.PACK_DIM_BY_TYPE[t] ? { ...CFG.PACK_DIM_BY_TYPE[t] } : null;\n}\n\nfunction chooseDiscount(r){\n  const above = num(r[CFG.COLS.discAbove]); // e.g. 0.4\n  const below = num(r[CFG.COLS.discBelow]); // e.g. 0.35\n  const useAbove = CFG.ORDER_QTY >= CFG.DISCOUNT_THRESHOLD;\n  const d = useAbove ? above : (below || above || 0);\n  return (d>=0 && d<=1) ? d : 0;\n}\n\n// const rowsWrapped = $input.all();\nconst rowsWrapped = $('Tap (original items)').first().json.items;\nconst rows = rowsWrapped.flatMap(x=>{\n  const r = rowOf(x);\n  // Your paste sometimes wraps as { items: [{json:{...}}, ...] }\n  if (r && Array.isArray(r.items)) return r.items.map(rowOf);\n  return [r];\n});\n\nconst items = [];\nfor(const r of rows){\n  if(!r) continue;\n  const name = String(r[CFG.COLS.name]??'').trim();\n  const category = String(r[CFG.COLS.category]??'').trim();\n  const packType = String(r[CFG.COLS.packType]??'').trim();\n  const mrp = num(r[CFG.COLS.mrp]);\n  const weight = parseWeightToGrams(r[CFG.COLS.weight]);\n\n  let dims = parseSizeLxBxH_mm(r[CFG.COLS.size]) || fallbackDims(packType);\n  if(!dims) continue; // skip items with no dims; fill CFG.PACK_DIM_BY_TYPE to include them\n\n  const disc = chooseDiscount(r);\n  const price = Math.round(mrp * (1 - disc));\n\n  items.push({\n    id: name || `${category}-${mrp}`,\n    name, category,\n    type: packType,\n    w: dims.w, d: dims.d, h: dims.h, // mm\n    weight,                           // grams\n    mrp, price,\n    qty: 9999,\n  });\n}\n\nreturn items.length ? [{ json: { items, units: { dims:'mm', weight:'g' } } }] \n                    : [{ json: { error: 'No items normalized; check PACK_DIM_BY_TYPE or Size column.' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        960
+      ],
+      "id": "f20a4a25-9ef0-4fa2-8359-ce295b8b700b",
+      "name": "Items Normalisation"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  data : $input.all()[0].json\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        960
+      ],
+      "id": "618c2114-9146-4ac0-80cc-7dbcaf43214a",
+      "name": "Wrap in Data Object"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1200,
+        1600
+      ],
+      "id": "ae49e17f-cd4a-4a09-b1a3-7f8e8d69706a",
+      "name": "When chat message received",
+      "webhookId": "d6615a38-6fdc-4d08-b5ed-057dd10abc58"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are KIWI Hamper Concierge.\n\nCollect exactly these fields (ask ONE question at a time):\n- budget_per_hamper (₹, integer)\n- quantity (pcs, integer)\n- delivery_date (YYYY-MM-DD)\n- packaging_reference (free text; e.g. Ratan Jali / Acrylic / Jute)\n- item_preference (free text; e.g. “4 dry fruits + diya + candle”)\n- has_reference_image (boolean) and reference_image_url if an image is attached\n\nRules:\n- If quantity < 200, mention ONCE: “We have an offer for 200+ pieces (extra discount). Want a 200-qty quote too?”\n- If the user answers multiple fields at once, accept them all.\n- When ALL fields are filled, do not ask more. Say: “Thanks! Generating options now.”\n\nYou MUST return Structured Output matching the JSON Schema exactly.\n",
+          "batching": {
+            "delayBetweenBatches": 1000
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -624,
+        1600
+      ],
+      "id": "71313363-74a9-4cd9-9f79-a01a556e5d6c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -592,
+        1840
+      ],
+      "id": "7a207f9c-41f9-4b50-88e4-921bd294b0c4",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        1776
+      ],
+      "id": "9b505029-87fc-4483-adc3-656ca6950738",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg",
+          "mode": "list",
+          "cachedResultName": "KIWI - Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 31908932,
+          "mode": "list",
+          "cachedResultName": "List of Items",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg/edit#gid=31908932"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -432,
+        1856
+      ],
+      "id": "2985a06b-a954-485f-9b8b-bcad71a62863",
+      "name": "items"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg",
+          "mode": "list",
+          "cachedResultName": "KIWI - Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 290808651,
+          "mode": "list",
+          "cachedResultName": "Packaging Material ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sQreiCqhRGUyYskob2Qdy_Tj6tcPKyTavnDqZgh-_Wg/edit#gid=290808651"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -288,
+        1792
+      ],
+      "id": "1a292ce0-b19f-4be4-9f05-5d55573cdbf3",
+      "name": "packaging boxes"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        1808
+      ],
+      "id": "192d5d61-ae29-4915-afc9-a6591db73f31",
+      "name": "Google Gemini Chat Model"
+    }
+  ],
+  "connections": {
+    "items list": {
+      "main": [
+        [
+          {
+            "node": "Tap (original items)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "packaging sheet": {
+      "main": [
+        [
+          {
+            "node": "Tap (Packaging)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "items list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "items list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "final algorithm": {
+      "main": [
+        [
+          {
+            "node": "Wrap in Data Object",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tap (original items)": {
+      "main": [
+        [
+          {
+            "node": "packaging sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tap (Packaging)": {
+      "main": [
+        [
+          {
+            "node": "Items Normalisation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Items Normalisation": {
+      "main": [
+        [
+          {
+            "node": "final algorithm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrap in Data Object": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "items": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "packaging boxes": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "connection": "upgrade",
+            "host": "n8n.creativehand.co.in",
+            "x-real-ip": "117.223.87.168",
+            "x-forwarded-for": "117.223.87.168",
+            "x-nginx-proxy": "true",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+            "sec-ch-ua": "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"Google Chrome\";v=\"140\"",
+            "sec-ch-ua-mobile": "?0",
+            "accept": "*/*",
+            "origin": "https://kiwi.creativehand.co.in",
+            "sec-fetch-site": "same-site",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty",
+            "referer": "https://kiwi.creativehand.co.in/",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+            "if-none-match": "W/\"70d8-2nE6FoEFyH4gXyId/ZP1PyGD4mY\""
+          },
+          "params": {},
+          "query": {},
+          "body": {},
+          "webhookUrl": "https://n8n.creativehand.co.in/webhook/fetch-kiwi-options",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "versionId": "d819f537-7763-45b2-8a5d-67d06cd1e811",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-10T10:25:38.799Z",
+      "updatedAt": "2025-10-10T10:25:38.799Z",
+      "role": "workflow:owner",
+      "workflowId": "QiQ7ksl3GUxQME6v",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
