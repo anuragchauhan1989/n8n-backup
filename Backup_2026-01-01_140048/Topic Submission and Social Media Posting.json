@@ -1,0 +1,2832 @@
+{
+  "createdAt": "2025-09-17T09:11:14.943Z",
+  "updatedAt": "2025-09-20T12:46:54.000Z",
+  "id": "43DscUW46Ec1lwJq",
+  "name": "Topic Submission and Social Media Posting",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate exactly 5 engaging and original text-based social media post topic ideas tailored for the niche: {{ $json.niche }}.\n\nInstructions:\n\n- The topics should be written in a short, catchy, and scroll-stopping style, suitable for platforms like Facebook, Instagram, & LinkedIn.\n- Do NOT suggest video ideas, formats, or captions.\n- Do NOT include any list numbers, bullet points, or extra explanations.\n- Each topic should be unique, creative, and relevant to the niche.\n- Output should be in plain text, with one topic per line.\n\nExample output:\n\nTopic 1\nTopic 2\nTopic 3\nTopic 4\nTopic 5"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        -32,
+        432
+      ],
+      "id": "3a47ec38-34df-4164-be6f-6e6a69f60f7b",
+      "name": "Generate Post Ideas"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ideas: $json.text\n        .split('\\n')\n        .filter(i => i.trim() !== '')\n        .map(i =>\n          i.trim().replace(/^[\"'\\s]*|[\"'\\s]*$/g, '') // Removes leading/trailing quotes and spaces\n        )\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        432
+      ],
+      "id": "f5287c88-4724-4196-af00-e3794baed6cb",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json['Select one topic from below'] }}\",\n  \"search_depth\": \"advanced\",\n  \"max_results\": 5,\n  \"include_answer\": false,\n  \"include_raw_content\": true\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        432
+      ],
+      "id": "23b9cd97-91a2-41f8-bee3-2d8cae6e3a16",
+      "name": "Tavily",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lKmr7WyjO5KaoW51",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert summarizer.\n\nYour task is to read the following articles content and extract the most important and relevant information.\n\n🔹 Your summary should:\n- Be factual and neutral\n- Capture the main arguments, data points, and conclusions\n- Be structured in clear, concise paragraphs\n- Avoid opinions or unnecessary embellishments\n- Ignore unrelated sections like author bios, ads, or navigation text\n\nAlso give one suitable title for this article within 6 words, do not include any special characters\n\n--- Article Content ---\n\n🔹 Article 1\n\nTitle: {{ $json.results[0].title }}\nRaw Content: \n{{ $json.results[0].raw_content }}\n\n🔹 Article 2\n\nTitle: {{ $json.results[1].title }}\nRaw Content: \n{{ $json.results[1].raw_content }}\n\n🔹 Article 3\n\nTitle: {{ $json.results[2].title }}\nRaw Content: \n{{ $json.results[2].raw_content }}\n\n🔹 Article 4\n\nTitle: {{ $json.results[3].title }}\nRaw Content: \n{{ $json.results[3].raw_content }}\n\n🔹 Article 5\n\nTitle: {{ $json.results[4].title }}\nRaw Content: \n{{ $json.results[4].raw_content }}\n\n\nReturn output in this exact JSON format:\n{\n  \"title\": \"...\",\n  \"summary\": \"...\"\n}",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        1008,
+        432
+      ],
+      "id": "84fca87f-d7bb-4a04-92f7-d7e8fb254a6f",
+      "name": "WebSearch Summary"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6f4d763b-db1c-4cca-b44e-0b8ca53179f7",
+              "name": "niche",
+              "value": "={{ $json['Enter your niche/topic'] }}",
+              "type": "string"
+            },
+            {
+              "id": "f84adf83-a9bf-4bd6-922e-a242fe42f1e8",
+              "name": "brandColor",
+              "value": "={{ $json['Brand color (name or hex code)'] }}",
+              "type": "string"
+            },
+            {
+              "id": "106e42f9-b7c5-443e-a551-23590ea290b2",
+              "name": "userOpinion",
+              "value": "={{ $json['Share your personal insights or opinion'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -272,
+        432
+      ],
+      "id": "84dd383c-69ad-4a4c-b526-d3aa19a7b5f0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 4,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        2544,
+        400
+      ],
+      "id": "5def5a29-99a0-4bc0-99c3-61b688a07b17",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('WebSearch Summary').item.json.output.title }}_Facebook Copy",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1MfGIj5OYLAxP6_QO242iUILzblDkoQ8O",
+          "mode": "list",
+          "cachedResultName": "n8n copy image",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1MfGIj5OYLAxP6_QO242iUILzblDkoQ8O"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2224,
+        432
+      ],
+      "id": "fd1fa805-fdca-4eee-bc4e-797e17d27a8f",
+      "name": "Upload Image"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo",
+          "mode": "list",
+          "cachedResultName": "Social Media Post Manager",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Social Media Post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Draft",
+            "Niche": "={{ $('Edit Fields').item.json.niche }}",
+            "Idea": "={{ $('Form').item.json['Select one topic from below'] }}",
+            "Summary": "={{ $('WebSearch Summary').item.json.output.summary }}",
+            "Facebook Copy": "={{ $json.message.content.facebook }}",
+            "Instagram Copy": "={{ $json.message.content.instagram }}",
+            "LinkedIn Copy": "={{ $json.message.content.linkedin }}",
+            "Facebook Image": "={{ $('Upload Image').item.json.webViewLink }}",
+            "Instagram Image": "={{ $('Upload Image1').item.json.webViewLink }}",
+            "LinkedIn Image": "={{ $('Upload Image2').item.json.webViewLink }}",
+            "Source Article": "N/A"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Niche",
+              "displayName": "Niche",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Idea",
+              "displayName": "Idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source Article",
+              "displayName": "Source Article",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Facebook Copy",
+              "displayName": "Facebook Copy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Facebook Image",
+              "displayName": "Facebook Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instagram Copy",
+              "displayName": "Instagram Copy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instagram Image",
+              "displayName": "Instagram Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "LinkedIn Copy",
+              "displayName": "LinkedIn Copy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Image",
+              "displayName": "LinkedIn Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2784,
+        416
+      ],
+      "id": "9ef51b72-8a4b-48ee-96e0-b624f172bb3b",
+      "name": "Update Copy Content",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Select one topic from below",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "={{ $json.ideas[0] }}"
+                  },
+                  {
+                    "option": "={{ $json.ideas[1] }}"
+                  },
+                  {
+                    "option": "={{ $json.ideas[2] }}"
+                  },
+                  {
+                    "option": "={{ $json.ideas[3] }}"
+                  },
+                  {
+                    "option": "={{ $json.ideas[4] }}"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        560,
+        432
+      ],
+      "id": "abce7572-da59-497a-bfb3-97323399d07b",
+      "name": "Form",
+      "webhookId": "318aac04-6231-4f8b-9c33-b86f6c07d8e2"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"...\",\n  \"summary\": \"...\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1232,
+        704
+      ],
+      "id": "43b6898f-d95f-4fd9-a6f4-06d24b118e4c",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a senior social media strategist and expert copywriter.\n\nYour task is to write three distinct social media posts based on the provided article summary and — if available — the user’s personal opinion. Each post should be tailored to the tone, audience, and format of a specific platform:\n\nIf the user’s opinion is provided, blend it naturally into the content to add a personal or conversational tone. If the opinion is not provided, write the posts based solely on the summary.\n\n1. Facebook\n\n- Informal, approachable, and community-focused  \n- Use full sentences and a clear explanation of the insight  \n- If user opinion is present, integrate it conversationally  \n- End with a light engagement question or comment prompt  \n- Include up to 2 relevant hashtags  \n\n2. Instagram\n\n- Energetic, visual, and emotionally engaging  \n- Use emojis where appropriate 🎯✨🔥  \n- Use short lines and spacing for mobile readability  \n- If user opinion is provided, include it as a motivational or relatable angle  \n- Add 3–5 hashtags at the end for discoverability  \n\n3. LinkedIn\n\n- Professional, insightful, and concise  \n- Highlight the strategic or business relevance  \n- If a user opinion is available, treat it as a thought-provoking point or reflection\n- Avoid emojis  \n- Conclude with a thoughtful question or call for discussion  \n\n\n\nReturn output in this exact JSON format:\n{\n  \"facebook\": \"...\",\n  \"instagram\": \"...\",\n  \"linkedin\": \"...\"\n}\n",
+              "role": "system"
+            },
+            {
+              "content": "=Here’s the post summary:\n\"{{ $json.output.summary }}\"\n\n{{ $('Edit Fields').item.json.userOpinion ? 'The user’s opinion: \\n' + $('Edit Fields').item.json.userOpinion : '' }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1888,
+        656
+      ],
+      "id": "5fd0e731-0700-40d6-9baa-444475c54d7d",
+      "name": "Content Writer",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('WebSearch Summary').item.json.output.title }}_Instagram Copy",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1MfGIj5OYLAxP6_QO242iUILzblDkoQ8O",
+          "mode": "list",
+          "cachedResultName": "n8n copy image",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1MfGIj5OYLAxP6_QO242iUILzblDkoQ8O"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2224,
+        272
+      ],
+      "id": "b69ec96a-7364-43ee-8999-77b2bf0f76e4",
+      "name": "Upload Image1"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('WebSearch Summary').item.json.output.title }}_LinkedIn Copy",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1MfGIj5OYLAxP6_QO242iUILzblDkoQ8O",
+          "mode": "list",
+          "cachedResultName": "n8n copy image",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1MfGIj5OYLAxP6_QO242iUILzblDkoQ8O"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2224,
+        112
+      ],
+      "id": "36d8aba6-f166-4250-83c4-8b9e9a52731a",
+      "name": "Upload Image2",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "model": "gpt-image-1",
+        "prompt": "={{ $json.text }}{{ $('Edit Fields').item.json.brandColor ? ' (with brand color ' + $('Edit Fields').item.json.brandColor + ')' : '' }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2032,
+        432
+      ],
+      "id": "fbf7a474-82c8-43a7-8181-49d15eb6fad6",
+      "name": "FB Image Generation"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "model": "gpt-image-1",
+        "prompt": "={{ $json.text }}{{ $('Edit Fields').item.json.brandColor ? ' (with brand color ' + $('Edit Fields').item.json.brandColor + ')' : '' }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2032,
+        272
+      ],
+      "id": "027d21b2-2651-4774-a284-b2d4d32cfa5c",
+      "name": "IG Image Generation"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "model": "gpt-image-1",
+        "prompt": "={{ $json.text }}{{ $('Edit Fields').item.json.brandColor ? ' (with brand color ' + $('Edit Fields').item.json.brandColor + ')' : '' }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2032,
+        112
+      ],
+      "id": "545cfe8e-7e0c-4afc-beeb-533e5908eddf",
+      "name": "Li Image Generation",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here’s the information you’ll need:\nTitle: {{ $json.output.title }}\nSummary: {{ $json.output.summary }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Your task is to create a concise and descriptive prompt for an AI image generator. The resulting image should be optimized for Facebook’s broader demographic, encourage engagement, and complement the provided caption.\n\nGuidelines:\n1. Analyze the post idea or caption carefully, identifying key elements that would best represent or complement the post in an image.\n2. Use an attention-grabbing, high-quality image that stands out in the News Feed.\n3. Include a headline, brief supporting text, and a direct CTA.\n4. Use bold fonts for headlines and lighter weights for supporting text.\n5. Incorporate a contrasting color or a rounded button for CTA to draw attention.\n6. Choose a style that keeps the design vibrant and attention-grabbing.\n7. Ensure that all text elements are clearly visible and not cropped, with enough spacing around the edges and proper alignment to avoid cutoff on various screen sizes.{{ $('Edit Fields').item.json.brandColor ? ' Incorporate the brand\\'s color, ' + $('Edit Fields').item.json.brandColor + ', into the design — for example, in the background, accent shapes, text highlights, or CTA button. Ensure it complements the visual theme and does not overpower other elements.' : '' }}\n\n\nOutput Instructions:\n1. Provide the final prompt in a single paragraph that includes:\n    - A brief mention of the main subject or scene.\n    - A concise description of the visual mood or atmosphere.\n    - Placement and styling of any short text (headline, supporting text, and CTA).\n    - Any relevant details from the guidelines above (visual hierarchy, font choice, CTA emphasis, etc.).\n2. Do not add extra explanations, choices, or commentary. Just give the prompt."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1664,
+        432
+      ],
+      "id": "3b5fc973-47c5-4f28-9f65-bc540f4ee8b6",
+      "name": "FB Copy Image Prompt Generator"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "chatgpt-4o-latest"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        704
+      ],
+      "id": "acdde3c4-83f8-4cb5-8b0d-dbff854f177c",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here’s the information you’ll need:\nTitle: {{ $json.output.title }}\nSummary: {{ $json.output.summary }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Your task is to create a concise and descriptive prompt for an AI image generator. The resulting image should be optimized for Instagram and resonate with a younger audience that values authenticity and creativity and complement the provided caption.\n\nGuidelines:\n1. Analyze the post idea or caption carefully, identifying key elements that would best represent or complement the post in an image.\n2. Center a strong focal point to grab attention quickly in the Instagram feed.\n3. Incorporate only essential text (e.g., a short headline & CTA) to maintain a clean look.\n4. Choose a clean, sans-serif font with sufficient contrast against the background for easy reading.\n5. Select a color palette and subtle design elements or shapes that support the post idea without overshadowing the focal subject.\n6. Choose a style that keeps the design vibrant and attention-grabbing.\n7. Ensure that all text elements are clearly visible and not cropped, with enough spacing around the edges and proper alignment to avoid cutoff on various screen sizes.{{ $('Edit Fields').item.json.brandColor ? ' Incorporate the brand\\'s color, ' + $('Edit Fields').item.json.brandColor + ', into the design — for example, in the background, accent shapes, text highlights, or CTA button. Ensure it complements the visual theme and does not overpower other elements.' : '' }}\n\nOutput Instructions:\n1. Provide the final prompt in a single paragraph that includes:\n- A brief mention of the main subject or scene.\n- A concise description of the visual mood or atmosphere.\n- Placement and styling of any short text.\n- Any relevant details from the guidelines above (focal point, color palette, etc.).\n2. Do not add extra explanations, choices, or commentary. Just give the prompt."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1664,
+        272
+      ],
+      "id": "0c88ec41-9c11-4e1e-9ca5-05c81ccd0ef4",
+      "name": "IG Copy Image Prompt Generator"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here’s the information you’ll need:\nTitle: {{ $json.output.title }}\nSummary: {{ $json.output.summary }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Your task is to create a concise and descriptive prompt for an AI image generator. The resulting image should be optimized for LinkedIn, reflecting a professional and polished style that resonates with industry professionals and leaders, and should complement the provided caption.\n\nGuidelines:\n1. Analyze the post idea or caption to highlight key elements that convey professionalism and industry relevance.\n2. Maintain a polished, corporate look with subtle tones (e.g., blues, grays) and refined styling.\n3. Include concise text: a headline, brief bullet points for key insights, and a clear CTA.\n4. Align text to the left and place the main image on the right, leveraging white space for a clean layout. (This is not compulsory, you’re open to create any other layouts)\n5. Use sans-serif fonts in sizes that remain readable across devices; keep the design uncluttered.\n6. Incorporate geometric shapes or modern design accents sparingly to add visual interest without distracting from the core message.\n7. Opt for a refined, professional design that appeals to a B2B audience.\n8. Ensure that all text elements are clearly visible and not cropped, with enough spacing around the edges and proper alignment to avoid cutoff on various screen sizes.{{ $('Edit Fields').item.json.brandColor ? ' Incorporate the brand\\'s color, ' + $('Edit Fields').item.json.brandColor + ', into the design — for example, in the background, accent shapes, text highlights, or CTA button. Ensure it complements the visual theme and does not overpower other elements.' : '' }}\n\nOutput Instructions:\n1. Provide the final prompt in a single paragraph that includes:\n- A brief mention of the main subject or scene.\n- A concise description of the visual mood or atmosphere.\n- Placement and styling of any short text (headline, bullet points, CTA).\n- Any relevant details from the guidelines above (corporate color palette, left-aligned text, etc.).\n2. Do not add extra explanations, choices, or commentary. Just give the prompt."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1664,
+        112
+      ],
+      "id": "6e14b01d-f20b-4fc9-84d1-c58c4b56c933",
+      "name": "Li Copy Image Prompt Generator"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        3120
+      ],
+      "id": "d88f5f14-b380-485d-a23c-39e4ca26e725",
+      "name": "Limit1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return{\n  json: {},\n  binary: $('Download Image').item.binary\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        2864
+      ],
+      "id": "deb2fef0-86a6-4bb8-ae0f-2218937b7111",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        880,
+        2784
+      ],
+      "id": "9bd6a7f1-bd7e-457f-9ad6-75107d442746",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "YOUR_PAGE_ID",
+        "edge": "photos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "data",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $json['Facebook Copy'] }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        2784
+      ],
+      "id": "69cdd8e1-a0e7-4900-b84b-eb92a65671e4",
+      "name": "Facebook Publish"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "18e18654-1057-4387-a214-cc9f01b5a4af",
+              "name": "Facebook Copy",
+              "value": "={{ $json['Facebook Copy'] }}",
+              "type": "string"
+            },
+            {
+              "id": "456bfa8f-455d-4ff6-856b-87c1eb75177e",
+              "name": "Facebook Image",
+              "value": "={{ $json['Facebook Image'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        2752
+      ],
+      "id": "da6b0281-5aab-4362-90cb-37212f739ff2",
+      "name": "Facebook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6a90ed9d-2c6f-4a30-b2d7-edb26accdeb8",
+              "name": "Instagram Copy",
+              "value": "={{ $json['Instagram Copy'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c982451d-9444-4900-9b22-9018cfc908b6",
+              "name": "Instagram Image",
+              "value": "={{ $json['Instagram Image'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -32,
+        3120
+      ],
+      "id": "2a98dc34-2a5f-42ef-b03f-68f1d0301d6a",
+      "name": "Instagram"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6a90ed9d-2c6f-4a30-b2d7-edb26accdeb8",
+              "name": "LinkedIn Copy",
+              "value": "={{ $json['LinkedIn Copy'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c982451d-9444-4900-9b22-9018cfc908b6",
+              "name": "LinkedIn Image",
+              "value": "={{ $json['LinkedIn Image'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        3472
+      ],
+      "id": "145c0989-dd97-47a2-b37e-65d534e77675",
+      "name": "LinkedIn"
+    },
+    {
+      "parameters": {
+        "content": "## Publish to Social Media",
+        "height": 1200,
+        "width": 2600,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -800,
+        2624
+      ],
+      "typeVersion": 1,
+      "id": "8325c82b-859b-4424-8564-7ca8153b2bae",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Social Media Content Generator by Niche",
+        "height": 900,
+        "width": 3920
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "9b60b54b-80f4-4b3c-9f1a-56a74e119b8a",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json['Facebook Image'] }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        304,
+        2864
+      ],
+      "id": "e1fc2e03-b612-489c-8817-95000bca4b52",
+      "name": "Download Image"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo",
+          "mode": "list",
+          "cachedResultName": "Social Media Post Manager",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Social Media Post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Limit1').item.json.row_number }}",
+            "Status": "Published"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Niche",
+              "displayName": "Niche",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Idea",
+              "displayName": "Idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Source Article",
+              "displayName": "Source Article",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Facebook Copy",
+              "displayName": "Facebook Copy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Facebook Image",
+              "displayName": "Facebook Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Instagram Copy",
+              "displayName": "Instagram Copy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Instagram Image",
+              "displayName": "Instagram Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "LinkedIn Copy",
+              "displayName": "LinkedIn Copy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "LinkedIn Image",
+              "displayName": "LinkedIn Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1584,
+        3136
+      ],
+      "id": "1dd0b5d3-836e-4612-bd93-6a0969f1c72f",
+      "name": "Update Status"
+    },
+    {
+      "parameters": {
+        "formTitle": "Social Media Auto Publish Agent",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Choose your input method",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Topic or Niche"
+                  },
+                  {
+                    "option": "Article URL"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -1296,
+        1056
+      ],
+      "id": "6ab5ad08-5b2f-4eb3-bc1f-7d81bef7ebcc",
+      "name": "On form submission1",
+      "webhookId": "921dcf85-c703-4c57-b065-9c4e8481f184"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ca5c5d07-899c-4019-a357-0222d246f093",
+              "leftValue": "={{ $json['Choose your input method'] }}",
+              "rightValue": "Topic or Niche",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1088,
+        1056
+      ],
+      "id": "655097c7-5e9a-4ba6-9773-93d298063696",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Enter your niche/topic",
+              "placeholder": "e.g., Fitness, AI, Travel Tips",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Brand color (name or hex code)",
+              "placeholder": "e.g., #009688 or “midnight blue”"
+            },
+            {
+              "fieldLabel": "Share your personal insights or opinion",
+              "placeholder": "e.g., “This trend is gaining traction...”"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        432
+      ],
+      "id": "b9840ce5-8e40-4b76-bdcc-27bebb47a105",
+      "name": "Form1",
+      "webhookId": "44a65ee3-2ed8-4a99-8410-ff0f9ba5c9ee"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "chatgpt-4o-latest"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        432,
+        1776
+      ],
+      "id": "28bc0115-0254-4a98-9090-7f6db2244c20",
+      "name": "OpenAI Chat Model1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6f4d763b-db1c-4cca-b44e-0b8ca53179f7",
+              "name": "url",
+              "value": "={{ $json['Paste the article link'] }}",
+              "type": "string"
+            },
+            {
+              "id": "83263a06-796f-463c-a653-a70d9d19e082",
+              "name": "brandColor",
+              "value": "={{ $json['Brand color (name or hex code)'] }}",
+              "type": "string"
+            },
+            {
+              "id": "eb69d035-58c0-4353-ab9d-0ef293dd933c",
+              "name": "userOpinion",
+              "value": "={{ $json['Share your personal insights or opinion'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -320,
+        1536
+      ],
+      "id": "08d2b9e7-5f6c-4ac6-848e-96a6975ab3c4",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"...\",\n  \"summary\": \"...\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        1776
+      ],
+      "id": "6ea05c72-23bf-444b-8d81-8a12cecc525c",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "content": "## Social Media Content Generator by Article URL",
+        "height": 840,
+        "width": 3100,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -800,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "38e6a25b-135e-4e95-8933-dc00e949b8db",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Paste the article link",
+              "placeholder": "e.g., https://example.com/blog/ai-in-healthcare",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Brand color (name or hex code)",
+              "placeholder": "e.g., #009688 or “midnight blue”"
+            },
+            {
+              "fieldLabel": "Share your personal insights or opinion",
+              "placeholder": "e.g., “This ai is gaining traction...”"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        1536
+      ],
+      "id": "ff222c69-cb13-43c8-b907-b57c72defb6e",
+      "name": "Form2",
+      "webhookId": "44a65ee3-2ed8-4a99-8410-ff0f9ba5c9ee"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 4,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1760,
+        1536
+      ],
+      "id": "926cee0d-6bcd-468f-ad1c-7f64e5c1c06c",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Article Summary').item.json.output.title }}_Facebook Copy",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1eMd7ROrNTpG5FDaezqnpKGezAq1yPGjv",
+          "mode": "list",
+          "cachedResultName": "n8n copy images",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1eMd7ROrNTpG5FDaezqnpKGezAq1yPGjv"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1440,
+        1584
+      ],
+      "id": "bb0fff59-4d4e-406e-925f-2acbfb26de9f",
+      "name": "Upload Image3"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo",
+          "mode": "list",
+          "cachedResultName": "Social Media Post Manager",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Social Media Post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Niche": "N/A",
+            "Idea": "N/A",
+            "Facebook Image": "={{ $('Upload Image3').item.json.webViewLink }}",
+            "Instagram Image": "={{ $('Upload Image4').item.json.webViewLink }}",
+            "LinkedIn Image": "={{ $('Upload Image5').item.json.webViewLink }}",
+            "Status": "Draft",
+            "Facebook Copy": "={{ $('Content Writer1').item.json.message.content.facebook }}",
+            "Instagram Copy": "={{ $('Content Writer1').item.json.message.content.instagram }}",
+            "LinkedIn Copy": "={{ $('Content Writer1').item.json.message.content.linkedin }}",
+            "Summary": "={{ $('Article Summary').item.json.output.summary }}",
+            "Source Article": "={{ $('Edit Fields1').item.json.url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Niche",
+              "displayName": "Niche",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Idea",
+              "displayName": "Idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source Article",
+              "displayName": "Source Article",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Facebook Copy",
+              "displayName": "Facebook Copy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Facebook Image",
+              "displayName": "Facebook Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instagram Copy",
+              "displayName": "Instagram Copy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instagram Image",
+              "displayName": "Instagram Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Copy",
+              "displayName": "LinkedIn Copy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Image",
+              "displayName": "LinkedIn Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2032,
+        1552
+      ],
+      "id": "cbc68036-29e5-4422-aff1-e0c31a000bb2",
+      "name": "Update Copy Content1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a senior social media strategist and expert copywriter.\n\nYour task is to write three distinct social media posts based on the provided article summary and — if available — the user’s personal opinion. Each post should be tailored to the tone, audience, and format of a specific platform:\n\nIf the user’s opinion is provided, blend it naturally into the content to add a personal or conversational tone. If the opinion is not provided, write the posts based solely on the summary.\n\n1. Facebook\n\n- Informal, approachable, and community-focused  \n- Use full sentences and a clear explanation of the insight  \n- If user opinion is present, integrate it conversationally  \n- End with a light engagement question or comment prompt  \n- Include up to 2 relevant hashtags  \n\n2. Instagram\n\n- Energetic, visual, and emotionally engaging  \n- Use emojis where appropriate 🎯✨🔥  \n- Use short lines and spacing for mobile readability  \n- If user opinion is provided, include it as a motivational or relatable angle  \n- Add 3–5 hashtags at the end for discoverability  \n\n3. LinkedIn\n\n- Professional, insightful, and concise  \n- Highlight the strategic or business relevance  \n- If a user opinion is available, treat it as a thought-provoking point or reflection  \n- Avoid emojis  \n- Conclude with a thoughtful question or call for discussion  \n\n\nAt the end of the Facebook and LinkedIn post content, include a call-to-action that redirects the reader to the source article. Do not include this in the Instagram content.\n- Article link: {{ $('Edit Fields1').item.json.url }}\n\n\nReturn output in this exact JSON format:\n{\n  \"facebook\": \"...\",\n  \"instagram\": \"...\",\n  \"linkedin\": \"...\"\n}\n",
+              "role": "system"
+            },
+            {
+              "content": "=Here’s the article summary:\n\"{{ $json.output.summary }}\"\n\n{{ $('Edit Fields1').item.json.userOpinion ? 'The user’s opinion: \\n' + $('Edit Fields1').item.json.userOpinion : '' }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1104,
+        1792
+      ],
+      "id": "cb01c4ee-98f9-4645-abfc-24f7afb19f8f",
+      "name": "Content Writer1"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Article Summary').item.json.output.title }}_Instagram Copy",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1eMd7ROrNTpG5FDaezqnpKGezAq1yPGjv",
+          "mode": "list",
+          "cachedResultName": "n8n copy images",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1eMd7ROrNTpG5FDaezqnpKGezAq1yPGjv"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1440,
+        1424
+      ],
+      "id": "bcd33405-34a3-4987-86fa-206847334329",
+      "name": "Upload Image4"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Article Summary').item.json.output.title }}_LinkedIn Copy",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1eMd7ROrNTpG5FDaezqnpKGezAq1yPGjv",
+          "mode": "list",
+          "cachedResultName": "n8n copy images",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1eMd7ROrNTpG5FDaezqnpKGezAq1yPGjv"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1440,
+        1264
+      ],
+      "id": "38afdc5f-624a-49bf-bfac-325eec283f32",
+      "name": "Upload Image5"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "model": "gpt-image-1",
+        "prompt": "={{ $json.text }}{{ $('Edit Fields1').item.json.brandColor ? ' (with brand color ' + $('Edit Fields1').item.json.brandColor + ')' : '' }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1248,
+        1584
+      ],
+      "id": "8409484d-3e31-4c8e-a626-0432f484e3c5",
+      "name": "FB Image Generation1"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "model": "gpt-image-1",
+        "prompt": "={{ $json.text }}{{ $('Edit Fields1').item.json.brandColor ? ' (with brand color ' + $('Edit Fields1').item.json.brandColor + ')' : '' }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1248,
+        1424
+      ],
+      "id": "5bf4ee74-0a3c-4b6b-9868-4bc6f4200e25",
+      "name": "IG Image Generation1"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "model": "gpt-image-1",
+        "prompt": "={{ $json.text }}{{ $('Edit Fields1').item.json.brandColor ? ' (with brand color ' + $('Edit Fields1').item.json.brandColor + ')' : '' }}",
+        "options": {
+          "quality": "high",
+          "size": "1024x1024"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1248,
+        1264
+      ],
+      "id": "ea16ecb6-1db4-4998-991a-ecfa082ba64d",
+      "name": "Li Image Generation1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here’s the information you’ll need:\nTitle: {{ $json.output.title }}\nSummary: {{ $json.output.summary }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Your task is to create a concise and descriptive prompt for an AI image generator. The resulting image should be optimized for Facebook’s broader demographic, encourage engagement, and complement the provided caption.\n\nGuidelines:\n1. Analyze the post idea or caption carefully, identifying key elements that would best represent or complement the post in an image.\n2. Use an attention-grabbing, high-quality image that stands out in the News Feed.\n3. Include a headline, brief supporting text, and a direct CTA.\n4. Use bold fonts for headlines and lighter weights for supporting text.\n5. Incorporate a contrasting color or a rounded button for CTA to draw attention.\n6. Choose a style that keeps the design vibrant and attention-grabbing.\n7. Ensure that all text elements are clearly visible and not cropped, with enough spacing around the edges and proper alignment to avoid cutoff on various screen sizes.{{ $('Edit Fields1').item.json.brandColor ? ' Incorporate the brand\\'s color, ' + $('Edit Fields1').item.json.brandColor + ', into the design — for example, in the background, accent shapes, text highlights, or CTA button. Ensure it complements the visual theme and does not overpower other elements.' : '' }}\n\nOutput Instructions:\n1. Provide the final prompt in a single paragraph that includes:\n    - A brief mention of the main subject or scene.\n    - A concise description of the visual mood or atmosphere.\n    - Placement and styling of any short text (headline, supporting text, and CTA).\n    - Any relevant details from the guidelines above (visual hierarchy, font choice, CTA emphasis, etc.).\n2. Do not add extra explanations, choices, or commentary. Just give the prompt."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        880,
+        1584
+      ],
+      "id": "f5da50fa-a83e-4ba5-bfbf-fa794f5fe3dc",
+      "name": "FB Copy Image Prompt Generator1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here’s the information you’ll need:\nTitle: {{ $json.output.title }}\nSummary: {{ $json.output.summary }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Your task is to create a concise and descriptive prompt for an AI image generator. The resulting image should be optimized for Instagram and resonate with a younger audience that values authenticity and creativity and complement the provided caption.\n\nGuidelines:\n1. Analyze the post idea or caption carefully, identifying key elements that would best represent or complement the post in an image.\n2. Center a strong focal point to grab attention quickly in the Instagram feed.\n3. Incorporate only essential text (e.g., a short headline & CTA) to maintain a clean look.\n4. Choose a clean, sans-serif font with sufficient contrast against the background for easy reading.\n5. Select a color palette and subtle design elements or shapes that support the post idea without overshadowing the focal subject.\n6. Choose a style that keeps the design vibrant and attention-grabbing.\n7. Ensure that all text elements are clearly visible and not cropped, with enough spacing around the edges and proper alignment to avoid cutoff on various screen sizes.{{ $('Edit Fields1').item.json.brandColor ? ' Incorporate the brand\\'s color, ' + $('Edit Fields1').item.json.brandColor + ', into the design — for example, in the background, accent shapes, text highlights, or CTA button. Ensure it complements the visual theme and does not overpower other elements.' : '' }}\n\nOutput Instructions:\n1. Provide the final prompt in a single paragraph that includes:\n- A brief mention of the main subject or scene.\n- A concise description of the visual mood or atmosphere.\n- Placement and styling of any short text.\n- Any relevant details from the guidelines above (focal point, color palette, etc.).\n2. Do not add extra explanations, choices, or commentary. Just give the prompt."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        880,
+        1424
+      ],
+      "id": "6f8e3fa8-b7c8-4fca-8806-a85dd0e01284",
+      "name": "IG Copy Image Prompt Generator1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here’s the information you’ll need:\nTitle: {{ $json.output.title }}\nSummary: {{ $json.output.summary }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Your task is to create a concise and descriptive prompt for an AI image generator. The resulting image should be optimized for LinkedIn, reflecting a professional and polished style that resonates with industry professionals and leaders, and should complement the provided caption.\n\nGuidelines:\n1. Analyze the post idea or caption to highlight key elements that convey professionalism and industry relevance.\n2. Maintain a polished, corporate look with subtle tones (e.g., blues, grays) and refined styling.\n3. Include concise text: a headline, brief bullet points for key insights, and a clear CTA.\n4. Align text to the left and place the main image on the right, leveraging white space for a clean layout. (This is not compulsory, you’re open to create any other layouts)\n5. Use sans-serif fonts in sizes that remain readable across devices; keep the design uncluttered.\n6. Incorporate geometric shapes or modern design accents sparingly to add visual interest without distracting from the core message.\n7. Opt for a refined, professional design that appeals to a B2B audience.\n8. Ensure that all text elements are clearly visible and not cropped, with enough spacing around the edges and proper alignment to avoid cutoff on various screen sizes.{{ $('Edit Fields1').item.json.brandColor ? ' Incorporate the brand\\'s color, ' + $('Edit Fields1').item.json.brandColor + ', into the design — for example, in the background, accent shapes, text highlights, or CTA button. Ensure it complements the visual theme and does not overpower other elements.' : '' }}\n\nOutput Instructions:\n1. Provide the final prompt in a single paragraph that includes:\n- A brief mention of the main subject or scene.\n- A concise description of the visual mood or atmosphere.\n- Placement and styling of any short text (headline, bullet points, CTA).\n- Any relevant details from the guidelines above (corporate color palette, left-aligned text, etc.).\n2. Do not add extra explanations, choices, or commentary. Just give the prompt.\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        880,
+        1264
+      ],
+      "id": "e9a8973f-b74f-4e47-8af0-9c8b57b8e19f",
+      "name": "Li Copy Image Prompt Generator1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return{\n  json: {},\n  binary: $('Download Image2').item.binary\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        3584
+      ],
+      "id": "ddb18202-81de-43dc-b198-d921ab6601b3",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        880,
+        3504
+      ],
+      "id": "131476ca-168b-42b1-ac39-2207463742a0",
+      "name": "Merge4"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json['LinkedIn Image'] }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        304,
+        3584
+      ],
+      "id": "11a1beac-154b-4f8f-9af3-4ea5cf7dba11",
+      "name": "Download Image2"
+    },
+    {
+      "parameters": {
+        "person": "yAUab9C0p8",
+        "text": "={{ $json[\"LinkedIn Copy\"] }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        3504
+      ],
+      "id": "ed7a1b56-1fc4-43cc-8dd4-1ca7704b36b8",
+      "name": "LinkedIn Publish"
+    },
+    {
+      "parameters": {
+        "content": "### Publishing to Facebook",
+        "height": 320,
+        "width": 1460,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -112,
+        2704
+      ],
+      "typeVersion": 1,
+      "id": "4537f303-c87d-49d6-a7ed-6830b261c971",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "### Publishing to Instagram",
+        "height": 360,
+        "width": 1460,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -112,
+        3040
+      ],
+      "typeVersion": 1,
+      "id": "e4b2bf31-d9a2-4f48-ace0-fba07cd21a70",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "### Publishing to LinkedIn",
+        "height": 320,
+        "width": 1460,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -112,
+        3424
+      ],
+      "typeVersion": 1,
+      "id": "11496a65-49b0-4823-95f0-a7f73552b521",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.9"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -128,
+        1536
+      ],
+      "id": "78fe3703-d774-42a2-9466-2e5a14498dbb",
+      "name": "Scrape the Source URL"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "body",
+              "cssSelector": "html"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        1536
+      ],
+      "id": "a2be1e54-9ff5-4aeb-b85c-bb6eba671028",
+      "name": "Extract Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "if ($input.item.json.body) {\n  $input.item.json.content = $input.item.json.body\n    // Remove <style>, <script>, and other head-like content blocks\n    .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n    .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n    .replace(/<!--[\\s\\S]*?-->/g, '') // HTML comments\n\n    // Remove all HTML tags\n    .replace(/<\\/?[^<>]+?>/g, '')\n\n    // Remove CSS or JS snippets (e.g., .class { ... } or function foo() { ... })\n    .replace(/(?:.\\[\\w-]+|\\#[\\w-]+)?\\s*\\{[^}]*\\}/g, '')  // CSS rules\n    .replace(/\\bfunction\\s+\\w+\\s*\\([^)]*\\)\\s*\\{[^}]*\\}/g, '') // JS functions\n\n    // Remove UI junk and boilerplate phrases (commonly seen in web UIs)\n    .replace(/\\b(Subscribe|Book a (call|meeting)|Leave a Reply|Cancel Reply|Login|Logout|Signup|Your Name|Email|Website|Privacy Policy|Terms & Conditions|Close Menu|Skip to main content|Back to top|Search|Menu|Share|Tweet|Pin)\\b/gi, '')\n\n    // Remove social and footer keywords\n    .replace(/\\b(Facebook|Twitter|LinkedIn|Instagram|\\©\\s\\d{4}[\\w\\s.]+)\\b/gi, '')\n\n    // Normalize multiple spaces and line breaks\n    .replace(/\\r?\\n|\\r/g, ' ')      // Remove all newlines\n    .replace(/\\s{2,}/g, ' ')        // Collapse multiple spaces\n    .trim();                        // Trim leading/trailing whitespace\n}\n\nreturn $input.item;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        1536
+      ],
+      "id": "fb15a62e-1b70-4968-a5d9-114842e3a500",
+      "name": "Clean HTML"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "YOUR_INSTAGRAM_ID",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "image_url",
+                "value": "={{ $json.image_url }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $json['Instagram Copy'] }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        3136
+      ],
+      "id": "58c46214-edbe-4c7d-90f4-3ba32070480d",
+      "name": "Create IG Container"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "YOUR_INSTAGRAM_ID",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        3136
+      ],
+      "id": "029d00df-4523-4075-b2c0-2ab6c9bdc450",
+      "name": "Post to IG"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        880,
+        3136
+      ],
+      "id": "48b4cb13-70eb-401c-81b7-35926894fc0b",
+      "name": "Merge5"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json['Instagram Image'] }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        128,
+        3216
+      ],
+      "id": "29575330-9711-4a16-a35f-ccfe74fbc8ea",
+      "name": "Download Image3",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -688,
+        3120
+      ],
+      "id": "0c85c09d-fff8-4792-88bc-7bf8b0f22ab5",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    image_url: $json.url\n      .replace(\"?dl=0\", \"?raw=1\")\n      .replace(\"&dl=0\", \"&raw=1\")\n  }\n}];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        3216
+      ],
+      "id": "0a7ab9c8-5dcb-45bd-99e1-07c967029f80",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"path\": \"{{ $json.path_display }}\",\n  \"settings\": {\n    \"requested_visibility\": \"public\"\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        3216
+      ],
+      "id": "3383e591-86a6-4279-963d-8895e92505f5",
+      "name": "Create Shared Link"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1424,
+        3136
+      ],
+      "id": "afbb2108-91a3-461f-b241-73e5fdfbf293",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert summarizer.\n\nYour task is to read the following article content and extract the most important and relevant information.\n\n🔹 Your summary should:\n- Be factual and neutral\n- Capture the main arguments, data points, and conclusions\n- Be structured in clear, concise paragraphs\n- Avoid opinions or unnecessary embellishments\n- Ignore unrelated sections like author bios, ads, or navigation text\n\nAlso give one suitable title for this article within 6 words, do not include any special characters\n\n--- Article Content ---\n{{ $json.content }}\n\n\nReturn output in this exact JSON format:\n{\n  \"title\": \"...\",\n  \"summary\": \"...\"\n}\n",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        432,
+        1536
+      ],
+      "id": "e173e670-8371-41ba-b4e3-3e350679d281",
+      "name": "Article Summary"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo",
+          "mode": "list",
+          "cachedResultName": "Social Media Post Manager",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Social Media Post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BoCbTK-RmbGX75Socok-iWxYol14hwL6v69kVvAyVVo/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Approved"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -496,
+        3120
+      ],
+      "id": "07be7b55-7927-4c38-82bc-c586168b94a4",
+      "name": "Get Copy Contents"
+    },
+    {
+      "parameters": {
+        "path": "=/instagram_copy_image/{{$binary.data.fileName.replace(/\\s+/g, \"_\")}}.png",
+        "binaryData": true
+      },
+      "type": "n8n-nodes-base.dropbox",
+      "typeVersion": 1,
+      "position": [
+        320,
+        3216
+      ],
+      "id": "e3f65bae-d86c-4c3a-b2ae-af263d6d618c",
+      "name": "Upload Image to Dropbox"
+    }
+  ],
+  "connections": {
+    "Generate Post Ideas": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily": {
+      "main": [
+        [
+          {
+            "node": "WebSearch Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WebSearch Summary": {
+      "main": [
+        [
+          {
+            "node": "Content Writer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "FB Copy Image Prompt Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IG Copy Image Prompt Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Li Copy Image Prompt Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Generate Post Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Update Copy Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form": {
+      "main": [
+        [
+          {
+            "node": "Tavily",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "WebSearch Summary",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Writer": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Upload Image2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "FB Image Generation": {
+      "main": [
+        [
+          {
+            "node": "Upload Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG Image Generation": {
+      "main": [
+        [
+          {
+            "node": "Upload Image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Li Image Generation": {
+      "main": [
+        [
+          {
+            "node": "Upload Image2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB Copy Image Prompt Generator": {
+      "main": [
+        [
+          {
+            "node": "FB Image Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "FB Copy Image Prompt Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "IG Copy Image Prompt Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Li Copy Image Prompt Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "WebSearch Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Generate Post Ideas",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG Copy Image Prompt Generator": {
+      "main": [
+        [
+          {
+            "node": "IG Image Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Li Copy Image Prompt Generator": {
+      "main": [
+        [
+          {
+            "node": "Li Image Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit1": {
+      "main": [
+        [
+          {
+            "node": "Facebook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Instagram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Facebook Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Publish": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram": {
+      "main": [
+        [
+          {
+            "node": "Download Image3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Form1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Form2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Article Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Li Copy Image Prompt Generator1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "IG Copy Image Prompt Generator1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "FB Copy Image Prompt Generator1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Scrape the Source URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Article Summary",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Update Copy Content1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image3": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Content Writer1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Upload Image4": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Upload Image5": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB Image Generation1": {
+      "main": [
+        [
+          {
+            "node": "Upload Image3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG Image Generation1": {
+      "main": [
+        [
+          {
+            "node": "Upload Image4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Li Image Generation1": {
+      "main": [
+        [
+          {
+            "node": "Upload Image5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB Copy Image Prompt Generator1": {
+      "main": [
+        [
+          {
+            "node": "FB Image Generation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG Copy Image Prompt Generator1": {
+      "main": [
+        [
+          {
+            "node": "IG Image Generation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Li Copy Image Prompt Generator1": {
+      "main": [
+        [
+          {
+            "node": "Li Image Generation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Download Image2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Download Image2": {
+      "main": [
+        [
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Publish": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Scrape the Source URL": {
+      "main": [
+        [
+          {
+            "node": "Extract Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Content": {
+      "main": [
+        [
+          {
+            "node": "Clean HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean HTML": {
+      "main": [
+        [
+          {
+            "node": "Article Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create IG Container": {
+      "main": [
+        [
+          {
+            "node": "Post to IG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge5": {
+      "main": [
+        [
+          {
+            "node": "Create IG Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image3": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to Dropbox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to IG": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Copy Contents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create Shared Link": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Update Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Article Summary": {
+      "main": [
+        [
+          {
+            "node": "Li Copy Image Prompt Generator1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IG Copy Image Prompt Generator1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "FB Copy Image Prompt Generator1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Content Writer1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Copy Contents": {
+      "main": [
+        [
+          {
+            "node": "Limit1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to Dropbox": {
+      "main": [
+        [
+          {
+            "node": "Create Shared Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "4b3c2071-5c65-4319-8735-6f7e898d2de9",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-17T09:11:14.949Z",
+      "updatedAt": "2025-09-17T09:11:14.949Z",
+      "role": "workflow:owner",
+      "workflowId": "43DscUW46Ec1lwJq",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
