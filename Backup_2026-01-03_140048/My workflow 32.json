@@ -1,0 +1,1368 @@
+{
+  "createdAt": "2025-10-12T12:28:05.071Z",
+  "updatedAt": "2025-10-12T19:59:08.000Z",
+  "id": "Z3VMefj6IR9p27cy",
+  "name": "My workflow 32",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is the Input Idea:\n\nINPUT: {{ $json[\"My Content Idea\"] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an expert social media content creator who writes in the style of Alex Hormozi: bold, punchy, contrarian, and highly engaging.\n\nTASK: Create three versions of a social media post based on the given idea, optimized for Linkedin, Instagram, and Facebook. Each should use Hormozi’s proven engagement and conversation techniques: pattern interrupt (hook), curiosity, authority, lesson, and engagement trigger.\n\n### Content Formula (for all 3)\n- Hook (1–2 lines): Contrarian opener that challenges a belief.  \n- Story (2–4 lines): Quick example or proof (I used to believe → I discovered → result).  \n- Lesson (1–2 lines): Condensed principle.  \n- Engagement Trigger (1 line): Open-ended question for comments.  \n\n### Platform Adjustments\n- Linkedin: 150–200 words, professional but bold, formatted with line breaks.  \n- Instagram: 100–150 words, short sentences, casual, line breaks + optional emojis.  \n- Facebook: 120–180 words, warm and conversational, encourage discussion."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -112,
+        1376
+      ],
+      "id": "e31c795f-aacd-4327-a8c8-56846849bd90",
+      "name": "Content Generator"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "sessiondata"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        1696
+      ],
+      "id": "ecad95d4-b139-43a5-b82b-986e07ab4335",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"Linkedin\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"Instagram\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n      \"Facebook\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t}\n}",
+        "autoFix": true,
+        "customizeRetryPrompt": true,
+        "prompt": "Instructions:\nRemove \\n from the response\n\nAbove, the Completion did not satisfy the constraints given in the Instructions.\nError:\n--------------\n{error}\n--------------\n\nPlease try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        1664
+      ],
+      "id": "f0649efc-48f9-4cd3-9dfd-f21d1d22a197",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3424b6be-534a-44be-8757-7f9726d75298",
+                    "leftValue": "={{ $json[\"Control Column\"] }}",
+                    "rightValue": "Approved & Create Post",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approved & Create Post"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json[\"Control Column\"] }}",
+                    "rightValue": "Generate Content",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f32b3a2a-5adb-4207-ab84-2b1b110466d7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Generate Content"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1248,
+        848
+      ],
+      "id": "bc8e8cb3-1277-4e19-8ee8-a0939867802c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "={{ $('Download image').item.json.node }}",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "caption",
+                "value": "={{ $('Download image').item.json.Post }}"
+              },
+              {
+                "name": "image_url",
+                "value": "={{ $json.image_url }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        800
+      ],
+      "id": "8d58a6f2-61e0-496b-beec-a32b6e141ab1",
+      "name": "Instagram container id",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "VTvp4R5kfa5OUUcR",
+          "name": "Facebook Graph account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/userinfo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        304,
+        0
+      ],
+      "id": "d2a94bd9-b4fe-4854-9a0f-95e15e058178",
+      "name": "Get Linkedin User Info",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lKmr7WyjO5KaoW51",
+          "name": "Linkedin Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const data = item.json;\n  const content = (data[\"Linkedin Post Content\"] || \"\")\n    .trim()\n    .replace(/\"/g, '\\\\\"')   // Escape double quotes\n    .replace(/\\n/g, \"\\\\n\"); // Escape newlines\n\n  return {\n    json: {\n      linkedinContent: content\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b7d7216d-8c79-4ec1-9e73-2c08fc04d193",
+      "name": "Extract Linkedin Post content"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.value.uploadMechanism[\"com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest\"].uploadUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "image/png"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        0
+      ],
+      "id": "d11ea6f9-6d1c-4421-bdb1-01fbefa457cf",
+      "name": "Upload Image to Linkedin",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lKmr7WyjO5KaoW51",
+          "name": "Linkedin Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"author\": \"urn:li:person:{{ $('Get Linkedin User Info').item.json.sub }}\",\n    \"lifecycleState\": \"PUBLISHED\",\n    \"specificContent\": {\n        \"com.linkedin.ugc.ShareContent\": {\n            \"shareCommentary\": {\n                \"text\": \"{{ $('Extract Linkedin Post content').item.json.linkedinContent }}\"\n            },\n            \"shareMediaCategory\": \"IMAGE\",\n            \"media\": [\n                {\n                    \"status\": \"READY\",\n                    \"description\": {\n                        \"text\": \"Center stage!\"\n                    },\n                    \"media\": \"{{ $('Register Upload, get Upload URL and Asset from Linkedin').item.json.value.asset }}\",\n                    \"title\": {\n                        \"text\": \"LinkedIn Talent Connect 2021\"\n                    }\n                }\n            ]\n        }\n    },\n    \"visibility\": {\n        \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"\n    }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1408,
+        0
+      ],
+      "id": "4a56e937-52c8-4668-9151-fe31b5d74a9b",
+      "name": "Upload Linkedin Post And Image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lKmr7WyjO5KaoW51",
+          "name": "Linkedin Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2fd5a4cc-5e81-479e-9ab8-fffe330ec69c",
+              "name": "=node",
+              "value": "17841472727279985",
+              "type": "string"
+            },
+            {
+              "id": "e5e39ee1-f2f0-4cc3-810c-06aaefe94bfe",
+              "name": "Post",
+              "value": "={{ $('Switch').item.json['Instagram Post Content'] }}",
+              "type": "string"
+            },
+            {
+              "id": "78d4375a-570f-4381-8e4b-a4cb5d453faa",
+              "name": "cloud_name",
+              "value": "=djcf4plbk",
+              "type": "string"
+            },
+            {
+              "id": "d522f002-8725-47aa-a3fe-d2ef14475384",
+              "name": "api_key",
+              "value": "195328934477254",
+              "type": "string"
+            },
+            {
+              "id": "3edbc111-53bc-48e0-a74b-d609fe813657",
+              "name": "api_secret",
+              "value": "vD9X6BBbk6CRpVGvBQiuvEhxOiM",
+              "type": "string"
+            },
+            {
+              "id": "bd625dfd-20d6-47cf-9993-8ef8e564a115",
+              "name": "public_id",
+              "value": "=ea8a46fd-4489-430f-aa28-26fd94b31b16",
+              "type": "string"
+            },
+            {
+              "id": "c4a0ae57-01a7-4200-aa83-7ca243c9834f",
+              "name": "upload_preset",
+              "value": "akcloudpreset",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -336,
+        800
+      ],
+      "id": "82ecda20-c66f-4251-ac60-9af2df536333",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        800
+      ],
+      "id": "5e33aea6-1d3a-4c04-8a24-ac37cf671fef",
+      "name": "Wait for 5 Sec",
+      "webhookId": "f1b550fb-192e-4de8-a6fa-be2d8bea957a"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "={{ $('Edit Fields').item.json.node }}",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        2032,
+        800
+      ],
+      "id": "8914293f-aa2c-4784-bfd5-40dd5ba83bbf",
+      "name": "Instagram post with image",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "VTvp4R5kfa5OUUcR",
+          "name": "Facebook Graph account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "me",
+        "edge": "photos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "data",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $json[\"Facebook Post Content\"] }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        96,
+        416
+      ],
+      "id": "33cb7ae9-4c4d-40f3-8956-edbd273bcda9",
+      "name": "Facebook post with image",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "VTvp4R5kfa5OUUcR",
+          "name": "Facebook Graph account - cognigenai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2672,
+        368
+      ],
+      "id": "e0ff91c3-dc3f-4116-8e55-c049748e247d",
+      "name": "Merge Linkedin,  Facbeook and Instagram",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const linkedin = $items(\"Upload Linkedin Post And Image\")[0].json;\nconst instagram = $items(\"Instagram post with image\")[0].json;\nconst facebook = $items(\"Facebook post with image\")[0].json;\n\n// Merge all into one array\nconst mergedData = [\n  { linkedin_id: linkedin.id,\n    instagram_id: instagram.id,\n    facebook_id: facebook.id,\n    row_number:$('Switch').first().json.row_number\n  }\n];\n\n// Return in n8n format\nreturn mergedData.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3088,
+        384
+      ],
+      "id": "176458d4-2d01-4061-a70b-c1d65bda643e",
+      "name": "Merge into one list"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "49cfa5d5-e8ab-4a88-b71d-9137c2c144ab",
+              "leftValue": "={{ $json.linkedin_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "3cf83996-dd16-41f8-a0eb-6ee8aa9fc808",
+              "leftValue": "={{ $json.instagram_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "5dddfcba-5e71-4997-bf18-e51696d52d2e",
+              "leftValue": "={{ $json.facebook_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3456,
+        384
+      ],
+      "id": "b3c74444-f39f-4dd8-9d97-054f376caa96",
+      "name": "Check if posting is done"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4",
+          "mode": "list",
+          "cachedResultName": "Voip Trainers Social Media Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Switch').item.json.row_number }}",
+            "Facebook Post Content": "={{ $('Content Generator').item.json.output.Facebook }}",
+            "Instagram Post Content": "={{ $('Content Generator').item.json.output.Instagram }}",
+            "Linkedin Post Content": "={{ $('Content Generator').item.json.output.Linkedin }}",
+            "Image Link": "={{ $json.webViewLink }}",
+            "Control Column": "Ready for Review"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "My Content Idea",
+              "displayName": "My Content Idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Facebook Post Content",
+              "displayName": "Facebook Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instagram Post Content",
+              "displayName": "Instagram Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Linkedin Post Content",
+              "displayName": "Linkedin Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image Link",
+              "displayName": "Image Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Control Column",
+              "displayName": "Control Column",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1120,
+        1376
+      ],
+      "id": "c087571d-91f6-41f9-a18a-17ab3c51f3be",
+      "name": "Review Done",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4",
+          "mode": "list",
+          "cachedResultName": "Voip Trainers Social Media Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "Control Column": "Posting Done"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "My Content Idea",
+              "displayName": "My Content Idea",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Facebook Post Content",
+              "displayName": "Facebook Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instagram Post Content",
+              "displayName": "Instagram Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Linkedin Post Content",
+              "displayName": "Linkedin Post Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image Link",
+              "displayName": "Image Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Control Column",
+              "displayName": "Control Column",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        3824,
+        368
+      ],
+      "id": "ee57d881-1f32-4568-a387-6145fa96791f",
+      "name": "Posting Complete",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "=post_image_{{$now.format('yyyy-MM-dd_hh:mm:ss')}}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "14V74XQSJaXJlbTKQO6KZDEbwup46SS5N",
+          "mode": "list",
+          "cachedResultName": "Social Media Post Image",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/14V74XQSJaXJlbTKQO6KZDEbwup46SS5N"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        768,
+        1376
+      ],
+      "id": "273d8c1d-4840-4f3c-8924-9b4e87c6258a",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Switch').item.json['Image Link'] }}",
+          "mode": "url"
+        },
+        "options": {
+          "binaryPropertyName": "data",
+          "fileName": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        864,
+        0
+      ],
+      "id": "e830d1d4-6a7f-46f3-ad03-40004bb50156",
+      "name": "Download file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json['Image Link'] }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -336,
+        416
+      ],
+      "id": "e939f177-981e-4ab8-bfdc-d2cbd98d3961",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Switch').item.json['Image Link'] }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        0,
+        800
+      ],
+      "id": "f5d34451-681f-4f79-9b87-a2c37f8126b6",
+      "name": "Download image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4",
+          "mode": "list",
+          "cachedResultName": "Voip Trainers Social Media Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1520,
+        848
+      ],
+      "id": "fe90d59f-93c5-4d69-95ea-647da635ceb3",
+      "name": "Get Rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/assets?action=registerUpload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"registerUploadRequest\": {\n        \"recipes\": [\n            \"urn:li:digitalmediaRecipe:feedshare-image\"\n        ],\n        \"owner\": \"urn:li:person:{{ $json.sub }}\",\n        \"serviceRelationships\": [\n            {\n                \"relationshipType\": \"OWNER\",\n                \"identifier\": \"urn:li:userGeneratedContent\"\n            }\n        ]\n    }\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        592,
+        0
+      ],
+      "id": "e510f261-c0f1-468d-9ce6-e4d4140f8410",
+      "name": "Register Upload, get Upload URL and Asset from Linkedin",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lKmr7WyjO5KaoW51",
+          "name": "Linkedin Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        1904
+      ],
+      "id": "b83ca9d5-5043-4814-9aed-a4bec2a91ee2",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-exp-image-generation",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-exp-image-generation"
+        },
+        "prompt": "=A high-quality, photo-realistic image showcasing: \"{{ $('Get Rows').item.json[\"My Content Idea\"] }}\". \nClean studio lighting, professional commercial photography style, \nmodern look optimized for Facebook, Instagram, and LinkedIn posts. \nNo text or watermarks, just the product/idea as the main focus.\n",
+        "options": {
+          "binaryPropertyOutput": "data"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        448,
+        1376
+      ],
+      "id": "08f2e011-5372-4b65-8404-25d347ee0d79",
+      "name": "Generate an image1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "13GUWdzP5u5goYYi",
+          "name": "Google Gemini(PaLM) Api account - Ansh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "=/instagram_copy_image/{{$binary.data.fileName.replace(/\\s+/g, \"_\")}}.jpeg",
+        "binaryData": true
+      },
+      "type": "n8n-nodes-base.dropbox",
+      "typeVersion": 1,
+      "position": [
+        224,
+        800
+      ],
+      "id": "b27df339-55c4-47e4-a196-c25d1b759b99",
+      "name": "Upload a file"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"path\": \"{{ $json.path_display }}\",\n  \"settings\": {\n    \"requested_visibility\": \"public\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        544,
+        800
+      ],
+      "id": "4b839d63-b43f-497b-b02a-89c723198c23",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    image_url: $json.url\n      .replace(\"?dl=0\", \"?raw=1\")\n      .replace(\"&dl=0\", \"&raw=1\")\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        800
+      ],
+      "id": "099cfda3-03f9-46f6-9a62-c2af5a4c1743",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4",
+          "mode": "list",
+          "cachedResultName": "Voip Trainers Social Media Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YHfkvGZdl-6pieQp_huPJO2u1x2nTHnUhe4pG8HrZc4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1808,
+        848
+      ],
+      "id": "001f41a2-31d8-4ae3-bbfa-97bdbca98392",
+      "name": "Google Sheets Trigger"
+    }
+  ],
+  "connections": {
+    "Content Generator": {
+      "main": [
+        [
+          {
+            "node": "Generate an image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Content Generator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Content Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Linkedin Post content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Content Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram container id": {
+      "main": [
+        [
+          {
+            "node": "Wait for 5 Sec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Linkedin User Info": {
+      "main": [
+        [
+          {
+            "node": "Register Upload, get Upload URL and Asset from Linkedin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Linkedin Post content": {
+      "main": [
+        [
+          {
+            "node": "Get Linkedin User Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to Linkedin": {
+      "main": [
+        [
+          {
+            "node": "Upload Linkedin Post And Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Download image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for 5 Sec": {
+      "main": [
+        [
+          {
+            "node": "Instagram post with image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Linkedin Post And Image": {
+      "main": [
+        [
+          {
+            "node": "Merge Linkedin,  Facbeook and Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram post with image": {
+      "main": [
+        [
+          {
+            "node": "Merge Linkedin,  Facbeook and Instagram",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Facebook post with image": {
+      "main": [
+        [
+          {
+            "node": "Merge Linkedin,  Facbeook and Instagram",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Linkedin,  Facbeook and Instagram": {
+      "main": [
+        [
+          {
+            "node": "Merge into one list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge into one list": {
+      "main": [
+        [
+          {
+            "node": "Check if posting is done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if posting is done": {
+      "main": [
+        [
+          {
+            "node": "Posting Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Review Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file1": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to Linkedin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Facebook post with image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download image": {
+      "main": [
+        [
+          {
+            "node": "Upload a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Upload, get Upload URL and Asset from Linkedin": {
+      "main": [
+        [
+          {
+            "node": "Download file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image1": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Instagram container id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "af358933-b925-415a-9d6a-e273c7c19eb2",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-12T12:28:05.074Z",
+      "updatedAt": "2025-10-12T12:28:05.074Z",
+      "role": "workflow:owner",
+      "workflowId": "Z3VMefj6IR9p27cy",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
