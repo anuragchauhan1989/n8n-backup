@@ -1,0 +1,298 @@
+{
+  "createdAt": "2025-10-07T08:00:36.206Z",
+  "updatedAt": "2025-10-07T12:49:50.000Z",
+  "id": "3397eapzEyRkSxp3",
+  "name": "Medical Imaging Report Generator - CT and MRI",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Map form fields to expected format\nconst formData = $input.item.json;\n\n// Map form field names to internal field names\nconst data = {\n  patientId: formData['Patient ID'] || formData.patientId,\n  patientName: formData['Patient Name'] || formData.patientName,\n  patientAge: formData['Patient Age'] || formData.patientAge,\n  patientGender: formData['Patient Gender'] || formData.patientGender,\n  scanType: formData['Scan Type'] || formData.scanType,\n  bodyPart: formData['Body Part'] || formData.bodyPart,\n  scanDate: formData['Scan Date'] || formData.scanDate,\n  clinicalHistory: formData['Clinical History'] || formData.clinicalHistory,\n  referringPhysician: formData['Referring Physician Email'] || formData.referringPhysician,\n  scanImages: formData['Imaging Findings'] || formData.scanImages,\n  technicalParameters: formData.technicalParameters || {}\n};\n\n// Validate required fields\nconst requiredFields = ['patientId', 'scanType', 'scanDate', 'scanImages'];\nconst missingFields = requiredFields.filter(field => !data[field]);\n\nif (missingFields.length > 0) {\n  throw new Error(`Missing required fields: ${missingFields.join(', ')}`);\n}\n\n// Validate scan type\nconst validScanTypes = ['CT', 'MRI'];\nif (!validScanTypes.includes(data.scanType.toUpperCase())) {\n  throw new Error(`Invalid scan type. Must be CT or MRI`);\n}\n\n// Return structured data\nreturn {\n  patientId: data.patientId,\n  patientName: data.patientName || 'Unknown',\n  patientAge: data.patientAge || 'Unknown',\n  patientGender: data.patientGender || 'Unknown',\n  scanType: data.scanType.toUpperCase(),\n  scanDate: data.scanDate,\n  scanImages: data.scanImages,\n  bodyPart: data.bodyPart || 'Not specified',\n  clinicalHistory: data.clinicalHistory || 'Not provided',\n  referringPhysician: data.referringPhysician || 'Not specified',\n  technicalParameters: data.technicalParameters,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "validate-input",
+      "name": "Validate Input Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\n\n// Create comprehensive prompt for AI analysis\nconst prompt = `You are an expert radiologist analyzing a ${data.scanType} scan. Generate a comprehensive medical imaging report based on the following information:\n\n**PATIENT INFORMATION:**\n- Patient ID: ${data.patientId}\n- Name: ${data.patientName}\n- Age: ${data.patientAge}\n- Gender: ${data.patientGender}\n\n**EXAMINATION DETAILS:**\n- Scan Type: ${data.scanType}\n- Body Part: ${data.bodyPart}\n- Scan Date: ${data.scanDate}\n- Clinical History: ${data.clinicalHistory}\n- Referring Physician: ${data.referringPhysician}\n\n**TECHNICAL PARAMETERS:**\n${JSON.stringify(data.technicalParameters, null, 2)}\n\n**IMAGING FINDINGS:**\n${data.scanImages}\n\nPlease generate a structured radiology report with the following sections:\n\n1. **CLINICAL INDICATION**: Summarize the reason for examination\n2. **TECHNIQUE**: Describe the imaging technique used\n3. **FINDINGS**: Detailed description of observations in anatomical order\n4. **IMPRESSION**: Concise summary of key findings and their clinical significance\n5. **RECOMMENDATIONS**: Any follow-up imaging or clinical correlation needed\n\nProvide the report in a professional medical format suitable for patient records.`;\n\nreturn {\n  ...data,\n  chatInput: prompt\n};"
+      },
+      "id": "prepare-ai-prompt",
+      "name": "Prepare Analysis Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are a board-certified radiologist with 20+ years of experience. Generate accurate, detailed, and professional radiology reports. Use appropriate medical terminology and follow standard reporting formats."
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Report Generator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        848,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "openai-model",
+      "name": "GPT-4 Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        560
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst aiResponse = data.output || data.text || '';\n\n// Create structured report document\nconst report = {\n  reportId: `RPT-${data.patientId}-${Date.now()}`,\n  patientInfo: {\n    patientId: data.patientId,\n    patientName: data.patientName,\n    age: data.patientAge,\n    gender: data.patientGender\n  },\n  examInfo: {\n    scanType: data.scanType,\n    bodyPart: data.bodyPart,\n    scanDate: data.scanDate,\n    reportDate: new Date().toISOString(),\n    referringPhysician: data.referringPhysician,\n    clinicalHistory: data.clinicalHistory\n  },\n  report: aiResponse,\n  technicalDetails: data.technicalParameters,\n  status: 'completed',\n  generatedAt: new Date().toISOString()\n};\n\nreturn report;"
+      },
+      "id": "format-report",
+      "name": "Format Final Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.REPORT_STORAGE_URL || 'https://your-storage-api.com/reports' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "report",
+              "value": "={{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "store-report",
+      "name": "Store Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1296,
+        208
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "odw0FaTRUSGiHCOl",
+          "name": "Serper dev Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "1d92854c-6438-47a8-b19a-4d89d0d7cb1a",
+        "formTitle": "Medical Imaging Report Request",
+        "formDescription": "Submit CT or MRI scan files along with patient information to generate an automated radiology report",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Patient ID",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Patient Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Patient Age",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Patient Gender",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Male"
+                  },
+                  {
+                    "option": "Female"
+                  },
+                  {
+                    "option": "Other"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Scan Type",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "CT"
+                  },
+                  {
+                    "option": "MRI"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Body Part",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Scan Date",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Clinical History",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Referring Physician Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Upload CT/MRI Scan Images",
+              "fieldType": "file",
+              "acceptFileTypes": ".dcm,.jpg,.jpeg,.png,.pdf,.zip",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Additional Imaging Findings (Optional)",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "form-trigger",
+      "name": "Medical Scan Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        288,
+        288
+      ],
+      "webhookId": "1d92854c-6438-47a8-b19a-4d89d0d7cb1a"
+    }
+  ],
+  "connections": {
+    "Validate Input Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare Analysis Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Analysis Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Report Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Report Generator": {
+      "main": [
+        [
+          {
+            "node": "Format Final Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Final Report": {
+      "main": [
+        [
+          {
+            "node": "Store Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4 Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Report Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "07cacb10-27eb-4f2e-ad7e-5b216a12f0ec",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-07T08:00:36.209Z",
+      "updatedAt": "2025-10-07T08:00:36.209Z",
+      "role": "workflow:owner",
+      "workflowId": "3397eapzEyRkSxp3",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
