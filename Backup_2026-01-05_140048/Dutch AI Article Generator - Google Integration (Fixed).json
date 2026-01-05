@@ -1,0 +1,676 @@
+{
+  "createdAt": "2025-09-21T19:54:37.288Z",
+  "updatedAt": "2025-09-30T09:14:32.000Z",
+  "id": "EG5NSfwf1eEAAQe0",
+  "name": "Dutch AI Article Generator - Google Integration (Fixed)",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "schedule-trigger",
+      "name": "Daily Schedule (9 AM Weekdays)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1zqy8xWyM1FxhgM_SzbY_etOxaC5Khm_rYN8dpu65x7A",
+          "mode": "list",
+          "cachedResultName": "Dutch Keywords Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zqy8xWyM1FxhgM_SzbY_etOxaC5Khm_rYN8dpu65x7A/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zqy8xWyM1FxhgM_SzbY_etOxaC5Khm_rYN8dpu65x7A/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "read-keywords",
+      "name": "Read Keywords from Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        304
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "has-unprocessed",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "pending",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-pending",
+      "name": "Filter Pending Keywords",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.keyword }} artikel onderzoek trends 2024 Nederland"
+            },
+            {
+              "name": "num",
+              "value": "10"
+            },
+            {
+              "name": "hl",
+              "value": "nl"
+            },
+            {
+              "name": "gl",
+              "value": "nl"
+            },
+            {
+              "name": "api_key",
+              "value": "=5286b373ef752ceeec029d5e1b56e154a48dd1dd028b0810a337d763e0c18bce"
+            }
+          ]
+        },
+        "options": {
+          "response": {}
+        }
+      },
+      "id": "research-serp",
+      "name": "SERP Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        912,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_news"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.keyword }} laatste nieuws Nederland"
+            },
+            {
+              "name": "num",
+              "value": "5"
+            },
+            {
+              "name": "hl",
+              "value": "nl"
+            },
+            {
+              "name": "gl",
+              "value": "nl"
+            },
+            {
+              "name": "api_key",
+              "value": "=5286b373ef752ceeec029d5e1b56e154a48dd1dd028b0810a337d763e0c18bce"
+            }
+          ]
+        },
+        "options": {
+          "response": {}
+        }
+      },
+      "id": "research-news",
+      "name": "News Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        912,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "Je bent een expert content analist die onderzoeksdata analyseert voor het schrijven van Nederlandse SEO-artikelen. Analyseer de onderzoeksdata en geef een samenvatting van belangrijke trends, inzichten en statistieken."
+            },
+            {
+              "content": "=Analyseer deze onderzoeksdata voor het keyword \"{{ $json.keyword }}\":\n\nSERP Data: {{ JSON.stringify($('SERP Research').item.json.organic_results || [], null, 2) }}\n\nNews Data: {{ JSON.stringify($('News Research').item.json.news_results || [], null, 2) }}\n\nGeef een gestructureerde samenvatting met:\n1. Belangrijkste trends en inzichten\n2. Relevante statistieken en feiten\n3. Recente ontwikkelingen\n4. Aanbevelingen voor inhoud focus"
+            }
+          ]
+        },
+        "simplifyOutput": false,
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "analyze-research",
+      "name": "Analyze Research Data",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "position": [
+        1152,
+        304
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "Je bent een ervaren Nederlandse SEO copywriter die hoogwaardige, geoptimaliseerde artikelen schrijft. Jouw artikelen zijn boeiend, informatief en ranking hoog in Google."
+            },
+            {
+              "content": "Schrijf een SEO-geoptimaliseerd artikel in het Nederlands voor het keyword: \"{{ $('Filter Pending Keywords').item.json.keyword }}\"\n\nArtikel specificaties:\n- Doelgroep: {{ $('Filter Pending Keywords').item.json.target_audience }}\n- Gewenste woordenaantal: {{ $('Filter Pending Keywords').item.json.word_count }}\n- Toon: {{ $('Filter Pending Keywords').item.json.tone }}\n- Brand voice: {{ $('Filter Pending Keywords').item.json.brand_voice }}\n\nOnderzoeksdata voor context:\n{{ $('Analyze Research Data').item.json.choices[0].message.content }}\n\nHet artikel moet:\n1. Een pakkende titel hebben met het hoofdkeyword\n2. Een duidelijke inleiding met hook\n3. Gestructureerde content met H2 en H3 headers\n4. Natuurlijke keyword integratie\n5. Praktische tips en inzichten\n6. Een sterke conclusie met call-to-action\n7. SEO-geoptimaliseerd zijn voor Nederlandse zoekopdrachten\n\nSchrijf het artikel nu:"
+            }
+          ]
+        },
+        "simplifyOutput": false,
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "write-article",
+      "name": "Write SEO Article",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        304
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.copyscape.com/api/",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "u",
+              "value": "YOUR_COPYSCAPE_USERNAME"
+            },
+            {
+              "name": "k",
+              "value": "YOUR_COPYSCAPE_API_KEY"
+            },
+            {
+              "name": "o",
+              "value": "csearch"
+            },
+            {
+              "name": "t",
+              "value": "={{ $('Write SEO Article').item.json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "plagiarism-check",
+      "name": "Plagiarism Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1584,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "Je bent een expert content quality assessor die artikelen beoordeelt op kwaliteit, SEO en leesbaarheid. Geef een objectieve score en feedback."
+            },
+            {
+              "content": "Beoordeel de kwaliteit van dit Nederlandse artikel:\n\n{{ $('Write SEO Article').item.json.choices[0].message.content }}\n\nBeoordeel op:\n1. SEO optimalisatie (keyword gebruik, structuur)\n2. Leesbaarheid en taalgebruik\n3. Inhoudelijke kwaliteit en diepgang\n4. Praktische waarde voor de lezer\n5. Algemene structuur en opbouw\n\nGeef je response in JSON format:\n{\"overall_score\": [1-10], \"seo_score\": [1-10], \"readability_score\": [1-10], \"content_quality\": [1-10], \"feedback\": \"gedetailleerde feedback en verbeterpunten\"}"
+            }
+          ]
+        },
+        "simplifyOutput": false,
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "quality-check",
+      "name": "Content Quality Check",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "position": [
+        1584,
+        400
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "quality-threshold",
+              "leftValue": "={{ JSON.parse($('Content Quality Check').item.json.choices[0].message.content).overall_score || 7 }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "quality-gate",
+      "name": "Quality Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "Je bent een expert Nederlandse content editor die artikelen verbetert op basis van feedback om ze van hogere kwaliteit te maken."
+            },
+            {
+              "content": "Verbeter dit artikel op basis van de feedback:\n\nOrigineel artikel:\n{{ $('Write SEO Article').item.json.choices[0].message.content }}\n\nFeedback:\n{{ $('Content Quality Check').item.json.choices[0].message.content }}\n\nCreëer een verbeterde versie die:\n1. De feedback addresseert\n2. Beter SEO-geoptimaliseerd is\n3. Meer waarde biedt aan de lezer\n4. Professioneler en boeiender geschreven is\n\nBehoud het keyword: {{ $('Filter Pending Keywords').item.json.keyword }}\nBestemd voor: {{ $('Filter Pending Keywords').item.json.target_audience }}"
+            }
+          ]
+        },
+        "simplifyOutput": false,
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "revise-article",
+      "name": "Revise Article (if needed)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "position": [
+        2032,
+        384
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "document_title",
+              "name": "document_title",
+              "value": "={{ '[' + $json.keyword + '] - Artikel - ' + new Date().toLocaleDateString('nl-NL') }}",
+              "type": "string"
+            },
+            {
+              "id": "document_content",
+              "name": "document_content",
+              "value": "={{ '# ZOEKWOORD: ' + $json.keyword + '\\n\\n' + '**Gegenereerd op:** ' + new Date().toLocaleDateString('nl-NL') + '\\n' + '**Doelgroep:** ' + ($json.target_audience || 'Algemeen publiek') + '\\n' + '**Woorden:** ' + ($json.word_count || 1500) + '\\n' + '**Toon:** ' + ($json.tone || 'Professioneel') + '\\n\\n' + '---\\n\\n' + ($node['Quality Gate'].context.node.outputItems[0][0]?.json ? $('Write SEO Article').item.json.choices[0].message.content : $('Revise Article (if needed)').item.json.choices[0].message.content) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-content",
+      "name": "Prepare Content for Google Docs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        2256,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "folderId": "1FCEtHDEyArIkG3HaWtjZCP1eI_rboTaD",
+        "title": "={{ $('Prepare Content for Google Docs').item.json.document_title }}"
+      },
+      "id": "create-google-doc",
+      "name": "Create Google Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        304
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "8qhis65GMrcNAKf9",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "object": {
+                "text": "={{ $('Prepare Content for Google Docs').item.json.document_content }}",
+                "replaceText": ""
+              }
+            }
+          ]
+        }
+      },
+      "id": "add-content-to-doc",
+      "name": "Add Content to Google Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        304
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "8qhis65GMrcNAKf9",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1zqy8xWyM1FxhgM_SzbY_etOxaC5Khm_rYN8dpu65x7A",
+          "mode": "list",
+          "cachedResultName": "Dutch Keywords Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zqy8xWyM1FxhgM_SzbY_etOxaC5Khm_rYN8dpu65x7A/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zqy8xWyM1FxhgM_SzbY_etOxaC5Khm_rYN8dpu65x7A/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "update-sheet-status",
+      "name": "Update Sheet Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2928,
+        304
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Schedule (9 AM Weekdays)": {
+      "main": [
+        [
+          {
+            "node": "Read Keywords from Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Keywords from Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter Pending Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Pending Keywords": {
+      "main": [
+        [
+          {
+            "node": "SERP Research",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "News Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SERP Research": {
+      "main": [
+        [
+          {
+            "node": "Analyze Research Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Research": {
+      "main": [
+        [
+          {
+            "node": "Analyze Research Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Research Data": {
+      "main": [
+        [
+          {
+            "node": "Write SEO Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write SEO Article": {
+      "main": [
+        [
+          {
+            "node": "Plagiarism Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Content Quality Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plagiarism Check": {
+      "main": [
+        [
+          {
+            "node": "Quality Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Quality Check": {
+      "main": [
+        [
+          {
+            "node": "Quality Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Gate": {
+      "main": [
+        [
+          {
+            "node": "Prepare Content for Google Docs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Revise Article (if needed)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revise Article (if needed)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Content for Google Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Content for Google Docs": {
+      "main": [
+        [
+          {
+            "node": "Create Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Doc": {
+      "main": [
+        []
+      ]
+    },
+    "Add Content to Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Update Sheet Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "61217de9-329e-480e-a0ad-cf80b291a436",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-21T19:54:37.291Z",
+      "updatedAt": "2025-09-21T19:54:37.291Z",
+      "role": "workflow:owner",
+      "workflowId": "EG5NSfwf1eEAAQe0",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
