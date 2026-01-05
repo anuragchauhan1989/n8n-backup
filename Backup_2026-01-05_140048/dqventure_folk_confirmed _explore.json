@@ -1,0 +1,402 @@
+{
+  "createdAt": "2025-11-21T05:34:51.233Z",
+  "updatedAt": "2025-11-21T10:56:40.000Z",
+  "id": "br311gDTZlViNmXq",
+  "name": "dqventure_folk_confirmed _explore",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "={{$json.body.firstName}} {{$json.body.lastName}}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1xt4aIk1B0YoiBXH-X21JXzNEG0e6L8Hy",
+          "mode": "list",
+          "cachedResultName": "Explore Stage",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1xt4aIk1B0YoiBXH-X21JXzNEG0e6L8Hy"
+        },
+        "options": {}
+      },
+      "id": "f7f1421e-c6bf-4eea-8d34-e81ed6d46ce3",
+      "name": "Create Main Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1216,
+        32
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "confirmed-explore",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1392,
+        32
+      ],
+      "id": "d2da5d0d-d68f-46fd-8da3-6cb3321f3456",
+      "name": "Webhook",
+      "webhookId": "f4bbc32a-0800-4ba4-b492-4b5e152fe206"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -464,
+        16
+      ],
+      "id": "c26b5525-14e5-477a-8138-451259e0809d",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "name": "={{ $('Create Main Folder').item.json.name }} - {{ $json.name.replace(/\\{\\{[^}]+\\}\\}\\s*/g, '').replace(/\\\\n|\\n|\\r/g, ' ').replace(/\\s*\\d+\\s*$/g, '').replace(/\\s+/g, ' ').trim() }}",
+        "sameFolder": false,
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $('Create Inner Folder').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -272,
+        32
+      ],
+      "id": "aba2226d-c500-4b04-8ce2-31172221d57d",
+      "name": "Copy file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "962fd7c6-dd83-4754-83e8-8e241cac5132",
+              "leftValue": "mimeType",
+              "rightValue": "application/vnd.google-apps.folder",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -688,
+        32
+      ],
+      "id": "0e90fb97-5763-41b1-a28f-e3c838bc2018",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "={{ $json.name }} & DQventures : Explore Stage",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1040,
+        32
+      ],
+      "id": "f191849f-0c5f-48b9-80f2-67bdd2a67d4f",
+      "name": "Create Inner Folder",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "operation": "share",
+        "folderNoRootId": {
+          "__rl": true,
+          "value": "={{ $('Create Inner Folder').item.json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "writer",
+            "type": "user",
+            "emailAddress": "={{ $('Webhook').item.json.body.email }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        -160
+      ],
+      "id": "22346fa0-bff7-4a96-8f22-f9af93b911f0",
+      "name": "Share folder",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1OGy_a89x2TH7LuDuiigXcqO6PafG_WJr",
+            "mode": "list",
+            "cachedResultName": "Explore Template Folder",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1OGy_a89x2TH7LuDuiigXcqO6PafG_WJr"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -848,
+        32
+      ],
+      "id": "caeeff7a-4617-4b1a-8459-cf566563cb17",
+      "name": "Get all template folder files",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.folk.app/contacts/{{$json.body.contactId}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"googleDriveLink\": \"https://drive.google.com/drive/folders/{{$('Create Main Folder').item.json.id}}?usp=drive_link\",\n  \"exploreGoogleDriveLink\": \"https://drive.google.com/drive/folders/{{$('Create Inner Folder').item.json.id}}?usp=drive_link\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -80,
+        -160
+      ],
+      "id": "82631026-7182-4d5a-b896-4f76180cd161",
+      "name": "Update Folk with URLs"
+    }
+  ],
+  "connections": {
+    "Create Main Folder": {
+      "main": [
+        [
+          {
+            "node": "Create Inner Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Main Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Share folder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Copy file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy file": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Inner Folder": {
+      "main": [
+        [
+          {
+            "node": "Get all template folder files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share folder": {
+      "main": [
+        [
+          {
+            "node": "Update Folk with URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all template folder files": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.cognigenai.in",
+            "user-agent": "PostmanRuntime/7.49.1",
+            "content-length": "53",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "content-type": "application/json",
+            "postman-token": "b1079676-2ff0-4015-a633-eb3aa9524719",
+            "via": "1.1 Caddy",
+            "x-forwarded-for": "122.161.53.27",
+            "x-forwarded-host": "n8n.cognigenai.in",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "firstName": "ak",
+            "lastName": "chahuan",
+            "email": "mailtodroidoo@gmail.com"
+          },
+          "webhookUrl": "https://n8n.cognigenai.in/webhook-test/confirmed-explore",
+          "executionMode": "test"
+        }
+      }
+    ]
+  },
+  "versionId": "ad7bc73b-178f-4cdd-ba98-38c6cd1f4fe8",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-21T05:34:51.236Z",
+      "updatedAt": "2025-11-21T05:34:51.236Z",
+      "role": "workflow:owner",
+      "workflowId": "br311gDTZlViNmXq",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
