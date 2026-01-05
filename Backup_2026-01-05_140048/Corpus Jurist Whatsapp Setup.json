@@ -1,0 +1,28 @@
+{
+  "createdAt": "2026-01-02T10:44:50.279Z",
+  "updatedAt": "2026-01-02T10:44:50.279Z",
+  "id": "kVdYHoEFmTY6BCqO",
+  "name": "Corpus Jurist Whatsapp Setup",
+  "active": false,
+  "isArchived": false,
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "c5aed93b-c1cc-4c57-ab5c-103bea65ba14",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2026-01-02T10:44:50.286Z",
+      "updatedAt": "2026-01-02T10:44:50.286Z",
+      "role": "workflow:owner",
+      "workflowId": "kVdYHoEFmTY6BCqO",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
