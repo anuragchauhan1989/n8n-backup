@@ -1,0 +1,156 @@
+{
+  "createdAt": "2025-10-01T03:53:15.169Z",
+  "updatedAt": "2025-10-02T07:56:21.000Z",
+  "id": "6PdZhwU7Jnn3eqsf",
+  "name": "sc",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        -64
+      ],
+      "id": "c17db5d6-5ebe-4440-8af2-d3e05413519f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk",
+          "mode": "list",
+          "cachedResultName": "Lead List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Accounts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C9G3lFSScjY4LZ4dlnY8d0ekIxFYhE8jsYxAF2ASEtk/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -128,
+        -64
+      ],
+      "id": "661cc130-1b2e-4a48-8381-c050d95a3a72",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.5-preview",
+          "mode": "list",
+          "cachedResultName": "GPT-4.5-PREVIEW"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=I want you to come with apollo url just natural language query/prompt given by the user.\n\nExample of search url: https://app.apollo.io/#/people?sortAscending=false&sortByField=%5Bnone%5D&page=1&qKeywords=design%20agency&personLocations[]=new%20york&personTitles[]=ceo&personTitles[]=ceo%20founder&personTitles[]=owner&personTitles[]=partner&personTitles[]=founder&personTitles[]=co-founder\n\nThis URL describes a search for people that are\n\nLocated in the new york.\nHold the titles: Owner, CEO, Founder, or Partner.\nHave a keyword association with “design agency”.\nThe query of the user was: Design agency in new york\n\nThese are the fields you can change:\n\npersonLocations[], Keywords, personTitles[]\n\nDo not add or change any other fields. Use the above template\n\nReturn your response in JSON using this format:\n\n{\"searchUrl\":\"search url goes here\"}"
+            },
+            {
+              "content": "You're a helpful, smart sales assistant.",
+              "role": "system"
+            },
+            {
+              "content": "design agencies in london"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        128,
+        -64
+      ],
+      "id": "56927ae9-8056-4711-8386-2a37a365162e",
+      "name": "Apollo URL Maker",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Apollo URL Maker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Apollo URL Maker": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": {
+              "searchUrl": "https://app.apollo.io/#/people?sortAscending=false&sortByField=%5Bnone%5D&page=1&qKeywords=marketing%20agency&personLocations[]=new%20york&personTitles[]=ceo&personTitles[]=ceo%20founder&personTitles[]=owner&personTitles[]=partner&personTitles[]=founder&personTitles[]=co-founder"
+            },
+            "refusal": null,
+            "annotations": []
+          },
+          "finish_reason": "stop"
+        }
+      }
+    ]
+  },
+  "versionId": "9a8aa3ed-eedc-4876-bd9f-474f97c5c5e6",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-01T03:53:15.172Z",
+      "updatedAt": "2025-10-01T03:53:15.172Z",
+      "role": "workflow:owner",
+      "workflowId": "6PdZhwU7Jnn3eqsf",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
