@@ -1,0 +1,668 @@
+{
+  "createdAt": "2025-11-23T10:21:57.969Z",
+  "updatedAt": "2025-11-26T21:48:22.000Z",
+  "id": "HL7rmiyFCr98vP8f",
+  "name": "Dq venture -> Slack – Explore Stage Channel Automation",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "confirmed-explore",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -848,
+        -64
+      ],
+      "id": "ff49dbed-b480-4858-a082-8b8be7af0cbb",
+      "name": "Webhook",
+      "webhookId": "f4bbc32a-0800-4ba4-b492-4b5e152fe206"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.folk.app/v1/people/{{$json.body.data.id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer FOLKLvOYP5CUhY9GxAKoZSBFWsW2NWUM"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        -64
+      ],
+      "id": "00df0de0-dc92-42d9-962b-a748b56d7b7d",
+      "name": "GET Person Details"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "channel",
+        "channelId": "={{ `e-${($json.data.firstName || \"user\").normalize(\"NFD\").replace(/[^\\u0000-\\u007F]/g, \"\").toLowerCase().replace(/[^a-z0-9]/g, \"\").slice(0, 35)}-${($json.data.lastName || \"unknown\").normalize(\"NFD\").replace(/[^\\u0000-\\u007F]/g, \"\").toLowerCase().replace(/[^a-z0-9]/g, \"\").slice(0, 35)}`.slice(0, 80) }}",
+        "channelVisibility": "private"
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -512,
+        -64
+      ],
+      "id": "db251959-96ef-433d-be95-852c6a8e3450",
+      "name": "Create a channel",
+      "webhookId": "684f2a64-f910-4051-a1a2-61ed704de243",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "7jnLqfeGTHp8LG20",
+          "name": "Slack oauth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "user",
+        "operation": "getAll",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        -64
+      ],
+      "id": "b9b67ef0-c0a4-47e2-90cd-cf0beff1f04b",
+      "name": "Get many users",
+      "webhookId": "f4790008-db65-4fc5-88ad-4de4d81569d7",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $node[\"Set GP Lead Email\"].json.gp_email;\n\nif (!email) {\n  throw new Error(\"gp_email is missing from Set GP Lead Email\");\n}\n\n// Get all items passed into this Code node\nconst users = $items();  // ← NOW CORRECT\n\nfor (const item of users) {\n  const user = item.json;\n  const userEmail = user.profile?.email;\n\n  if (userEmail && userEmail.toLowerCase() === email.toLowerCase()) {\n    return [{ user }];\n  }\n}\n\nthrow new Error(\"Slack user not found for email: \" + email);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        -64
+      ],
+      "id": "3c5a473e-5c8d-4d90-a06b-60db7eda3c50",
+      "name": "Filter correct email"
+    },
+    {
+      "parameters": {
+        "resource": "channel",
+        "operation": "invite",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $node[\"Create a channel\"].json.id }}",
+          "mode": "id"
+        },
+        "userIds": "={{ [$node[\"Filter correct email\"].json.user.id] }}"
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        192,
+        -64
+      ],
+      "id": "1fd2b437-ea4d-45dd-8c5b-0d61deaadedf",
+      "name": "Invite GP Lead Into the Private Slack Channel",
+      "webhookId": "7b014f06-d2ef-47fc-8a58-7c16f5a0394d",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{    $json.data.customFieldValues[\"grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f\"][\"Investment Memo 1\"]     .replace(\"/edit\", \"/export?format=txt\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -816,
+        160
+      ],
+      "id": "765e3488-a7a3-428b-91f7-2043acdd5be4",
+      "name": "Fetch Google Doc as Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Raw memo text from previous HTTP Request node\nconst memo = $json;\n\n// Clean text (remove double spaces, normalize line breaks)\nlet text = memo\n  .replace(/\\r/g, '')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\n// ---- HEADING DETECTION ----\n// Google Docs red headings almost always appear as lines\n// written as clear section headers e.g.\n// \"Problem Understanding\"\n// \"Solution Outline\"\n// \"Market Size\"\n\nconst headingRegex = /^(Problem Understanding|Solution|Market Size|Opportunity|Why\\s.+|What\\s.+|How\\s.+|Idea\\s.+|.*:)\\s*$/im;\n\nlet formatted = text\n  .split('\\n')\n  .map(line => {\n\n    // If line looks like a heading → convert to Slack Canvas Medium Heading\n    if (headingRegex.test(line.trim())) {\n      return `## ${line.trim()}`;   // Canvas medium heading\n    }\n\n    return line;\n  })\n  .join('\\n');\n\n// Return formatted result\nreturn [\n  {\n    formatted_memo: formatted\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        160
+      ],
+      "id": "9d70b473-9e94-452d-a4d5-48032ad19366",
+      "name": "Format Investment Memo for Slack Canvas"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -400,
+        160
+      ],
+      "id": "c7306428-b3f6-41de-bd48-d91afc017fbb",
+      "name": "Create Slack Canvas in the Private Channel",
+      "webhookId": "7d1e3c5f-5dd2-4015-8291-6b293260aff5",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -208,
+        160
+      ],
+      "id": "0666b026-a669-44ff-8259-282d9e49f803",
+      "name": "Slack → Post Message",
+      "webhookId": "579ba2f7-c07d-473d-b0c8-4bcb99dc2df1",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "user",
+        "operation": "getAll"
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        160
+      ],
+      "id": "ae89256a-0585-4bea-a3d2-a2d5e8310b20",
+      "name": "Slack → Add Member to Conversation",
+      "webhookId": "42547ec3-c87d-4bed-98ac-2383a54e1185",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "channel",
+        "operation": "invite",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        160
+      ],
+      "id": "20216a4b-cf75-4479-bd94-81857e391553",
+      "name": "Invite a user to a channel",
+      "webhookId": "c905c915-fdab-484a-8b2e-0eb4d72fe82e",
+      "credentials": {
+        "slackApi": {
+          "id": "Ks9mI1D2tUwqdx44",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get Folk person data from the \"GET Person Details\" node\nconst personData = $node[\"GET Person Details\"].json;\n\n// Extract GP Lead\nconst gpLead = personData.data?.customFieldValues?.[\"grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f\"]?.[\"GP Lead\"];\n\nconst emailMap = {\n  \"James\": \"james@dqventures.com\",\n  \"Sam\": \"sam@dqventures.com\",\n  \"Oliver\": \"oliver@dqventures.com\",\n  \"Arjun\": \"arjun@dqventures.com\"\n};\n\nreturn {\n  ...items[0].json,  // Keep Slack channel data\n  gp_email: emailMap[gpLead] || null,\n  personData: personData.data  // Pass Folk data forward\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        -64
+      ],
+      "id": "73e8e787-46de-464e-a4da-0b104d7b1cd4",
+      "name": "Set GP Lead Email"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "GET Person Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Person Details": {
+      "main": [
+        [
+          {
+            "node": "Create a channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a channel": {
+      "main": [
+        [
+          {
+            "node": "Set GP Lead Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many users": {
+      "main": [
+        [
+          {
+            "node": "Filter correct email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter correct email": {
+      "main": [
+        [
+          {
+            "node": "Invite GP Lead Into the Private Slack Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invite GP Lead Into the Private Slack Channel": {
+      "main": [
+        [
+          {
+            "node": "Fetch Google Doc as Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Google Doc as Text": {
+      "main": [
+        [
+          {
+            "node": "Format Investment Memo for Slack Canvas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Investment Memo for Slack Canvas": {
+      "main": [
+        [
+          {
+            "node": "Create Slack Canvas in the Private Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Slack Canvas in the Private Channel": {
+      "main": [
+        [
+          {
+            "node": "Slack → Post Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack → Post Message": {
+      "main": [
+        [
+          {
+            "node": "Slack → Add Member to Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack → Add Member to Conversation": {
+      "main": [
+        [
+          {
+            "node": "Invite a user to a channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set GP Lead Email": {
+      "main": [
+        [
+          {
+            "node": "Get many users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "dqventures.app.n8n.cloud",
+            "user-agent": "node",
+            "content-length": "476",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "*",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "34.239.67.86",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "9a213011f0ffd654-IAD",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "sec-fetch-mode": "cors",
+            "traceparent": "00-000000000000000033967dde63989dd6-46d67a631d65b83c-00",
+            "tracestate": "dd=o:rum;s:0;p:46d67a631d65b83c",
+            "webhook-id": "evt_0b8d1119-863e-4643-a1ab-d67dbaf8f2c0",
+            "webhook-signature": "v1,JDAOlXl2kAX6f2puehesQoC+mtWQjYU6sulykNr0MXQ=",
+            "webhook-timestamp": "1763738541",
+            "x-datadog-origin": "rum",
+            "x-datadog-parent-id": "5104401793784592444",
+            "x-datadog-sampling-priority": "0",
+            "x-datadog-trace-id": "3717296936548081110",
+            "x-forwarded-for": "34.239.67.86, 172.70.35.69",
+            "x-forwarded-host": "dqventures.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-70-565db6c64f-sschb",
+            "x-is-trusted": "yes",
+            "x-real-ip": "34.239.67.86"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "id": "evt_0b8d1119-863e-4643-a1ab-d67dbaf8f2c0",
+            "type": "person.updated",
+            "createdAt": "2025-11-21T15:22:21.954Z",
+            "source": "https://api.folk.app/v1/webhooks/wbk_13ba38bb-6984-48f1-a83a-de55bce41279",
+            "data": {
+              "id": "per_608d18e2-ee23-435d-902e-0008ff9c8427",
+              "url": "https://api.folk.app/v1/people/per_608d18e2-ee23-435d-902e-0008ff9c8427",
+              "changes": [
+                {
+                  "type": "set",
+                  "path": [
+                    "groupCustomFieldValues",
+                    "grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f",
+                    "Status"
+                  ],
+                  "value": "Confirmed: Explore"
+                }
+              ]
+            }
+          },
+          "webhookUrl": "https://dqventures.app.n8n.cloud/webhook/confirmed-explore",
+          "executionMode": "production"
+        }
+      }
+    ],
+    "GET Person Details": [
+      {
+        "json": {
+          "data": {
+            "id": "per_608d18e2-ee23-435d-902e-0008ff9c8427",
+            "firstName": "Ansh",
+            "lastName": "Singh",
+            "fullName": "Ansh Singh",
+            "description": "test1",
+            "birthday": null,
+            "jobTitle": "",
+            "createdAt": "2025-11-20T06:59:57.845Z",
+            "createdBy": {
+              "id": "usr_fd2401fb-8a63-4185-87d6-6cdba8eab39e",
+              "fullName": "DQventures Team",
+              "email": "tools@dqventures.com"
+            },
+            "groups": [
+              {
+                "id": "grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f",
+                "name": "Pipeline"
+              }
+            ],
+            "companies": [],
+            "addresses": [],
+            "emails": [
+              "anshthakur@gmail.com"
+            ],
+            "phones": [],
+            "urls": [],
+            "customFieldValues": {
+              "grp_323c561b-8741-4c14-9a6b-e72bc1dbeb9f": {
+                "Anything else you'd like to share with us?": null,
+                "Application": null,
+                "Application Decision": null,
+                "Approximately how many people are affected by this problem?": "over 1 million businesses",
+                "Are there people in your network you could pitch to for some early startup funding?": "Yes, but I wouldn’t be comfortable approaching my own network",
+                "Are you aware of the $20k / 20% terms?": "Yes, I’m already aware",
+                "As a founder coming from the corporate world, it’s typical to take a salary cut in the early stages of building your business so more money can be used on growing the business, which in turn grows your long-term wealth.": "Yes, I understand and am prepared to take a reduced salary in the short term.",
+                "Current Company": null,
+                "Current Stage": "Applied on LinkedIn",
+                "Current Title": null,
+                "Custom GPT": null,
+                "Date applied to LinkedIn Job Ad": null,
+                "Date of Application": "2025-11-19",
+                "Date of Interview": null,
+                "Deal value": null,
+                "Degree": null,
+                "Do you already an idea in mind for what could solve this problem?": "Yes",
+                "Do you consider yourself to be someone that is “hands-on” or you prefer to hire people to do the work?": "yes i do the work",
+                "Do you have any notable connections, insights, expertise or advantages in this industry? Tell us more about that.": "yes i've been in the industry for 10 years and have many potential clients. I have a unique skillset for seo.",
+                "DQ has equity": null,
+                "Existing business": null,
+                "Explore Call 1 Date": null,
+                "Explore Call 2 Date": null,
+                "Explore Call 3 Date": null,
+                "Explore Call 4 Date": null,
+                "Explore End Date": null,
+                "Explore Google Drive Link": "https://drive.google.com/drive/folders/1SZPjzt4CG4ZgrxVn53Q2m3d3izFeN0gR?usp=drive_link",
+                "Explore Stage DQ member": null,
+                "Fillout ID": "914426c0-84ce-4ed9-8b51-5be8608091ae",
+                "Google Drive Link": "https://drive.google.com/drive/folders/1B_El4pphM-ZnTGmg20rkvnWDsgGEFtBh?usp=drive_link",
+                "GP Lead": null,
+                "How are people getting around this problem at the moment?": "they are hiring expensive SEO agencies or trying to do it themselves, both are not cost effective or getting good results.",
+                "How did you hear about DQventures?": "referral",
+                "How do you think you'll get your first 1 - 10 customers?": "SEO and paid ad campaigns",
+                "How many hours / days a week are you able to commit to working on your business now while still part time?": "20",
+                "How much do you think people will pay for this? And why do you think that number?": "$100 / month",
+                "If things go well, would you be comfortable raising external capital for your business?": "Yes",
+                "Imagine one year from now, the business is showing signs of success and you’ve quit your job to go full time on this. What does your typical day-to-day look like?": "wearing many hats",
+                "Interviewer": null,
+                "Investment Memo 1": "https://docs.google.com/document/d/1gz4U1DGAMCVTlzDYXBf0Hyki6vMcyyUt54lqB3GRf0Y/edit",
+                "Investment Memo 2": null,
+                "Is there anything else you'd like us to know about you and your goals?": "i'm a hard worker and make things happen",
+                "LinkedIn Headline": null,
+                "LinkedIn Job Ad Location": null,
+                "LinkedIn Location": null,
+                "LinkedIn Profile URL": null,
+                "Marketing Contact": null,
+                "Next steps": null,
+                "Offer Personalization": null,
+                "Official Start Date": null,
+                "Partnership Assessment": null,
+                "Portal Link": "https://build.dqventures.com/spaces/abeanne_abeesley?token=45e41ee9539e5739",
+                "Potential (interview stage)": null,
+                "Priority": null,
+                "Referral URL": "",
+                "Revenue": null,
+                "Sales Owner": [],
+                "Scorecard": null,
+                "Start Month": null,
+                "Start Year": null,
+                "Status": "Applied : reject",
+                "Time of Withdrawal": null,
+                "University": null,
+                "Validate Lead": null,
+                "Validate Phase": null,
+                "Walk us through your idea": "an seo software that automatically creates keyword optimized content",
+                "Weeks in program": null,
+                "What are your main skill gaps where you'll need help?": "finance, analytics",
+                "What are your strongest skills / specific things you want to be doing in the early stages of your new business?": "marketing, email campaigns, building the website",
+                "What does success look like for you?": "Earning what I earn now, but being my own boss",
+                "What is it about DQventures that made you want to reach out?": null,
+                "What is the minimum annual salary you would need to support yourself while working full-time on your business?": "40000",
+                "What is the specific problem in your industry that you want to solve?": "google rankings for SMEs",
+                "What skills or experience do you think would make you a great founder?": null,
+                "What trends or shifts in your industry are you most excited about? Why?": "AI implementing in SEO.",
+                "Which country are you currently located in?": "UK",
+                "Which industry do you know deeply? Tell us more about your experience in this industry.": null,
+                "Which industry do you want to build a business in, and why?": "seo software",
+                "Who is experiencing this problem?": "SMEs in mulitple verticals",
+                "Who is your main competition, and what are they getting wrong?": "Fat Joe - they are not marketing to SMEs",
+                "Why do you want DQventures to work with you on your new business?": "i need help getting started",
+                "Why do you want to become an entrepreneur?": "I want to have freedom and build something great.",
+                "Why now, and what has stopped you starting a business already?": "I've been busy with my corporate job, but now is the time to start. I feel ready.",
+                "Will solving this problem save people time or money (or both)? How much time or money?": "money",
+                "Withdrawal Reason": [],
+                "Would you like to proceed?": "",
+                "Years of work experience": "12"
+              }
+            },
+            "interactionMetadata": {
+              "user": {
+                "approximateCount": 0,
+                "lastInteractedAt": null
+              },
+              "workspace": {
+                "approximateCount": 0,
+                "lastInteractedAt": null,
+                "lastInteractedBy": []
+              }
+            }
+          }
+        }
+      }
+    ],
+    "Get many users": [
+      {
+        "json": {
+          "id": "USLACKBOT",
+          "name": "slackbot",
+          "is_bot": false,
+          "profile": {
+            "first_name": "slackbot",
+            "last_name": "",
+            "email": null
+          }
+        }
+      },
+      {
+        "json": {
+          "id": "U09B18YKE8Y",
+          "name": "kumar.anurag07",
+          "is_bot": false,
+          "profile": {
+            "email": "james@dqventures.com",
+            "first_name": "CogniGenAi",
+            "last_name": ""
+          }
+        }
+      },
+      {
+        "json": {
+          "id": "U09E2RJ3SQ4",
+          "name": "n8nintegration",
+          "is_bot": true,
+          "profile": {
+            "email": null,
+            "first_name": "n8n-integration",
+            "last_name": ""
+          }
+        }
+      },
+      {
+        "json": {
+          "id": "U09TESTARJ",
+          "name": "arjun.dq",
+          "is_bot": false,
+          "profile": {
+            "email": "arjun@dqventures.com",
+            "first_name": "Arjun",
+            "last_name": "DQ"
+          }
+        }
+      }
+    ]
+  },
+  "versionId": "602334d8-07d3-4746-ae7f-ad78f4a802f0",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-23T10:21:57.973Z",
+      "updatedAt": "2025-11-23T10:21:57.973Z",
+      "role": "workflow:owner",
+      "workflowId": "HL7rmiyFCr98vP8f",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
