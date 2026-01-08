@@ -1,0 +1,75 @@
+{
+  "createdAt": "2025-09-18T03:47:59.990Z",
+  "updatedAt": "2025-09-19T03:20:35.000Z",
+  "id": "eAEBDcfcPsN5GFI9",
+  "name": "whatsapp send group message",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        -32
+      ],
+      "id": "a3f8613d-0abf-455c-aa9b-d11448df103a",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://www.wasenderapi.com/api/groups",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -176,
+        -32
+      ],
+      "id": "24a92946-f538-4eb4-a6b8-1bea2dd8c87c",
+      "name": "HTTP Request"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "e8b33645-5d2f-4072-914c-8faca34b8b64",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-18T03:47:59.993Z",
+      "updatedAt": "2025-09-18T03:47:59.993Z",
+      "role": "workflow:owner",
+      "workflowId": "eAEBDcfcPsN5GFI9",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
