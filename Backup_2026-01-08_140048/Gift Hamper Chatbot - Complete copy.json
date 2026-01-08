@@ -1,0 +1,463 @@
+{
+  "createdAt": "2025-10-12T04:17:14.100Z",
+  "updatedAt": "2025-11-23T08:22:01.000Z",
+  "id": "5wcsVX7lzfacBwGf",
+  "name": "Gift Hamper Chatbot - Complete copy",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "3aa61312-0db5-4584-84b8-93f78fcec0f5",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "cf6613f2-9631-405f-bec4-463132abb890",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -1264,
+        672
+      ],
+      "typeVersion": 2,
+      "webhookId": "3aa61312-0db5-4584-84b8-93f78fcec0f5"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst userMessage = body.message || '';\nconst step = body.step !== undefined ? body.step : 0;\nconst session = body.sessionData || {};\n\n// ✅ UPDATED: Only 4 questions - removed packaging preference\nconst questions = [\n  { id: 0, field: 'budget', question: 'What is your Budget per piece? (e.g., 1000/-)', type: 'number' },\n  { id: 1, field: 'quantity', question: 'What is your quantity? (e.g., 100pcs). There is 40% off over buying 200 pieces and 35% below 200 pieces', type: 'number' },\n  { id: 2, field: 'deadline', question: 'When do you need it? (e.g., 10th Oct)', type: 'text' },\n  { id: 3, field: 'itemPreference', question: 'Do you have any item preference? (e.g., I need 4 dry fruits in the hamper plus diya and candle)', type: 'text' }\n];\n\nlet currentStep = step;\nlet aiTrigger = null;\n\nif (userMessage && currentStep < questions.length) {\n  session[questions[currentStep].field] = userMessage;\n  currentStep++;\n}\n\nconst currentQuestion = questions[currentStep];\nlet message = currentQuestion?.question || '';\n\n// Show discount message when asking for deadline (step 2)\nif (currentStep === 2 && session.quantity) {\n  const qty = parseInt(session.quantity.toString().replace(/[^0-9]/g, ''));\n  if (qty < 200) {\n    message = '💡 We have a special offer for 200+ pieces with extra 10% discount!\\n\\n' + message;\n  }\n}\n\n// ✅ UPDATED: Trigger AI after itemPreference (step 3 → step 4)\n// This will be the FINAL step with AI response\nif (currentStep === 4 && session.itemPreference) {\n  aiTrigger = 'final_recommendations';\n}\n\nreturn {\n  json: {\n    currentStep,\n    sessionData: session,\n    message,\n    aiTrigger,\n    isComplete: currentStep >= questions.length,\n    sessionId: body.sessionId || $execution.id\n  }\n};"
+      },
+      "id": "03d6ccaa-5e8e-4824-a499-44d6cf9018d9",
+      "name": "Conversation Manager",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -1056,
+        672
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "ai",
+              "leftValue": "={{ $json.aiTrigger }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3af98d9d-6bcb-4116-a11a-f51277b9e13d",
+      "name": "Need AI Processing?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -864,
+        672
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst session = data.sessionData;\n\nlet query = '';\n\nif (data.aiTrigger === 'product_search') {\n  const items = session.itemPreference.toLowerCase();\n  \n  const searchTerms = [];\n  \n  if (items.includes('dry fruit') || items.includes('fruit') || items.includes('nuts')) {\n    searchTerms.push('dry fruits', 'almonds', 'cashew', 'pistachio', 'nuts', 'charkhi', 'anjeer', 'walnut');\n  }\n  if (items.includes('diya')) {\n    searchTerms.push('diya', 'swastic diya', 'lamp');\n  }\n  if (items.includes('candle')) {\n    searchTerms.push('candle', 'mithai candle');\n  }\n  if (items.includes('chocolate')) {\n    searchTerms.push('chocolate', 'ferrero');\n  }\n  if (items.includes('sweet') || items.includes('mithai')) {\n    searchTerms.push('sweet', 'mithai', 'ladoo');\n  }\n  \n  // ✅ UPDATED: Removed dimension-related keywords\n  searchTerms.push('box', 'packaging', 'premium box');\n  \n  // ✅ UPDATED: Removed dimension references from query\n  query = `gift hamper ${searchTerms.join(' ')} ${session.itemPreference} box packaging budget ${session.budget}`;\n\n} else if (data.aiTrigger === 'final_recommendations') {\n  query = `gift hamper ${session.itemPreference} ${session.packagingPreference} box packaging budget ${session.budget}`;\n}\n\nreturn { \n  json: { \n    query, \n    sessionData: session, \n    aiTrigger: data.aiTrigger, \n    currentStep: data.currentStep \n  } \n};"
+      },
+      "id": "bf37970b-b2a8-44d0-bf33-17d6904b7ace",
+      "name": "Prepare AI Query",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -640,
+        432
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemPromptTemplate": "// Replace your RAG Product Search node's systemPromptTemplate with this:\n\nYou are a gift hamper product consultant with access to a product catalog.\n\nCUSTOMER NEEDS:\n- Budget: {{ $('Prepare AI Query').first().json.sessionData.budget }}\n- Quantity: {{ $('Prepare AI Query').first().json.sessionData.quantity }}\n- Items: {{ $('Prepare AI Query').first().json.sessionData.itemPreference }}\n\nYOUR TASK:\n1. Review ALL retrieved products from the catalog context\n2. Select products matching customer's item preferences\n3. Find a suitable box from catalog\n4. Calculate total cost (products + box)\n5. Ensure total ≤ budget per piece\n\nRESPONSE FORMAT:\n\n📦 **Selected Products:**\n[List each product with name and exact price from catalog]\n\n📐 **Box:**\n[Box Name], Price: Rs [EXACT MRP]\n\n✅ Example: \nLeather + Wood Box (Rectangle), Price: Rs 1000.00\n\n💰 **Cost:**\n- Products: Rs [total]\n- Box: Rs [amount]\n- Total per piece: Rs [total]\n- Budget: Rs [budget]\n- Status: [Within/Exceeds budget]\n\n⚠️ CRITICAL RULES:\n- Use ONLY products from retrieved context\n- DO NOT include box dimensions, sizes, or measurements\n- List ONLY: Box Name and Price\n- List ALL relevant products you can see\n- If items are not available, mention them\n- don't add \"🤖 AI Product Suggestions:\" statement in the beginning just the main content should be present\n\n-------------------------------------\nContext: {context}"
+        }
+      },
+      "id": "1d8d852c-aafd-4ede-bf95-a3618230e815",
+      "name": "RAG Product Search",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "position": [
+        -480,
+        432
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "jsCode": "// ✅ CORRECTED\nconst aiResp = $('RAG Product Search').first().json;\nconst conv = $('Prepare AI Query').first().json;\n\nlet text = '';\n\n// RAG chain output structure\nif (aiResp.output) {\n  text = aiResp.output;\n} else if (aiResp.text) {\n  text = aiResp.text;\n} else if (aiResp.response) {\n  text = typeof aiResp.response === 'string' ? aiResp.response : JSON.stringify(aiResp.response);\n} else {\n  text = JSON.stringify(aiResp);\n}\n\nreturn { \n  json: { \n    aiResponse: text, \n    sessionData: conv.sessionData, \n    currentStep: conv.currentStep, \n    aiTrigger: conv.aiTrigger \n  } \n};"
+      },
+      "id": "70656414-fc0f-4d28-b109-a84011fb1ab0",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -192,
+        432
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "done",
+              "leftValue": "={{ $json.currentStep }}",
+              "rightValue": 6,
+              "operator": {
+                "type": "number",
+                "operation": "largerEqual"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6851b60a-0496-4463-bef3-46d68a1d6809",
+      "name": "Is Complete?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -32,
+        432
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst conv = $('Conversation Manager').first().json;\n\nlet message = conv.message;\n\n// Clean up AI response\nlet aiText = data.aiResponse || '';\n\n// Remove JSON artifacts\nif (aiText.startsWith('{') || aiText.startsWith('[')) {\n  try {\n    const parsed = JSON.parse(aiText);\n    if (parsed.response && parsed.response.text) {\n      aiText = parsed.response.text;\n    } else if (parsed.text) {\n      aiText = parsed.text;\n    }\n  } catch (e) {\n    // Keep original\n  }\n}\n\n// ✅ UPDATED: Removed \"🤖 AI Product Suggestions:\" prefix\nif (aiText && data.currentStep === 4) {\n  // After itemPreference (step 3 → 4)\n  message = aiText + '\\n\\n' + conv.message;\n} else if (aiText && data.currentStep === 5) {\n  // After packagingPreference (step 4 → 5)\n  message = '📦 Final Recommendations:\\n\\n' + aiText + '\\n\\nProcessing your quotation...';\n}\n\nreturn { \n  json: { \n    success: true, \n    complete: false, \n    currentStep: conv.currentStep, \n    sessionData: conv.sessionData, \n    sessionId: conv.sessionId, \n    message \n  } \n};"
+      },
+      "id": "278ba57c-0a87-4abb-b5ab-334b84ad2d15",
+      "name": "Format Ongoing Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        192,
+        448
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nreturn { json: { success: true, complete: false, currentStep: data.currentStep, sessionData: data.sessionData, sessionId: data.sessionId, message: data.message } };"
+      },
+      "id": "7822426a-9937-4aa5-86b0-c51e3c1d9c42",
+      "name": "Format Simple Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -64,
+        688
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {},
+      "id": "f51dce6d-899d-4034-a26d-5c7723766c24",
+      "name": "Merge All Responses",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        384,
+        704
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "ee97545a-26fb-46d5-b556-b9bed52cf89d",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        560,
+        704
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "topK": 500
+      },
+      "id": "164f5ebf-f7d9-45a7-bf59-eee986d5156d",
+      "name": "Vector Retriever",
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "position": [
+        -368,
+        624
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "cgragtest",
+          "mode": "list",
+          "cachedResultName": "cgragtest"
+        },
+        "options": {
+          "pineconeNamespace": "RAGkiwiAgent"
+        }
+      },
+      "id": "8fd7a910-90ab-4143-ab3a-dbc7605d202d",
+      "name": "Pinecone Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        -448,
+        848
+      ],
+      "typeVersion": 1.3,
+      "credentials": {}
+    },
+    {
+      "parameters": {},
+      "id": "d1056964-7721-4ce2-8d80-11338dc30617",
+      "name": "Gemini Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "position": [
+        -448,
+        1008
+      ],
+      "typeVersion": 1,
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e8628c81-53fd-4168-810b-cb0ac11d19b0",
+      "name": "Gemini Chat",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        -512,
+        624
+      ],
+      "typeVersion": 1,
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Conversation Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Manager": {
+      "main": [
+        [
+          {
+            "node": "Need AI Processing?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need AI Processing?": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Simple Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Query": {
+      "main": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Product Search": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Is Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Complete?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Format Ongoing Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Ongoing Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Simple Response": {
+      "main": [
+        [
+          {
+            "node": "Merge All Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Responses": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG Product Search",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "d1d4ad64-2bba-4271-a08c-99de859a83e4",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-10-12T04:17:14.103Z",
+      "updatedAt": "2025-10-12T04:17:14.103Z",
+      "role": "workflow:owner",
+      "workflowId": "5wcsVX7lzfacBwGf",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
