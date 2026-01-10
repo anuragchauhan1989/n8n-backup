@@ -1,0 +1,555 @@
+{
+  "createdAt": "2025-10-17T13:32:24.274Z",
+  "updatedAt": "2025-11-02T06:38:19.000Z",
+  "id": "uCdGj1v7SiPIzqp1",
+  "name": "Nano Banana Influencer Ad creative Image generator",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "uCdGj1v7SiPIzqp1",
+          "mode": "list",
+          "cachedResultName": "Nano Banana Influencer Ad creative Image generator"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "product_image",
+              "displayName": "product_image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        16
+      ],
+      "id": "180ff057-2e89-4e6d-a36f-5297e2a16a62",
+      "name": "Call 'Nano Banana Influencer Ad creative Image generator'"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        496,
+        256
+      ],
+      "id": "34225f6f-819f-4e71-add0-4a0a841962bb",
+      "name": "Download Influencer Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        624,
+        16
+      ],
+      "id": "84f1c7b4-8eac-4a3e-b2e6-a5f7021b0ae0",
+      "name": "Download Product Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        288,
+        240
+      ],
+      "id": "909256f8-55bd-49d2-a40d-251a17cf3995",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "product_image",
+              "type": "any"
+            },
+            {
+              "name": "product_name"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        240
+      ],
+      "id": "3feb0a3a-b3cb-4a4b-95cc-63e2e9f59c51",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c01f1dce-1374-4320-be5d-cdb72ad58bd1",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        384,
+        0
+      ],
+      "id": "ae8f5b91-704c-4c77-8b3f-0925e0c76114",
+      "name": "Loop Over Product"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3",
+            "mode": "list",
+            "cachedResultName": "ZenshopProd",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        176,
+        0
+      ],
+      "id": "d54d4fa1-d642-481b-a893-23ca00385b77",
+      "name": "List_Product_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "524da01b-f8b9-4c2c-9e28-319455903e4d",
+              "name": "=image_result",
+              "value": "={{ $json.candidates[0].content.parts.filter(item => item.inlineData).first().inlineData.data }}",
+              "type": "string"
+            },
+            {
+              "id": "25afb3b4-f147-47be-97aa-d47b62bb5ec9",
+              "name": "product_name",
+              "value": "={{ $('When Executed by Another Workflow').item.json.product_name.split('.')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "1eb18d0a-2e6b-4c6a-bacc-46779b036f53",
+              "name": "influencer_name",
+              "value": "={{ $('Download Influencer Image').item.json.name.split('.')[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        256
+      ],
+      "id": "f4fe2520-e8f7-423e-86aa-a3ef759cf508",
+      "name": "set_result"
+    },
+    {
+      "parameters": {
+        "name": "=Product_{{ $('set_result').item.json.product_name }}_Influencer_{{ $('set_result').item.json.influencer_name }}_{{ $now.format('yyyy-MM-dd_HH-mm-ss') }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1",
+          "mode": "list",
+          "cachedResultName": "Zenshop Ad creative",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1S5gKfnCVtrXXAn_KItP6zXxTuxYv1vr1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1456,
+        240
+      ],
+      "id": "58e989cf-cb07-49da-a3a4-90aecb2a54f7",
+      "name": "upload_image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "image_result",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        256
+      ],
+      "id": "5ef7218b-1b27-4984-af70-e5284400fde5",
+      "name": "get_image",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      { \"text\": \"Create a realistic lifestyle photo showcasing the hair product from image 1. Generate a scene where someone with beautiful, long, flowing hair similar in style and color to the hair extensions shown in image 1 is photographed in a casual, relatable setting like outdoors, at home, or in an everyday location. Use the person's appearance from image 2 as reference for facial features and style. They should look confident and happy, with the hair clearly visible and flowing naturally. Use angle variation {{ $runIndex % 5 }}: 0=front view facing camera with hair framing the face, 1=side profile showing hair length and volume, 2=back view showcasing the full length and texture, 3=three-quarter angle showing both face and hair flow, 4=dynamic pose with hair in motion or being touched naturally. The photo should feel authentic like a friend took it, not overly professional. The lighting should be natural and flattering, emphasizing the hair's texture, shine, and length. Only return the final generated image.\" },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/png\",\n          \"data\": \"{{ $('When Executed by Another Workflow').item.json.product_image }}\"\n        }\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": \"image/jpeg\",\n          \"data\": \"{{ $node['influencer_image_to_base_64'].json.data }}\"\n        }\n      }\n    ]\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        864,
+        256
+      ],
+      "id": "c0d13b36-a612-4803-805d-01635ec202f5",
+      "name": "generate_image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cAWTpPjxWun8tUIM",
+          "name": "Header Auth account - google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        256
+      ],
+      "id": "46a7f63d-f6bc-436d-9368-58105c6d23ec",
+      "name": "influencer_image_to_base_64"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        896,
+        16
+      ],
+      "id": "9972ee8e-28fe-4c6d-bc08-420156f659d3",
+      "name": "product_image_to_base64"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa",
+            "mode": "list",
+            "cachedResultName": "ZenshopInfluencer",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1aN3PKgQW9QlTqAggsR1l8ix1d2RCUpWa"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        96,
+        240
+      ],
+      "id": "ee928d77-3a36-47c8-baba-12c8e7b43799",
+      "name": "list_influencer_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Download Product Image": {
+      "main": [
+        [
+          {
+            "node": "product_image_to_base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Influencer Image": {
+      "main": [
+        [
+          {
+            "node": "influencer_image_to_base_64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download Influencer Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "list_influencer_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "List_Product_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Product": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download Product Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List_Product_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_result": {
+      "main": [
+        [
+          {
+            "node": "get_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload_image": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_image": {
+      "main": [
+        [
+          {
+            "node": "upload_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_image": {
+      "main": [
+        [
+          {
+            "node": "set_result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "influencer_image_to_base_64": {
+      "main": [
+        [
+          {
+            "node": "generate_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "product_image_to_base64": {
+      "main": [
+        [
+          {
+            "node": "Call 'Nano Banana Influencer Ad creative Image generator'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_influencer_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Nano Banana Influencer Ad creative Image generator'": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "88b17e3d-78e0-4b41-a172-1f53f9c50129",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-17T13:32:24.278Z",
+      "updatedAt": "2025-10-17T13:32:24.278Z",
+      "role": "workflow:owner",
+      "workflowId": "uCdGj1v7SiPIzqp1",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
