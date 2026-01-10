@@ -1,0 +1,423 @@
+{
+  "createdAt": "2025-10-15T09:40:49.960Z",
+  "updatedAt": "2025-10-15T11:45:30.000Z",
+  "id": "lOoXX6i7lcNdeGFI",
+  "name": "LinkedIn Official API - Connection Status Checker",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "Daily Connection Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "refresh-token",
+      "name": "Refresh LinkedIn Access Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.linkedin.com/oauth/v2/accessToken",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ \n  JSON.stringify({\n    grant_type: 'refresh_token',\n    refresh_token: $env.LINKEDIN_REFRESH_TOKEN,\n    client_id: $env.LINKEDIN_CLIENT_ID,\n    client_secret: $env.LINKEDIN_CLIENT_SECRET\n  })\n}}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "notes": "Refreshes the LinkedIn access token using refresh token stored in environment variables"
+    },
+    {
+      "id": "get-pending",
+      "name": "Get Pending Connections from Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblv3Eqz4W1fJFWO6"
+        },
+        "filterByFormula": "=AND({Connection Sent} = 1, {Connection Accepted} = 0)",
+        "options": {}
+      },
+      "notes": "Query Airtable for records where connection was sent but not yet accepted"
+    },
+    {
+      "id": "get-connections",
+      "name": "Get LinkedIn Connections",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        300
+      ],
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/connections",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "viewer"
+            },
+            {
+              "name": "start",
+              "value": "0"
+            },
+            {
+              "name": "count",
+              "value": "100"
+            },
+            {
+              "name": "projection",
+              "value": "(elements*(to~(id,firstName,lastName,vanityName)),paging)"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Refresh LinkedIn Access Token').item.json.access_token }}"
+            },
+            {
+              "name": "LinkedIn-Version",
+              "value": "202409"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Fetch all 1st-degree connections from LinkedIn API with profile details"
+    },
+    {
+      "id": "check-more-pages",
+      "name": "Check for More Pages",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.paging.total }}",
+              "rightValue": "={{ $json.paging.start + $json.paging.count }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Check if there are more connections to fetch (pagination)"
+    },
+    {
+      "id": "aggregate-connections",
+      "name": "Aggregate All Connections",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        200
+      ],
+      "parameters": {
+        "jsCode": "// Aggregate all LinkedIn connections from multiple pages\nconst allItems = $input.all();\nconst allConnections = [];\n\nfor (const item of allItems) {\n  const elements = item.json.elements || [];\n  allConnections.push(...elements);\n}\n\n// Create a lookup map of connections\nconst connectionMap = {};\n\nfor (const conn of allConnections) {\n  if (!conn['to~']) continue;\n  \n  const profile = conn['to~'];\n  const personId = profile.id;\n  const vanityName = profile.vanityName || '';\n  const firstName = profile.firstName?.localized?.en_US || '';\n  const lastName = profile.lastName?.localized?.en_US || '';\n  const fullName = `${firstName} ${lastName}`.trim();\n  \n  connectionMap[personId] = {\n    personId,\n    vanityName,\n    firstName,\n    lastName,\n    fullName,\n    linkedInUrl: vanityName ? `https://www.linkedin.com/in/${vanityName}/` : ''\n  };\n}\n\nreturn [{\n  json: {\n    totalConnections: allConnections.length,\n    connections: connectionMap,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "notes": "Combine all paginated results into a single connection lookup map"
+    },
+    {
+      "id": "match-connections",
+      "name": "Match Airtable Records with LinkedIn",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Match Airtable pending records with LinkedIn connections\nconst airtableRecords = $('Get Pending Connections from Airtable').all();\nconst connectionData = $input.first().json;\nconst connectionMap = connectionData.connections;\n\nconst matches = [];\nconst noMatches = [];\n\n// Helper function to normalize strings for comparison\nfunction normalize(str) {\n  if (!str) return '';\n  return str.toLowerCase().trim().replace(/[^a-z0-9]/g, '');\n}\n\nfor (const record of airtableRecords) {\n  const data = record.json;\n  let matched = false;\n  let matchMethod = null;\n  let matchedConnection = null;\n  \n  // Method 1: Match by LinkedIn Person ID (most reliable)\n  if (data.LinkedIn_Person_ID && connectionMap[data.LinkedIn_Person_ID]) {\n    matched = true;\n    matchMethod = 'person_id';\n    matchedConnection = connectionMap[data.LinkedIn_Person_ID];\n  }\n  \n  // Method 2: Match by LinkedIn vanity URL\n  if (!matched && data.Employee_LinkedIn_URL) {\n    const urlParts = data.Employee_LinkedIn_URL.split('/in/');\n    if (urlParts.length > 1) {\n      const vanityName = urlParts[1].replace('/', '').toLowerCase();\n      \n      for (const [personId, conn] of Object.entries(connectionMap)) {\n        if (conn.vanityName && normalize(conn.vanityName) === normalize(vanityName)) {\n          matched = true;\n          matchMethod = 'vanity_url';\n          matchedConnection = conn;\n          break;\n        }\n      }\n    }\n  }\n  \n  // Method 3: Match by full name (fuzzy)\n  if (!matched && data.Employee_Full_Name) {\n    const airtableName = normalize(data.Employee_Full_Name);\n    \n    for (const [personId, conn] of Object.entries(connectionMap)) {\n      const linkedinName = normalize(conn.fullName);\n      \n      if (airtableName === linkedinName) {\n        matched = true;\n        matchMethod = 'exact_name';\n        matchedConnection = conn;\n        break;\n      }\n    }\n  }\n  \n  if (matched && matchedConnection) {\n    matches.push({\n      json: {\n        ...data,\n        matched: true,\n        matchMethod,\n        LinkedIn_Person_ID: matchedConnection.personId,\n        LinkedIn_Full_Name: matchedConnection.fullName,\n        LinkedIn_Profile_URL: matchedConnection.linkedInUrl,\n        checkedAt: new Date().toISOString()\n      }\n    });\n  } else {\n    noMatches.push({\n      json: {\n        ...data,\n        matched: false,\n        checkedAt: new Date().toISOString()\n      }\n    });\n  }\n}\n\nconsole.log(`Matched: ${matches.length}, Not matched: ${noMatches.length}`);\n\nreturn matches;"
+      },
+      "notes": "Match Airtable records with LinkedIn connections using multiple matching strategies"
+    },
+    {
+      "id": "update-airtable",
+      "name": "Update Accepted Connections",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1780,
+        300
+      ],
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblv3Eqz4W1fJFWO6"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Connection Accepted": 1,
+            "Connection_Accepted_Date": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "LinkedIn_Person_ID": "={{ $json.LinkedIn_Person_ID }}",
+            "Match_Method": "={{ $json.matchMethod }}"
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Update Airtable records to mark connections as accepted"
+    },
+    {
+      "id": "fetch-next-page",
+      "name": "Fetch Next Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        400
+      ],
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/connections",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "viewer"
+            },
+            {
+              "name": "start",
+              "value": "={{ $json.paging.start + $json.paging.count }}"
+            },
+            {
+              "name": "count",
+              "value": "100"
+            },
+            {
+              "name": "projection",
+              "value": "(elements*(to~(id,firstName,lastName,vanityName)),paging)"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Refresh LinkedIn Access Token').item.json.access_token }}"
+            },
+            {
+              "name": "LinkedIn-Version",
+              "value": "202409"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Fetch additional pages of connections if total > 100"
+    },
+    {
+      "id": "summary-node",
+      "name": "Create Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const updated = $input.all();\n\nreturn [{\n  json: {\n    success: true,\n    timestamp: new Date().toISOString(),\n    connectionsChecked: $('Get Pending Connections from Airtable').all().length,\n    connectionsAccepted: updated.length,\n    message: `Updated ${updated.length} connection(s) to accepted status`\n  }\n}];"
+      },
+      "notes": "Create execution summary for logging/notifications"
+    }
+  ],
+  "connections": {
+    "Daily Connection Check": {
+      "main": [
+        [
+          {
+            "node": "Refresh LinkedIn Access Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh LinkedIn Access Token": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Connections from Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Connections from Airtable": {
+      "main": [
+        [
+          {
+            "node": "Get LinkedIn Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LinkedIn Connections": {
+      "main": [
+        [
+          {
+            "node": "Check for More Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for More Pages": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Connections",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Next Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Next Page": {
+      "main": [
+        [
+          {
+            "node": "Check for More Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Connections": {
+      "main": [
+        [
+          {
+            "node": "Match Airtable Records with LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match Airtable Records with LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Update Accepted Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Accepted Connections": {
+      "main": [
+        [
+          {
+            "node": "Create Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "e84b990f-1f86-41d3-a464-a6ded4f1e6fe",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-15T09:40:49.961Z",
+      "updatedAt": "2025-10-15T09:40:49.961Z",
+      "role": "workflow:owner",
+      "workflowId": "lOoXX6i7lcNdeGFI",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
