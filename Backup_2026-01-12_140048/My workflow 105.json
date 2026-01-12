@@ -1,0 +1,201 @@
+{
+  "createdAt": "2025-10-19T01:52:18.000Z",
+  "updatedAt": "2025-10-19T01:52:20.000Z",
+  "id": "Tqo2Jjp6pyDRcaPn",
+  "name": "My workflow 105",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "14da1caf-30f7-4af1-a3d4-93fb0b54c8f5",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1,
+      "position": [
+        48,
+        0
+      ],
+      "webhookId": "a73384d3-5e1f-4869-98de-31f568f3f868"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are Kiwi, an intelligent gift hamper specialist AI assistant. Your role is to help customers create personalized gift hampers by gathering information through natural conversation.\n\nIMPORTANT GUIDELINES:\n1. Be conversational and friendly, but focused on gathering the required information\n2. Ask questions naturally based on the conversation flow\n3. You can handle topic changes, clarifications, and follow-up questions\n4. Be flexible - if a user mentions information out of order, acknowledge it and adapt\n\nINFORMATION TO COLLECT:\n- Budget (in Rs/INR)\n- Quantity of hampers needed\n- Delivery date/timeline\n- Specific preferences or requirements\n- Occasion (if mentioned)\n\nDISCOUNT STRUCTURE:\n- 40% discount for orders of 200+ pieces\n- 35% discount for orders below 200 pieces\n\nCONVERSATION FLOW:\n1. Start by welcoming and asking about their budget or occasion\n2. Based on their response, intelligently ask for missing information\n3. If they mention multiple pieces of information at once, acknowledge all and ask for what's missing\n4. Calculate discounts automatically when quantity is mentioned\n5. Provide suggestions based on their budget range\n6. When you have all information, provide a comprehensive summary with personalized recommendations\n\nBUDGET-BASED SUGGESTIONS:\n- Under Rs 50 per piece: Small treats (chocolates, cards, small candles)\n- Rs 50-100: Basic hamper (chocolates, candles, greeting cards, small dry fruits)\n- Rs 100-200: Premium hamper (premium chocolates, dry fruits 100g, diyas, personalized cards, small perfumes)\n- Above Rs 200: Luxury hamper (luxury chocolates, premium dry fruits 200g, designer diyas, candle sets, perfumes, decorative boxes)\n\nHANDLE VARIATIONS:\n- If user asks questions about products, answer them\n- If user changes topic, gently guide back while addressing their concern\n- If user provides partial information, work with it\n- If user asks for recommendations first, provide them and then gather requirements\n\nALWAYS:\n- Be helpful and adaptive to the conversation flow\n- Remember all information shared throughout the conversation\n- Provide value-added suggestions and tips\n- End with a clear summary when all information is collected",
+          "maxIterations": 10,
+          "returnIntermediateSteps": false,
+          "enableStreaming": true
+        }
+      },
+      "id": "2c7dc33d-aeca-408e-8183-d4824934551f",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sessionKey": "sessionId",
+        "contextWindowLength": 20
+      },
+      "id": "36a12fde-6595-4c9a-b09b-701b29d8927c",
+      "name": "Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1,
+      "position": [
+        256,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f264e1b9-324c-4d47-965a-f1056f5d1e20",
+      "name": "Language Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        256,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "name": "process_order",
+        "description": "Process and validate order information when all details are collected. Calculate discounts and generate order summary."
+      },
+      "id": "9bc9ec13-2299-483e-a21a-b26f8f11981c",
+      "name": "Order Processor Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        256,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "name": "search_products",
+        "description": "Search for available products and gift items based on budget and preferences. Returns relevant product suggestions."
+      },
+      "id": "58b3bf0b-9811-4b70-b733-d7fb34978637",
+      "name": "Product Search Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        256,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "name": "check_availability",
+        "description": "Check delivery availability for a specific date and quantity. Returns availability status and alternative dates if needed."
+      },
+      "id": "2156ed49-03d9-4f62-b61a-11ca465d04dd",
+      "name": "Availability Checker",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        256,
+        512
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1b7f22ab-707e-4bf6-8dbc-d00462a7d67d",
+      "name": "Product Knowledge Base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1,
+      "position": [
+        256,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "schema": "public",
+        "table": "gift_hamper_orders",
+        "columns": "session_id,order_data,status,created_at",
+        "options": {
+          "queryBatching": {
+            "batchSize": 1
+          }
+        }
+      },
+      "id": "ce2e56c3-1107-492a-a5bd-95f21e95c258",
+      "name": "Store Order in Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        656,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gift-hamper-ai-chat",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "a2c3ca99-64d0-4b71-9822-c72ba3784d51",
+      "name": "Webhook Alternative",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        48,
+        208
+      ],
+      "webhookId": "60e7f1d0-9841-48a3-9456-31536f6ef6a8"
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "output": null
+      },
+      "id": "409de8cc-805d-46df-83e4-37c92b27aa49",
+      "name": "Route Input",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        256,
+        0
+      ]
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "a72bb920-c03d-4d48-aed7-6a498815c250",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-19T01:52:18.002Z",
+      "updatedAt": "2025-10-19T01:52:18.002Z",
+      "role": "workflow:owner",
+      "workflowId": "Tqo2Jjp6pyDRcaPn",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
