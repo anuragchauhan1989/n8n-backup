@@ -1,0 +1,157 @@
+{
+  "createdAt": "2025-10-19T01:46:52.570Z",
+  "updatedAt": "2025-10-19T01:51:14.000Z",
+  "id": "5pLFoCSTpVFas38J",
+  "name": "My workflow 104",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gift-hamper-chat",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "013ba2c0-03ab-46ad-badf-174d2bda4793",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -800,
+        112
+      ],
+      "webhookId": "85896d63-f22b-411f-a379-1102bd4fadee"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get the incoming message and session data\nconst message = $input.item.json.body?.message || '';\nconst sessionId = $input.item.json.body?.sessionId || generateSessionId();\nconst conversationState = $input.item.json.body?.state || {};\n\n// Initialize or retrieve conversation state\nlet state = {\n  sessionId: sessionId,\n  currentStep: conversationState.currentStep || 'welcome',\n  budget: conversationState.budget || null,\n  quantity: conversationState.quantity || null,\n  deliveryDate: conversationState.deliveryDate || null,\n  preferences: conversationState.preferences || null,\n  conversationHistory: conversationState.conversationHistory || [],\n  discount: 0\n};\n\n// Add current message to history\nstate.conversationHistory.push({\n  role: 'user',\n  message: message,\n  timestamp: new Date().toISOString()\n});\n\n// Process the conversation flow\nlet response = '';\nlet nextStep = state.currentStep;\nlet isComplete = false;\n\nswitch(state.currentStep) {\n  case 'welcome':\n    response = \"Welcome to Kiwi Gift Hampers! 🎁 I'll help you create the perfect gift hamper. What is your Budget? (e.g., 1000/-)\";\n    nextStep = 'budget';\n    break;\n    \n  case 'budget':\n    // Parse budget from message\n    const budgetMatch = message.match(/\\d+/);\n    if (budgetMatch) {\n      state.budget = parseInt(budgetMatch[0]);\n      response = `Great! Your budget is Rs ${state.budget}. What is your total Quantity? (We're offering 40% discount for orders over 200 pieces and 35% for below 200)`;\n      nextStep = 'quantity';\n    } else {\n      response = \"Please provide a valid budget amount (e.g., 2000 or Rs 2000)\";\n      nextStep = 'budget';\n    }\n    break;\n    \n  case 'quantity':\n    // Parse quantity from message\n    const quantityMatch = message.match(/\\d+/);\n    if (quantityMatch) {\n      state.quantity = parseInt(quantityMatch[0]);\n      // Calculate discount\n      state.discount = state.quantity >= 200 ? 40 : 35;\n      response = `Perfect! ${state.quantity} pieces with ${state.discount}% discount applied. When do you need the delivery? (e.g., 15 Oct or 15/10/2024)`;\n      nextStep = 'delivery';\n    } else {\n      response = \"Please provide a valid quantity (e.g., 150)\";\n      nextStep = 'quantity';\n    }\n    break;\n    \n  case 'delivery':\n    // Parse delivery date\n    if (message && message.length > 2) {\n      state.deliveryDate = message;\n      response = \"Finally, any item preferences? (e.g., 4 dry fruits, diya, candle) or type 'no' for no preferences\";\n      nextStep = 'preferences';\n    } else {\n      response = \"Please provide a delivery date (e.g., 20 Oct or 20/10/2024)\";\n      nextStep = 'delivery';\n    }\n    break;\n    \n  case 'preferences':\n    state.preferences = message.toLowerCase() === 'no' ? 'No specific preferences' : message;\n    \n    // Calculate final details\n    const pricePerUnit = state.budget / state.quantity;\n    const discountedPrice = pricePerUnit * (1 - state.discount/100);\n    const totalAmount = discountedPrice * state.quantity;\n    \n    response = `🎉 **Your Personalized Gift Hamper Summary:**\\n\\n` +\n               `📊 **Order Details:**\\n` +\n               `• Budget: Rs ${state.budget}\\n` +\n               `• Quantity: ${state.quantity} pieces\\n` +\n               `• Discount Applied: ${state.discount}%\\n` +\n               `• Price per unit: Rs ${pricePerUnit.toFixed(2)}\\n` +\n               `• Discounted price: Rs ${discountedPrice.toFixed(2)}\\n` +\n               `• Total Amount: Rs ${totalAmount.toFixed(2)}\\n` +\n               `• Delivery Date: ${state.deliveryDate}\\n` +\n               `• Preferences: ${state.preferences}\\n\\n` +\n               `✨ **Suggested Hamper Items (Based on your budget):**\\n`;\n    \n    // Generate suggestions based on budget\n    if (pricePerUnit < 50) {\n      response += `• Small chocolate box\\n• Mini greeting card\\n• Small candle`;\n    } else if (pricePerUnit < 100) {\n      response += `• Assorted chocolates\\n• Scented candle\\n• Greeting card\\n• Small dry fruit pack`;\n    } else if (pricePerUnit < 200) {\n      response += `• Premium chocolate box\\n• Mixed dry fruits (100g)\\n• Decorative diya set\\n• Personalized greeting card\\n• Small perfume`;\n    } else {\n      response += `• Luxury chocolate selection\\n• Premium dry fruits (200g)\\n• Designer diya set\\n• Scented candles (set of 3)\\n• Personalized message card\\n• Mini perfume\\n• Decorative box`;\n    }\n    \n    response += \"\\n\\n📞 Would you like to proceed with this order? Reply 'yes' to confirm or 'restart' to start over.\";\n    nextStep = 'confirmation';\n    isComplete = true;\n    break;\n    \n  case 'confirmation':\n    if (message.toLowerCase().includes('yes')) {\n      response = \"Thank you for your order! 🎊 Our team will contact you shortly to finalize the details. Have a great day!\";\n      nextStep = 'completed';\n    } else if (message.toLowerCase().includes('restart')) {\n      // Reset the state\n      state = {\n        sessionId: sessionId,\n        currentStep: 'welcome',\n        budget: null,\n        quantity: null,\n        deliveryDate: null,\n        preferences: null,\n        conversationHistory: [],\n        discount: 0\n      };\n      response = \"Let's start over! What is your Budget? (e.g., 1000/-)\";\n      nextStep = 'budget';\n    } else {\n      response = \"Please reply with 'yes' to confirm your order or 'restart' to begin again.\";\n      nextStep = 'confirmation';\n    }\n    break;\n    \n  case 'completed':\n    response = \"Your order has already been processed. Thank you! To place a new order, please start a new conversation.\";\n    break;\n    \n  default:\n    response = \"Welcome to Kiwi Gift Hampers! 🎁 What is your Budget? (e.g., 1000/-)\";\n    nextStep = 'budget';\n}\n\n// Update state\nstate.currentStep = nextStep;\nstate.conversationHistory.push({\n  role: 'assistant',\n  message: response,\n  timestamp: new Date().toISOString()\n});\n\n// Helper function to generate session ID\nfunction generateSessionId() {\n  return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);\n}\n\nreturn {\n  json: {\n    sessionId: state.sessionId,\n    response: response,\n    state: state,\n    isComplete: isComplete,\n    orderSummary: isComplete ? {\n      budget: state.budget,\n      quantity: state.quantity,\n      deliveryDate: state.deliveryDate,\n      preferences: state.preferences,\n      discount: state.discount,\n      totalAmount: (state.budget / state.quantity * (1 - state.discount/100) * state.quantity).toFixed(2)\n    } : null\n  }\n};"
+      },
+      "id": "f3e2858a-a33f-47da-80d9-bc1760028003",
+      "name": "Conversation Controller",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assignment1",
+              "name": "conversation_data",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8584ea9b-5e61-4caf-afa7-5a0f519eb100",
+      "name": "Store Conversation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        -400,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json.isComplete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2a577735-d64a-4da6-8e0e-1a5b4f64fe74",
+      "name": "Check If Order Complete",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_ENDPOINT_URL || 'https://your-rag-system.com/api/generate-hamper' }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "orderSummary",
+              "value": "={{ $json.orderSummary }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "id": "3a0cb745-a048-46e9-9b4b-71eca3de01d3",
+      "name": "Send to RAG System",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Combine the conversation response with RAG suggestions if available\nconst conversationData = $input.item.json;\nlet finalResponse = conversationData.response;\n\nif (conversationData.isComplete && $node[\"Send to RAG System\"]?.json?.suggestions) {\n  const ragSuggestions = $node[\"Send to RAG System\"].json.suggestions;\n  finalResponse += \"\\n\\n🎁 **AI-Generated Custom Recommendations:**\\n\" + ragSuggestions;\n}\n\nreturn {\n  json: {\n    sessionId: conversationData.sessionId,\n    message: finalResponse,\n    state: conversationData.state,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "fa2c0692-9938-40ca-865f-eb2a2204bac1",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        112
+      ]
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "592e9f4f-c23f-4b86-8e7e-1e3f67b5a714",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-19T01:46:52.571Z",
+      "updatedAt": "2025-10-19T01:46:52.571Z",
+      "role": "workflow:owner",
+      "workflowId": "5pLFoCSTpVFas38J",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
