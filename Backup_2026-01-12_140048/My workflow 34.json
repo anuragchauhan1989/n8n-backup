@@ -1,0 +1,254 @@
+{
+  "createdAt": "2025-10-15T09:30:35.294Z",
+  "updatedAt": "2025-10-15T11:45:08.000Z",
+  "id": "ESPP9AqEjMW4aPyM",
+  "name": "My workflow 34",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "name": "Daily Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "95d094d8-b9ea-4506-bbfe-3a850dde8791"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.linkedin.com/oauth/v2/accessToken",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"grant_type\": \"refresh_token\", \"refresh_token\": \"{{ $env.LINKEDIN_REFRESH_TOKEN }}\", \"client_id\": \"{{ $env.LINKEDIN_CLIENT_ID }}\", \"client_secret\": \"{{ $env.LINKEDIN_CLIENT_SECRET }}\"}",
+        "options": {}
+      },
+      "name": "Refresh LinkedIn Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "e722d59d-41c5-428a-9d22-e7c968db6f8c"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblv3Eqz4W1fJFWO6"
+        },
+        "filterByFormula": "=AND({Connection Sent} = 1, {Connection Accepted} = 0)",
+        "options": {}
+      },
+      "name": "Get Pending Connections from Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "1e2d46db-d4dc-40cb-8317-62f8cb37f723",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/connections",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "viewer"
+            },
+            {
+              "name": "start",
+              "value": "0"
+            },
+            {
+              "name": "count",
+              "value": "500"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Refresh LinkedIn Token').item.json.access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Get LinkedIn Connections",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "018e322c-1560-4b0b-a538-67ec3795d74e"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Match Airtable records with LinkedIn connections\nconst airtableRecords = $('Get Pending Connections from Airtable').all();\nconst linkedinConnections = $input.first().json.elements;\n\n// Create a Set of LinkedIn connection IDs for fast lookup\nconst connectionIds = new Set(\n  linkedinConnections.map(conn => conn.to.split(':').pop())\n);\n\nconst matches = [];\n\nfor (const record of airtableRecords) {\n  const airtableData = record.json;\n  // Extract LinkedIn ID from profile URL\n  const linkedinUrl = airtableData.Employee_LinkedIn_URL || airtableData.profileUrl_n8n;\n  if (!linkedinUrl) continue;\n  \n  // Parse LinkedIn ID from URL (e.g., linkedin.com/in/john-smith-123456)\n  const urlParts = linkedinUrl.split('/in/');\n  if (urlParts.length < 2) continue;\n  \n  const profileSlug = urlParts[1].replace('/', '');\n  \n  // Check if this person is in connections\n  // Note: LinkedIn API returns person URNs, not profile slugs\n  // You may need to store LinkedIn person IDs in Airtable\n  \n  matches.push({\n    json: {\n      ...airtableData,\n      isConnected: true,\n      checkedAt: new Date().toISOString()\n    }\n  });\n}\n\nreturn matches;"
+      },
+      "name": "Match & Filter Accepted Connections",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "19147ce2-18b2-453f-a7a4-679d0b567ba3"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appSyRFfQAU9hVeAP"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblv3Eqz4W1fJFWO6"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Connection Accepted": 1
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "name": "Update Airtable Records",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "04d24e12-ba5f-421f-b003-858703466468",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "15qEGjBO5wP9YFX7",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Check": {
+      "main": [
+        [
+          {
+            "node": "Refresh LinkedIn Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh LinkedIn Token": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Connections from Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Connections from Airtable": {
+      "main": [
+        [
+          {
+            "node": "Get LinkedIn Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LinkedIn Connections": {
+      "main": [
+        [
+          {
+            "node": "Match & Filter Accepted Connections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match & Filter Accepted Connections": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "b6680685-7b2c-4369-8b3a-bc673a14ef04",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-15T09:30:35.300Z",
+      "updatedAt": "2025-10-15T09:30:35.300Z",
+      "role": "workflow:owner",
+      "workflowId": "ESPP9AqEjMW4aPyM",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
