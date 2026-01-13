@@ -1,0 +1,108 @@
+{
+  "createdAt": "2026-01-02T10:44:50.279Z",
+  "updatedAt": "2026-01-05T10:36:02.000Z",
+  "id": "kVdYHoEFmTY6BCqO",
+  "name": "Corpus Jurist Whatsapp Setup",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        -160
+      ],
+      "id": "1574e501-dc81-4970-baf2-5f8182178ff4",
+      "name": "WhatsApp Trigger",
+      "webhookId": "a2674368-e756-4c8e-9fb6-7f274ee3d831",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "j35PqADpAwqmWibm",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "937889916075896",
+        "recipientPhoneNumber": "7393800862",
+        "textBody": "This is a test message send via Whatsapp Business API",
+        "additionalFields": {
+          "previewUrl": false
+        }
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        32,
+        16
+      ],
+      "id": "b4c88b6c-9b3a-49be-b644-1a74a7242cf0",
+      "name": "Send message",
+      "webhookId": "4f9f02e4-124c-4562-9852-6b809eb8f120",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "3wlSwYxPvLBY8MqD",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        16
+      ],
+      "id": "8794c173-9887-46f7-854c-84fa1d8fe8fe",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        []
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "d06b248f-68f7-4432-b38b-1f18b653ff23",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2026-01-02T10:44:50.286Z",
+      "updatedAt": "2026-01-02T10:44:50.286Z",
+      "role": "workflow:owner",
+      "workflowId": "kVdYHoEFmTY6BCqO",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
