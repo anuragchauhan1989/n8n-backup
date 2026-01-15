@@ -1,0 +1,235 @@
+{
+  "createdAt": "2025-10-17T10:20:55.155Z",
+  "updatedAt": "2025-10-17T13:24:50.000Z",
+  "id": "0bX5ocrBk2b1A3o4",
+  "name": "Ad creative Image generator -gg",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        672,
+        112
+      ],
+      "id": "f25e266b-a1fc-41be-ba37-08f399865380",
+      "name": "product_image_to_base64"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3",
+            "mode": "list",
+            "cachedResultName": "ZenshopProd",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1UC66Xaac46Nu_XvUH5NEAd0CDxqqHxW3"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        64,
+        96
+      ],
+      "id": "bf762d15-bc66-4029-8c25-2635f1648698",
+      "name": "List_Product_images",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        512,
+        112
+      ],
+      "id": "f2d9cb6c-fde8-48c3-a28a-2c7127eb2c3d",
+      "name": "Download file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        272,
+        96
+      ],
+      "id": "01485d86-2605-4a9c-88f9-0f2cd9e80145",
+      "name": "Loop Over Product"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        96
+      ],
+      "id": "be19a8af-75b0-41ce-970b-7de7db8c57b8",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "snEUpgaRUTEVAjoU",
+          "mode": "list",
+          "cachedResultName": "My workflow 100"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "product_image": "={{ $json.data }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "product_image",
+              "displayName": "product_image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": "={{ true }}"
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        112
+      ],
+      "id": "13473116-a3e0-4925-8161-5d7d4c7dd1e3",
+      "name": "Call 'My workflow 100'",
+      "alwaysOutputData": false
+    }
+  ],
+  "connections": {
+    "List_Product_images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file1": {
+      "main": [
+        [
+          {
+            "node": "product_image_to_base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Product": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "List_Product_images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "product_image_to_base64": {
+      "main": [
+        [
+          {
+            "node": "Call 'My workflow 100'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'My workflow 100'": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "6098e8a3-f815-4297-884b-fd45e306f729",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-17T10:20:55.157Z",
+      "updatedAt": "2025-10-17T10:20:55.157Z",
+      "role": "workflow:owner",
+      "workflowId": "0bX5ocrBk2b1A3o4",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
