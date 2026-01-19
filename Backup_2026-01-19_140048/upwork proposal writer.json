@@ -1,0 +1,540 @@
+{
+  "createdAt": "2025-10-07T05:09:32.409Z",
+  "updatedAt": "2025-10-09T06:52:00.000Z",
+  "id": "KphcOJV0iJ6KZCT3",
+  "name": "upwork proposal writer",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5686233f-b608-48eb-8037-8d0e8332c2ca",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "f6353eea-2d38-4820-9f1d-5d41702dfad8",
+      "name": "Read Upwork Jobs from Excel",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -608,
+        272
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      },
+      "notes": "Reads all scraped Upwork job posts from Google Sheets"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "date",
+              "name": "date",
+              "value": "={{ $json.Date }}",
+              "type": "string"
+            },
+            {
+              "id": "description",
+              "name": "description",
+              "value": "={{ $json.Description }}",
+              "type": "string"
+            },
+            {
+              "id": "experience_level",
+              "name": "experience_level",
+              "value": "={{ $json['Experience Level'] }}",
+              "type": "string"
+            },
+            {
+              "id": "category",
+              "name": "category",
+              "value": "={{ $json.Category }}",
+              "type": "string"
+            },
+            {
+              "id": "client_type",
+              "name": "client_type",
+              "value": "={{ $json['Client Type'] }}",
+              "type": "string"
+            },
+            {
+              "id": "has_google_ads",
+              "name": "has_google_ads",
+              "value": "={{ $json['Has Google Ads Account'] }}",
+              "type": "string"
+            },
+            {
+              "id": "questions",
+              "name": "questions",
+              "value": "={{ $json['Additional Questions'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b384cced-8261-458a-beb4-5c9c1db3920f",
+      "name": "Extract Job Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -384,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "direct-client",
+              "leftValue": "={{ $json.client_type }}",
+              "rightValue": "Direct Client",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a969ec2b-06ec-492d-a5cd-393207da8e2a",
+      "name": "Is Direct Client?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -160,
+        272
+      ],
+      "notes": "Filter for Direct Clients only (skip agencies for now)"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4155c1b5-b7dd-4c06-9db5-95357da1c88b"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ae185898-4da2-43a9-a9ba-89d70cfa4417",
+      "name": "Has Google Ads Account?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        64,
+        160
+      ],
+      "notes": "Route to correct proposal template based on client type"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.7
+        }
+      },
+      "id": "59cb7d7a-4a02-4616-97f6-03453ebb82b9",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        432
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert Upwork proposal writer for a Google Ads agency.\n\nYour task is to analyze the job posting and determine:\n1. Does this job require specific industry experience or references?\n2. What technical Google Ads experience is needed?\n3. Are there additional questions that need to be answered?\n\nJob Description:\n{{ $json.description }}\n\nCategory: {{ $json.category }}\n\nAdditional Questions:\n{{ $json.questions }}\n\nProvide your analysis in this JSON format:\n{\n  \"needs_industry_reference\": true/false,\n  \"industry_category\": \"specific industry if identified\",\n  \"technical_experience_required\": \"list of technical skills needed\",\n  \"questions_to_answer\": [\"question1\", \"question2\"]\n}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "id": "bebaab84-95ed-45d3-b584-104e539fe723",
+      "name": "Analyze Job Requirements",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        288,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_CLIENTS_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Past Clients",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "d4087514-447b-4cd4-b1d2-340f198c13dd",
+      "name": "Read Past Clients Database",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        576,
+        16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      },
+      "notes": "Retrieves past client references and industry experience"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobAnalysis = $input.item.json;\nconst pastClients = $('Read Past Clients Database').all();\n\nlet relevantClients = [];\n\nif (jobAnalysis.needs_industry_reference) {\n  const targetIndustry = jobAnalysis.industry_category.toLowerCase();\n  \n  relevantClients = pastClients.filter(client => {\n    const clientIndustry = client.json.Industry?.toLowerCase() || '';\n    return clientIndustry.includes(targetIndustry) || targetIndustry.includes(clientIndustry);\n  }).slice(0, 3); // Get top 3 relevant clients\n}\n\nreturn {\n  json: {\n    ...jobAnalysis,\n    relevant_clients: relevantClients.map(c => ({\n      name: c.json['Client Name'],\n      industry: c.json.Industry,\n      project: c.json['Project Description'],\n      results: c.json.Results\n    }))\n  }\n};"
+      },
+      "id": "86a524be-3567-4248-a1c3-b11e53cec76a",
+      "name": "Match Industry References",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        144
+      ],
+      "notes": "Finds relevant client references based on industry"
+    },
+    {
+      "parameters": {},
+      "id": "75e1f28b-4b77-46af-a5ba-b493a6d66ea9",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "maxTokens": 1500,
+          "temperature": 0.8
+        }
+      },
+      "id": "74e4145f-d40e-4556-b6ac-0c7aaf23b9fa",
+      "name": "Proposal Generator Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        432
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are writing a winning Upwork proposal for a Google Ads agency.\n\n**JOB DETAILS:**\nDescription: {{ $('Extract Job Data').item.json.description }}\nCategory: {{ $('Extract Job Data').item.json.category }}\nExperience Level: {{ $('Extract Job Data').item.json.experience_level }}\n\n**ANALYSIS:**\n{{ JSON.stringify($json, null, 2) }}\n\n**TEMPLATE TO FOLLOW (Clients with Google Ads Account):**\n\nHi [Client Name],\n\nI understand you're looking for [summarize their need]. With [X] years of experience managing Google Ads accounts, I've helped businesses like yours achieve [specific results].\n\n**My Approach:**\n- [Technical expertise point 1]\n- [Technical expertise point 2]\n- [Technical expertise point 3]\n\n{% if needs_industry_reference %}\n**Relevant Experience:**\n{% for client in relevant_clients %}\n- {{ client.name }} ({{ client.industry }}): {{ client.results }}\n{% endfor %}\n{% endif %}\n\n{% if questions_to_answer %}\n**Answers to Your Questions:**\n{% for question in questions_to_answer %}\n**Q: {{ question }}**\nA: [Detailed, specific answer based on expertise]\n{% endfor %}\n{% endif %}\n\nI'd love to discuss how I can help you achieve your Google Ads goals. When would be a good time for a quick call?\n\nBest regards,\n[Your Name]\n\n**NOW WRITE THE COMPLETE PROPOSAL:**\nFill in all placeholders with specific, relevant content. Make it personalized, professional, and compelling. Include specific metrics and achievements where possible.",
+        "options": {}
+      },
+      "id": "caf8e1e8-d5f2-4b47-a5fd-dcdbebfb4733",
+      "name": "Generate Proposal with AI",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        944,
+        160
+      ],
+      "notes": "Generates the final proposal based on template and analysis"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "87441b94-1b62-4531-a8ac-cf33c4897bdc",
+      "name": "Update Sheet with Proposal",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1392,
+        160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Cognigenai Google Sheets account"
+        }
+      },
+      "notes": "Writes the generated proposal back to the spreadsheet"
+    },
+    {
+      "parameters": {
+        "content": "## 📋 UPWORK PROPOSAL WRITER WORKFLOW\n\n**How it works:**\n1. Reads job posts from Excel/Google Sheets\n2. Filters for Direct Clients only\n3. Routes to correct template (Google Ads/Lead Gen/Audit)\n4. AI analyzes job requirements\n5. Matches industry references if needed\n6. Generates technical experience descriptions\n7. Answers additional questions\n8. Creates personalized proposal\n9. Writes back to spreadsheet\n\n**Setup Required:**\n- Google Sheets with job data\n- Past clients database\n- OpenAI API key\n- Proposal templates",
+        "height": 340,
+        "width": 380
+      },
+      "id": "5c537b62-45fb-4e54-860b-1cb4baa4c62d",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 TEMPLATE ROUTING\n\nBased on client type:\n- Google Ads Account ✅\n- Lead Gen (no Google Ads)\n- Audit Template\n\nCurrently focused on path 1",
+        "height": 200,
+        "width": 300
+      },
+      "id": "5707b03e-1cc9-47be-aab0-3f0ede1a6340",
+      "name": "Sticky Note 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -160
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Upwork Jobs from Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Upwork Jobs from Excel": {
+      "main": [
+        [
+          {
+            "node": "Extract Job Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Job Data": {
+      "main": [
+        [
+          {
+            "node": "Is Direct Client?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Direct Client?": {
+      "main": [
+        [
+          {
+            "node": "Has Google Ads Account?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Google Ads Account?": {
+      "main": [
+        [
+          {
+            "node": "Analyze Job Requirements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Job Requirements": {
+      "main": [
+        [
+          {
+            "node": "Read Past Clients Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Past Clients Database": {
+      "main": [
+        [
+          {
+            "node": "Match Industry References",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match Industry References": {
+      "main": [
+        [
+          {
+            "node": "Generate Proposal with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Proposal with AI": {
+      "main": [
+        [
+          {
+            "node": "Update Sheet with Proposal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Job Requirements",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Proposal Generator Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Proposal with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analyze Job Requirements",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c10975d1-f170-4b42-81b4-025c22f22fb5",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-07T05:09:32.415Z",
+      "updatedAt": "2025-10-07T05:09:32.415Z",
+      "role": "workflow:owner",
+      "workflowId": "KphcOJV0iJ6KZCT3",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
