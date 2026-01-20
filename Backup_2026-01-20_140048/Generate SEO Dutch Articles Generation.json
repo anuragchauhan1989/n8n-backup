@@ -1,0 +1,784 @@
+{
+  "createdAt": "2025-09-20T11:39:03.909Z",
+  "updatedAt": "2025-10-04T03:28:03.000Z",
+  "id": "PxEgOm9DARLZfEuN",
+  "name": "Generate SEO Dutch Articles Generation",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        464
+      ],
+      "id": "91d69791-8a25-44ff-a899-3a69e685ebba",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_X7Y_NuB_BZdX-X3cR0P8hDv-9frWgHrZ_O6KBlLtQ4",
+          "mode": "list",
+          "cachedResultName": "Keyword research alphabetically",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_X7Y_NuB_BZdX-X3cR0P8hDv-9frWgHrZ_O6KBlLtQ4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Blad1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_X7Y_NuB_BZdX-X3cR0P8hDv-9frWgHrZ_O6KBlLtQ4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        464
+      ],
+      "id": "2203cbcd-47bb-4063-9ef7-ecf592110f8b",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZG1MR4HwHasbUvb4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        896,
+        368
+      ],
+      "id": "f02ed31f-d51d-4eec-8b23-c692546056cb",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fab92043-a882-40f4-bfcc-713c384e6fad",
+              "name": "Keyword",
+              "value": "={{ $json.Keyword }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        368
+      ],
+      "id": "961c5ce3-bbe7-4af4-aafb-818ecfaa5881",
+      "name": "Get Keyword"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert content researcher.\n\nBased on the provided **keyword**, your task is to generate **three detailed research prompts**, each covering a **different informational angle** of the topic.\n\nEach prompt must be a **comprehensive, natural-language query** designed to help an AI search engine (e.g., Perplexity AI) retrieve valuable, insightful, and high-quality information for article writing.\n\nThe three prompts should be written in **clear English**, and each one should focus on a **different research angle.**\n\nAll three prompts should be written in a **logical funnel structure,** progressing from general understanding to deeper insights.\n\nReturn only the following JSON structure:\n\n```json\n{\n  \"keyword\": \"[insert keyword here]\",\n  \"queries\": [\n    \"Prompt 1\",\n    \"Prompt 2\",\n    \"Prompt 3\"\n  ]\n}\n\n```"
+            },
+            {
+              "content": "=Keyword:\n\n{{ $('Get Keyword').item.json.Keyword }}\n\nPlease Respond only in English."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1120,
+        192
+      ],
+      "id": "5c32d65d-4028-49f5-b663-260ca1eb4723",
+      "name": "Message a model",
+      "alwaysOutputData": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=message.content.queries",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        192
+      ],
+      "id": "e16e8b47-30cd-42a1-8eef-fea6b180fec7",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "=message.content"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        192
+      ],
+      "id": "6a560f3c-60a4-47d7-bdd1-39133602fef2",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json['message.content.queries'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1696,
+        192
+      ],
+      "id": "8692ae2d-13b2-4d0d-a84c-3890ceb05e90",
+      "name": "Message a model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/serp/google/organic/live/advanced",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "= [{\n        \"language_code\": \"en\",\n        \"location_code\": 2840,\n        \"keyword\": \"{{ $('Get Keyword').item.json.Keyword }}\"\n    }\n]",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2272,
+        192
+      ],
+      "id": "513c6f21-b8b7-4606-899d-887583c9a457",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "NmNezsIBtq2LgIPb",
+          "name": "data for seo api credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $json.tasks[0].result[0].items;\nconst paa = items.find(item => item.type === 'people_also_ask');\n\n// Check if the data exists\nif (!paa || !paa.items) {\n  return [];\n}\n\n// Combine the question and answer into one String\nreturn paa.items.map(el => {\n  const question = el.title || \"\";\n  const answer = (el.expanded_element && el.expanded_element[0]) ? el.expanded_element[0].description : \"\";\n  return { \n    FAQ: `een vraag: ${question} | antwoord: ${answer}` \n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2496,
+        192
+      ],
+      "id": "a37b036c-3c5f-46c7-ac0e-74da879e4fd2",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "FAQ"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        192
+      ],
+      "id": "8f5bf817-7cf7-42c2-bcb5-9c76521adab6",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert SEO content strategist.\n\nYour task is to generate a structured, SEO-optimized outline for an article that fully addresses the search intent behind the provided keyword {{ $('Get Keyword').item.json.Keyword }}\n\nThe outline should help a writer produce high-quality content based on the structure and essential information you provide.\n\nMake the outline as detailed and comprehensive as possible. It should be suitable for writing a long-form, in-depth article, not a short or surface-level piece.\n\n---\n\n### **Methodology**\n\n### 1. Start with the Reader’s Journey\n\n- Think of the article as a **funnel** — guide the reader step by step, from awareness to understanding, to depth, and finally to action or resolution.\n- Ensure each H2 section is **logically connected** to the one before it, forming a clear, natural narrative progression.\n- The **second H2 section** after the introduction must **directly answer the primary search intent** of the keyword.\n- Each H2 section must connect narratively to the previous one. The outline should flow as a continuous reader journey — like a funnel — starting with awareness, then understanding, followed by challenges/solutions, and ending in resolution.\n\n---\n\n### **H2 Structure Guidelines**\n\n- Break the outline into **main sections (H2s)** written in **question format** (3–5 words max).\n- The first H2 must always be \"de introductie\" and must clearly follow one of the following content strategies: PAS, AIDA, BAB, or RAD. The strategy used must be explicitly labeled inside the H2 heading (e.g., \"Inleiding (AIDA - 2 paragraphs)\").\n- Include at least one dedicated **FAQ section** and a final **Conclusion** section.\n- After each H2 heading, specify the **expected format** in parentheses (e.g., intro, 2–3 paragraphs, list + explanation, etc.).\n- Only assign a format to an H2 if it contains no H3s. If the H2 includes H3s, leave its format blank to avoid conflict.\n- Use the main keyword or its variations inside H2s for SEO performance.\n\n---\n\n### **H3 Structure Guidelines**\n\n- Add **supporting H3s** under each H2 — also in **short question format** (3–5 words max).\n- After each H3, specify the **expected format** (e.g., single paragraph, paragraph + bullet points).\n- Each H3 must focus on a unique sub-topic that directly supports the H2.\n- Ensure that each H3 is **a natural and functional sub-question** of its H2 — it must **directly break down, clarify, or expand the parent H2 topic** without shifting focus or introducing unrelated sub-themes.\n- Prioritize questions that reflect **real user queries**.\n- Avoid repeating ideas across sections.\n\n---\n\n### **Information Requirement**\n\n- Under each **H2**, include an `\"info\"` field that lists **all detailed information points** required for writing — avoid summaries or generalizations. Include **every factual detail** necessary to fully cover the section, as if you’re feeding a writer everything they need without assuming prior knowledge.\n- Each point should be **detailed, complete, and directly usable** for content generation — no summaries or simplifications.\n- These points are meant to **guide the writer** — they must be accurate, specific, and actionable, without invented or vague content.\n\n---\n\n### **General Rules**\n\n- Ensure the structure is **SEO-friendly**, clear, and skimmable.\n- Keep headings short, natural, and phrased like real search queries.\n- The full outline must read like a **guided narrative** — funneling the reader through a structured journey from intro to resolution.\n- Match the outline to the **article type**: product-based, how-to, comparison, informational, or thought leadership.\n- Avoid generic or duplicate sections.\n- WRITE your outline in Dutch and the **format in English** (like the example below).\n\n---\n\n### Final Output Format\n\n- Do not include any explanation or headers — just return the JSON.\n- The final output must be in **JSON** format with this structure (just the structure, not its content ideas):\n\n```json\n{\n  \"title\": \"Artikeltitel\",\n  \"outline\": [\n    {\n      \"h2\": \"Inleiding (2 alinea's)\",\n      \"h3\": [],\n      \"info\": [\n        \"[Onderwerp] is een van de meest prominente moderne tools die voldoen aan verschillende behoeften in de zakelijke en technische sector.\",\n        \"Dit systeem is populair geworden dankzij de flexibiliteit en het gebruiksgemak, en is overgenomen door wereldwijde bedrijven zoals Google en Amazon om concrete operationele resultaten te behalen.\",\n        \"Het artikel is gericht op professionals, projectmanagers en beginners die op zoek zijn naar een effectieve manier om hun prestaties te verbeteren of hun werk te automatiseren.\",\n        \"De lezer leert over de werking van [Onderwerp], de voordelen, uitdagingen en hoe het zich verhoudt tot de alternatieven op de markt.\"\n      ]\n    },\n    {\n      \"h2\": \"Wat is [Onderwerp]?\",\n      \"h3\": [\n        \"Hoe werkt het? (2 alinea's)\",\n        \"Waaruit bestaat het? (opsommingstekens + details)\"\n      ],\n      \"info\": [\n        \"[Onderwerp] is een systeem of tool dat wordt gebruikt om bepaalde processen te automatiseren of te versnellen met behulp van kunstmatige intelligentie of slimme algoritmen.\",\n        \"Het is gebaseerd op het verzamelen van gegevens, het analyseren ervan en vervolgens het uitvoeren van automatische acties op basis van de resultaten van de analyse.\",\n        \"Het bestaat uit een grafische gebruikersinterface, een database, een analyse-eenheid en een API-integratiesysteem.\",\n        \"[Onderwerp] integreert technologieën zoals machine learning en cloud computing om hoogwaardige prestaties te bereiken.\"\n      ]\n    },\n    {\n      \"h2\": \"Wat zijn de voordelen van het gebruik van [Onderwerp]?\",\n      \"h3\": [\n        \"Verbetering van de productiviteit (alinea + data)\",\n        \"Vermindering van menselijke fouten (1 alinea)\",\n        \"Ondersteuning van besluitvorming (alinea + voorbeeld)\"\n      ],\n      \"info\": [\n        \"Een studie van McKinsey toont aan dat de adoptie van dit type tools leidt tot een productiviteitsverbetering van maximaal 40% in technische teams.\",\n        \"Het vermindert de menselijke tussenkomst in repetitieve processen, waardoor het foutenpercentage met maximaal 60% wordt verminderd.\",\n        \"Het kan worden geïntegreerd met tools voor data-analyse om onmiddellijke aanbevelingen te geven die strategische beslissingen ondersteunen, zoals het succesvol is toegepast in bedrijf X om verkoopbeslissingen te verbeteren.\",\n        \"Het bespaart tijd en verlaagt de operationele kosten met een constant percentage wanneer het wordt geïntegreerd in de dagelijkse activiteiten.\"\n      ]\n    },\n    {\n      \"h2\": \"Wie gebruikt [Onderwerp]?\",\n      \"h3\": [\n        \"Startende bedrijven (alinea)\",\n        \"Technische teams (alinea)\",\n        \"Onderwijsinstellingen (1 alinea)\"\n      ],\n      \"info\": [\n        \"Startende bedrijven vertrouwen erop om repetitieve taken te automatiseren en middelen te besparen.\",\n        \"Technische teams gebruiken het om de workflow te verbeteren en de tijd die nodig is om projecten op te leveren te verkorten.\",\n        \"Onderwijsinstellingen zijn begonnen met het integreren van [Onderwerp] in hun trainingsprogramma's om studenten voor te bereiden op de moderne arbeidsmarkt.\"\n      ]\n    },\n    {\n      \"h2\": \"Vergelijking tussen [Onderwerp] en [alternatief]? (opsommingstekens + details)\",\n      \"h3\": [],\n      \"info\": [\n        \"De vergelijking omvat: functies, kosten, technische ondersteuning, gebruiksgemak, compatibiliteit met andere tools.\",\n        \"[Onderwerp] wordt gekenmerkt door eenvoudig aan te passen en een flexibele interface, terwijl [Alternatief] sterker is in geavanceerde analyses.\",\n        \"Qua kosten biedt [Onderwerp] een meer economische optie op de lange termijn.\",\n        \"In een recent onderzoek koos 68% van de gebruikers voor [Onderwerp] vanwege de betere gebruikerservaring.\"\n      ]\n    },\n    {\n      \"h2\": \"Wat zijn de uitdagingen die gepaard gaan met het gebruik van [Onderwerp]?\",\n      \"h3\": [\n        \"Moeilijkheden bij de eerste configuratie (alinea)\",\n        \"Noodzaak van training (1 alinea)\",\n        \"Technische compatibiliteitsproblemen (alinea + voorbeeld)\"\n      ],\n      \"info\": [\n        \"Het vereist een nauwkeurige technische installatie voor de werking om een ​​functionele storing te voorkomen.\",\n        \"Het vereist dat technische teams of eindgebruikers voldoende inzicht hebben in de werking ervan, wat interne training of externe cursussen kan vereisen.\",\n        \"In sommige gevallen integreert het niet gemakkelijk met traditionele projectmanagementsystemen, zoals in het voorbeeld van bedrijf Y dat te maken kreeg met een vertraging in de integratie.\"\n      ]\n    },\n    {\n      \"h2\": \"Veelgestelde vragen over [Onderwerp] (FAQ)\",\n      \"h3\": [\n        \"Is het geschikt voor beginners? (1 alinea)\",\n        \"Is het veilig te gebruiken? (alinea + data)\",\n        \"Moet het continu worden bijgewerkt? (enkele alinea)\"\n      ],\n      \"info\": [\n        \"[Onderwerp] is ontworpen om gemakkelijk te gebruiken te zijn, zelfs voor niet-technische gebruikers, dankzij de intuïtieve interface en geïntegreerde ondersteuning.\",\n        \"Een hoog veiligheidspercentage dat is gedocumenteerd in verschillende digitale veiligheidstests die zijn uitgevoerd door een onafhankelijke partij.\",\n        \"Het is raadzaam om het periodiek bij te werken om een ​​efficiënte werking en compatibiliteit met eventuele wijzigingen in de werkomgeving of gegevens te garanderen.\"\n      ]\n    },\n    {\n      \"h2\": \"Conclusie (2 korte alinea's)\",\n      \"h3\": [],\n      \"info\": [\n        \"[Onderwerp] is een cruciaal hulpmiddel bij het verbeteren van de bedrijfsprestaties en het vereenvoudigen van processen, met concrete resultaten die in veel sectoren zijn gedocumenteerd.\",\n        \"Het wordt aanbevolen om het geleidelijk in het operationele systeem te integreren en de juiste training te bieden om maximaal te profiteren.\"\n      ]\n    }\n  ]\n}\n\n```\n\nImportant:\n\n- The example JSON is meant to demonstrate the required structure and formatting only. The actual headings (h2, h3) and info content must be uniquely generated based on the keyword, not copied from the example.\n- All h2 and h3 items must be plain strings that include the format inside parentheses (e.g., \"Wat zijn de voordelen? (2 paragraphs)\").\n- Do not use nested objects or additional keys like \"text\" or \"format\" — only use a single string for each heading.\n- The outline must follow this structure exactly:\"h2\": string (with format in parentheses)\n- All h3 items must be written as plain strings that include the format in parentheses, like\n- Do not return h3 as objects or use keys like \"format\" — it must be a single string only.\n- Do not return keys like \"format\", \"text\", or \"content\" — just follow the format shown above."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2944,
+        192
+      ],
+      "id": "af2a83bd-abcf-43fb-a297-cf2f50a674b7",
+      "name": "Message a model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "message.content.outline",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        3296,
+        192
+      ],
+      "id": "74a4f8cf-ba15-489a-962d-72878996e27c",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a professional Dutch content writer.\n\nYour task is to write a complete article section based on:\n\n- The provided H2 heading\n- Its related H3 subpoints\n- The given information about the section\n\nFollow the instructions below carefully.\n\n### **Writing Methodology**\n\n1. **Structure & Flow**\n    - Start by writing the H2 title (do not change or rephrase it) (Do not mention the format), then the content, and follow the H3 subpoints one by one..\n    - Do not invent or introduce any ideas beyond what is provided.\n    - Do not create a separate introduction or conclusion for the H2 — just continue the article smoothly, your role now just to write the section needed.\n2. **Skimmability**\n    - The paragraphs should be short (2–4 lines max).\n    - The bullet points, when needed, should be used without a heading. Each bullet should be a complete sentence, not just a fragment.\n3. **SEO Optimization**\n    - Use the main keyword and related terms naturally in the text.\n    - Use semantic variations and rich vocabulary.\n    - Structure content so that it can rank for featured snippets.\n\n---\n\n### Tone & Style Guidelines\n\n- Use the plural form of \"you\" to maintain a gender-neutral and inclusive tone.\n- Keep the tone natural, human.\n- You are allowed to express the information using rich, natural language, but only using the facts and details provided. Do not create new ideas or reframe the intent.\n- Avoid overly technical, dry, or formal language.\n- Use diverse vocabulary and expressive sentence structure.\n- DO NOT use clichés or generic phrases such as:\n    - \"It is worth noting\", \"There is no doubt\", \"Moreover\", \"The perfect choice\",\n\"In this regard\", \"In conclusion\", \"We hope we have succeeded\", \"Undoubtedly\",\n\"The best ever\", \"Revolutionary\", \"Absolutely amazing\"\n    - Or any phrase that sounds like generic AI content.\n- Avoid wordiness or unnecessary repetition — every sentence must deliver clear, meaningful content.\n- Do not use filler language or vague expressions that add no real value.\n- Do not oversimplify in a way that reduces the accuracy or depth of the information — maintain a balance between clarity and substance.\n- Write In Dutch.\n\n---\n\n### **Hard Restrictions**\n\n- Do **not** add any information that isn't included in the provided data.\n- Do **not** create fake references, data, or quotes.\n- Do **not** mention sources or references in the output.\n- Do **not** change the flow of the article — respect the sequence in the outline.\n\n---\n\nFormat the output using a clean Markdown structure. Use clean Markdown:\n\n`#` for H1, `##` for H2,..etc, `-` for bullets, `1.` for numbered lists, `**bold**` for emphasis, and line breaks between items."
+            },
+            {
+              "content": "=Main Keyword of The Topic:\n{{ $('Get Keyword').item.json.Keyword }}\n\n\nHere is The Section You will write and its info (just write this section):\n\nH2:\n\n{{ $json.h2 }}\nH3s:\n{{ $json.h3 }}\n\nInfo:\n{{ $json.info }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        3520,
+        192
+      ],
+      "id": "6af7ee2b-6ced-45c2-aba3-1a216bf20cbf",
+      "name": "Message a model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "HICWIosPabWx10xu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "65f2d66a-ae5f-456f-adea-cfd6a9dd854c",
+              "name": "=content",
+              "value": "={{ $json.message.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3872,
+        192
+      ],
+      "id": "170ad139-6bd6-42a1-8bcf-cb5377820181",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        4096,
+        192
+      ],
+      "id": "e5e5a532-7404-413a-b659-b0362dd7f79d",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get raw text from chatInput\nconst rawText = $input.first().json.content;\nconst lines = rawText.split(\"\\n\");\n\n// Function to parse bold and links\nconst createRichText = (text) => {\n  const linkRegex = /\\[([^\\]]+)\\]\\(([^)]+)\\)/g;\n  const boldRegex = /\\*\\*(.*?)\\*\\*/g;\n  let result = [];\n  let lastIndex = 0;\n  let match;\n\n // First: Links\n  while ((match = linkRegex.exec(text)) !== null) {\n   // Any text before the link\n    if (match.index > lastIndex) {\n      result.push(...parseBold(text.substring(lastIndex, match.index)));\n    }\n  // Add the link as an anchor\n    result.push({\n      type: \"text\",\n      text: { content: match[1], link: { url: match[2] } },\n      annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" },\n      plain_text: match[1],\n      href: match[2]\n    });\n    lastIndex = match.index + match[0].length;\n  }\n// The rest after the last link\n  if (lastIndex < text.length) {\n    result.push(...parseBold(text.substring(lastIndex)));\n  }\n  return result.length ? result : [{ type: \"text\", text: { content: text }, annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" }, plain_text: text, href: null }];\n};\n\n// bold function only (used inside the function above)\nfunction parseBold(text) {\n  const boldRegex = /\\*\\*(.*?)\\*\\*/g;\n  let parts = [];\n  let lastIndex = 0;\n  let match;\n  while ((match = boldRegex.exec(text)) !== null) {\n    if (match.index > lastIndex) {\n      parts.push({\n        type: \"text\",\n        text: { content: text.substring(lastIndex, match.index) },\n        annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" },\n        plain_text: text.substring(lastIndex, match.index),\n        href: null\n      });\n    }\n    parts.push({\n      type: \"text\",\n      text: { content: match[1] },\n      annotations: { bold: true, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" },\n      plain_text: match[1],\n      href: null\n    });\n    lastIndex = match.index + match[0].length;\n  }\n  if (lastIndex < text.length) {\n    parts.push({\n      type: \"text\",\n      text: { content: text.substring(lastIndex) },\n      annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" },\n      plain_text: text.substring(lastIndex),\n      href: null\n    });\n  }\n  return parts.length ? parts : [{ type: \"text\", text: { content: text }, annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: \"default\" }, plain_text: text, href: null }];\n}\n\n// Block constructors\nconst createHeading = (text, level = 1) => ({\n  object: \"block\",\n  type: `heading_${level}`,\n  [`heading_${level}`]: { rich_text: createRichText(text) }\n});\n\nconst createParagraph = (text) => ({\n  object: \"block\",\n  type: \"paragraph\",\n  paragraph: { rich_text: createRichText(text) }\n});\n\nconst createBulletListItem = (text) => ({\n  object: \"block\",\n  type: \"bulleted_list_item\",\n  bulleted_list_item: { rich_text: createRichText(text) }\n});\n\nconst createNumberedListItem = (text) => {\n  let cleanedText = text.replace(/^\\d+\\.\\s*/, \"\").trim();\n  return {\n    object: \"block\",\n    type: \"numbered_list_item\",\n    numbered_list_item: { rich_text: createRichText(cleanedText) }\n  };\n};\n\n// Main parsing\nlet blocks = [];\nlet paragraphContent = [];\n\nfor (let line of lines) {\n  line = line.trim();\n\n  if (line.startsWith(\"# \")) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createHeading(line.replace(\"# \", \"\"), 1));\n  }\n  else if (line.startsWith(\"## \")) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createHeading(line.replace(\"## \", \"\"), 2));\n  }\n  else if (line.startsWith(\"### \")) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createHeading(line.replace(\"### \", \"\"), 3));\n  }\n  else if (line.match(/^\\d+\\./)) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createNumberedListItem(line));\n  }\n  else if (line.startsWith(\"- \")) {\n    if (paragraphContent.length > 0) {\n      blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n      paragraphContent = [];\n    }\n    blocks.push(createBulletListItem(line.replace(\"- \", \"\").trim()));\n  }\n  else if (line.length > 0) {\n    paragraphContent.push(line);\n  }\n  else if (line.length === 0 && paragraphContent.length > 0) {\n    blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n    paragraphContent = [];\n  }\n}\n\n// At the end of the file: If there is accumulated content that has not been paid yet\nif (paragraphContent.length > 0) {\n  blocks.push(createParagraph(paragraphContent.join(\"\\n\\n\")));\n}\n\n// **Important point:**\n// In n8n, the output must be an array of objects, each object representing a block.\n// Example: [{json: {...}}, {json: {...}}, ...]\nreturn [{ json: { children: blocks } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4320,
+        288
+      ],
+      "id": "2f27949c-9046-4a66-a018-88251dbf4559",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7be1ecec-c8fa-49b4-91d8-417d829f2cbe",
+              "leftValue": "={{ $json.Keyword }}",
+              "rightValue": "algemene plaatselijke verordening",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        464
+      ],
+      "id": "d0d0c8d2-0145-4659-89ce-fa521a2a2b60",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        672,
+        560
+      ],
+      "id": "50e60123-f93d-441d-9023-61d7b53728c8",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all loop outputs\nlet allBlocks = [];\n\nfor (let item of $input.all()) {\n  if (item.json.children) {\n    allBlocks.push(...item.json.children);\n  }\n}\n\nreturn [\n  {\n    json: {\n      children: allBlocks\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4320,
+        96
+      ],
+      "id": "2a0b0ca3-913a-4a61-95a1-8b809647323f",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "jsCode": "let textOutput = \"\";\n\nfor (let item of $input.all()) {\n  if (item.json.children) {\n    for (let block of item.json.children) {\n      if (block.paragraph) {\n        textOutput += block.paragraph.rich_text.map(r => r.text.content).join(\"\") + \"\\n\\n\";\n      }\n      if (block.heading_1) {\n        textOutput += \"# \" + block.heading_1.rich_text[0].text.content + \"\\n\\n\";\n      }\n      if (block.heading_2) {\n        textOutput += \"## \" + block.heading_2.rich_text[0].text.content + \"\\n\\n\";\n      }\n      if (block.heading_3) {\n        textOutput += \"### \" + block.heading_3.rich_text[0].text.content + \"\\n\\n\";\n      }\n    }\n  }\n}\n\nreturn [\n  {\n    json: {\n      fileContent: textOutput\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4544,
+        96
+      ],
+      "id": "62e718af-6e90-4611-995e-46f51c90e08c",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the raw string from the input\nconst raw = $json.fileContent;\n\n// Get the keyword from the \"GetKeyword\" node\nconst keyword = $node[\"Get Keyword\"].json.Keyword || \"Article\";\n\n\n// Split into JSON objects\nconst chunks = raw.split('\\n\\n').filter(Boolean);\n\n// Parse JSON\nconst sections = chunks.map(c => {\n  try {\n    return JSON.parse(c);\n  } catch (e) {\n    return {};\n  }\n});\n\n// Build formatted text\nlet formattedText = \"\";\n\nsections.forEach(s => {\n  const text = s.markdown || s.content || \"\";\n  const lines = text.split(\"\\n\");\n\n  lines.forEach(line => {\n    if (!line.trim()) return;\n\n    if (line.startsWith(\"## \")) {\n      // Format H2\n      formattedText += `\\n\\n===== ${line.replace(/^## /, \"\").toUpperCase()} =====\\n\\n`;\n    } else if (line.startsWith(\"### \")) {\n      // Format H3\n      formattedText += `-- ${line.replace(/^### /, \"\")}\\n\\n`;\n    } else if (line.startsWith(\"- \")) {\n      // Format bullet\n      formattedText += `• ${line.replace(/^- /, \"\")}\\n`;\n    } else {\n      // Normal paragraph\n      formattedText += line + \"\\n\\n\";\n    }\n  });\n});\n\n// Convert to Buffer\nconst buffer = Buffer.from(formattedText, \"utf-8\");\n\n// Return as binary .docx\nreturn [\n  {\n    json: {},\n    binary: {\n      data: {\n        data: buffer.toString(\"base64\"),\n        mimeType: \"application/vnd.openxmlformats-officedocument.wordprocessingml.document\",\n        fileName: `${keyword}.docx`, // you can replace with keyword dynamically\n      },\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4768,
+        96
+      ],
+      "id": "b52bb626-9dcd-412c-9c7a-cece70ef5a02",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "name": "sample",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1FCEtHDEyArIkG3HaWtjZCP1eI_rboTaD",
+          "mode": "list",
+          "cachedResultName": "Freelance Project n8n",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1FCEtHDEyArIkG3HaWtjZCP1eI_rboTaD"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5408,
+        272
+      ],
+      "id": "b7d9ca8a-5944-4063-8983-f52b782d06db",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aclEYLTf0xLCPc7g",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Keyword": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Message a model2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model2": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Message a model3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get Keyword",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "0194f920-e2e9-4939-9e76-d47aec3bc9b9",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-20T11:39:03.921Z",
+      "updatedAt": "2025-09-20T11:39:03.921Z",
+      "role": "workflow:owner",
+      "workflowId": "PxEgOm9DARLZfEuN",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
