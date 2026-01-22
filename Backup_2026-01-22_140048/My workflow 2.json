@@ -1,0 +1,105 @@
+{
+  "createdAt": "2025-09-19T14:44:23.804Z",
+  "updatedAt": "2025-09-19T14:44:31.000Z",
+  "id": "B4HBbaVYP0pLNHx5",
+  "name": "My workflow 2",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "d3089877-af9d-41c0-8876-1127860800b7",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "keyword",
+              "value": "AI in education"
+            },
+            {
+              "name": "keyword",
+              "value": "SEO automation tools"
+            },
+            {
+              "name": "keyword",
+              "value": "Best project management apps 2025"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "49f9e022-8b74-4965-bafd-8769dcb73c03",
+      "name": "Keyword List",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        160
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e12c4a0a-8142-4bce-9008-0803fb37e376",
+      "name": "OpenAI - Blog Generator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "fileName": "/data/seo_blog_{{$json[\"keyword\"]}}.md",
+        "options": {}
+      },
+      "id": "701e21a7-8f96-46e8-801d-4e30ff0ec854",
+      "name": "Save to Markdown",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        112,
+        160
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "f87a7172-0aba-4275-8647-26cd36cfa107",
+      "name": "Format Output",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "ef4bf763-d726-43fe-b491-d98c17e87f64",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-19T14:44:23.822Z",
+      "updatedAt": "2025-09-19T14:44:23.822Z",
+      "role": "workflow:owner",
+      "workflowId": "B4HBbaVYP0pLNHx5",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
