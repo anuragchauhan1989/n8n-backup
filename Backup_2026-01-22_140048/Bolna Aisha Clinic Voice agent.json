@@ -1,0 +1,440 @@
+{
+  "createdAt": "2025-09-19T03:17:25.796Z",
+  "updatedAt": "2025-09-19T03:17:25.000Z",
+  "id": "cwLRk0bmJSKjE4aX",
+  "name": "Bolna Aisha Clinic Voice agent",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User Input\nUser Name - {{ $json.body.context_details.recipient_data.name }}\nPreferred Time - {{ $json.body.extracted_data.preferred_time }}\nEmail ID - {{ $json.body.context_details.recipient_data.email_id }}\nSummary - {{ $json.body.summary }}\nCurrent time - {{ $now }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are a calendar assistant. Your responsibilities include creating, getting, and deleting events in the user’s calendar.\n\n## Calendar Management Tools:\n1. Set up a new doctor–patient appointment - Use Create_Calendar tool when an event includes a participant.\n\n2) Modify a booked doctor–patient appointment — same patient info and confirmation required before updating.\nUse the Modify-Calendar Tool\n\n3) Cancel a booked doctor–patient appointment — again, confirm patient details and appointment timing before cancellation.\nUse the Delete_Calendar Tool\n\n## Rules\n- Turn the incoming query into an action. Ignore clarification questions, just take action based on the intent you receive.\n- Set Proper Title for Meeting\n\n## Final Notes\nHere is the current date/time: {{ $now }}\nIf a duration for an event isn’t specified, assume it will be one hour."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        304,
+        288
+      ],
+      "id": "0043fe3d-e128-4242-bc75-96d5e718416f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1NfFAB1P69l9ZBvwvgCoJ_ZFrPPo3apc646_h-XNGKvg",
+          "mode": "list",
+          "cachedResultName": "Angel Clinic Dental Appointment",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NfFAB1P69l9ZBvwvgCoJ_ZFrPPo3apc646_h-XNGKvg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NfFAB1P69l9ZBvwvgCoJ_ZFrPPo3apc646_h-XNGKvg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Get Bolna AI data').item.json.body.context_details.recipient_data.name }}",
+            "Email ID": "={{ $('Get Bolna AI data').item.json.body.context_details.recipient_data.email_id }}",
+            "Location": "={{ $('Get Bolna AI data').item.json.body.extracted_data.location }}",
+            "Phone Number": "={{ $('Get Bolna AI data').item.json.body.context_details.recipient_phone_number }}",
+            "health_issue": "={{ $('Get Bolna AI data').item.json.body.extracted_data.health_issue }}",
+            "Appointment_booking_time": "={{ $('Get Bolna AI data').item.json.body.extracted_data.preferred_time }}",
+            "Summary of call": "={{ $('Get Bolna AI data').item.json.body.summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email ID",
+              "displayName": "Email ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "health_issue",
+              "displayName": "health_issue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Appointment_booking_time",
+              "displayName": "Appointment_booking_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Summary of call",
+              "displayName": "Summary of call",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        944,
+        272
+      ],
+      "id": "ab8cab47-f866-4cfd-a136-4959d84abe3a",
+      "name": "Update the Entry"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ad7b26c0-33fb-4968-bc2c-63068d0a4600",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f820b3e4-75be-44f2-b497-f7cdcbd4d0d0",
+      "name": "Landing Page Call",
+      "webhookId": "ad7b26c0-33fb-4968-bc2c-63068d0a4600"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        192,
+        496
+      ],
+      "id": "385427b5-a85b-4625-a42d-517203712328",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "sinisyssoft@gmail.com",
+          "mode": "list",
+          "cachedResultName": "sinisyssoft@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        688,
+        544
+      ],
+      "id": "bcaabf1f-47d3-4485-9915-21d25f27e2fb",
+      "name": "Modify_Calendar"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "sinisyssoft@gmail.com",
+          "mode": "list",
+          "cachedResultName": "sinisyssoft@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        848,
+        544
+      ],
+      "id": "2e2e6393-23e4-44ad-a467-005e509a9349",
+      "name": "Delete_Calendar"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "sinisyssoft@gmail.com",
+          "mode": "list",
+          "cachedResultName": "sinisyssoft@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('attendees0_Attendees', ``, 'string') }}"
+          ],
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        544
+      ],
+      "id": "1880fc74-22ec-49db-b998-7abf889478a8",
+      "name": "Create_Calendar"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "sessionId"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        560
+      ],
+      "id": "6f8f5a02-b4ff-488a-82a8-e7144cd93dc8",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ee4111fc-0b05-447a-a6b3-0b8b1c0e19c2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        288
+      ],
+      "id": "6c0eb1d2-34d4-4873-bbb9-cf992d1203de",
+      "name": "Get Bolna AI data",
+      "webhookId": "ee4111fc-0b05-447a-a6b3-0b8b1c0e19c2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.bolna.ai/call",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"agent_id\": \"4408555b-1cae-4058-946d-de15459836e3\",\n  \"recipient_phone_number\": \"+91{{ $json.body.Mobile }}\",\n  \"from_phone_number\": \"+918035316995\",\n  \"user_data\": {\n    \"name\": \"{{ $json.body['First Name'] }}\",\n    \"email_id\": \"{{ $json.body.Email }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        0
+      ],
+      "id": "a7885ff3-9d3e-4489-9006-645e9c884c71",
+      "name": "Bolna AI Agent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2254e787-d64b-416f-8787-ea58a4c73d63",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        656,
+        288
+      ],
+      "id": "91ba10e7-b03f-4a41-8a64-c8d6b6242e0f",
+      "name": "If"
+    }
+  ],
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Landing Page Call": {
+      "main": [
+        [
+          {
+            "node": "Bolna AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modify_Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete_Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create_Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Bolna AI data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update the Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "f26772de-e8d7-474f-8089-956d539f9cfc",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-19T03:17:25.800Z",
+      "updatedAt": "2025-09-19T03:17:25.800Z",
+      "role": "workflow:owner",
+      "workflowId": "cwLRk0bmJSKjE4aX",
+      "projectId": "nnULjHyqOVknXpmc"
+    }
+  ],
+  "tags": []
+}
